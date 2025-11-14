@@ -11,12 +11,12 @@
   "description": "The Electron application that encapsulates Khiops Visualization",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KhiopsML/kv-electron.git"
+    "url": "https://github.com/KhiopsML/khiops-visualization-desktop.git"
   },
   "bugs": {
-    "url": "https://github.com/KhiopsML/kv-electron/issues"
+    "url": "https://github.com/KhiopsML/khiops-visualization-desktop/issues"
   },
-  "homepage": "https://github.com/KhiopsML/kv-electron#readme",
+  "homepage": "https://github.com/KhiopsML/khiops-visualization-desktop#readme",
   "browser": {
     "child_process": false,
     "electron": false,
@@ -48,10 +48,10 @@
     "web:build": "npm run build -- -c web-production",
     "electron": "electron",
     "electron:serve-tsc": "tsc -p tsconfig.serve.json",
-    "electron:serve": "wait-on tcp:4200 && npm run electron:serve-tsc && electron . --serve",
+    "electron:serve": "wait-on tcp:4200 && npm run electron:serve-tsc && electron . --serve --no-sandbox",
     "electron:local": "npm run build:prod && electron .",
     "electron:build": "npm run build:prod && electron-builder build --publish=never",
-    "publishReleases": "npm run build-visu && cd ../khiops-visualization-electron && npm run build:prod && electron-builder build --windows --ia32 -p always && electron-builder build --linux -p always && electron-builder build --mac -p always",
+    "publishReleases": "npm run build-visu && cd ../khiops-visualization-desktop && npm run build:prod && electron-builder build --windows --ia32 -p always && electron-builder build --linux -p always && electron-builder build --mac -p always",
     "removeDist": "rimraf dist && rimraf release && rimraf .cache",
     "removeMocks": "rimraf dist/khiops-visualization/mocks",
     "electron:linux": "npm run build:prod && electron-builder build --linux -p always",

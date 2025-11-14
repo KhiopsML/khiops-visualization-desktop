@@ -26,7 +26,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.github_token }}
         run: |
           # Retrieve releases
-          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/KhiopsML/kv-electron/releases" -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/KhiopsML/khiops-visualization-desktop/releases" -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
 
           # Select the latest draft release
           $draft_release = $releases | Where-Object { $_.draft -eq $true } | Sort-Object -Property created_at -Descending | Select-Object -First 1

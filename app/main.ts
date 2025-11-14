@@ -21,7 +21,7 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
 // log.transports.file.level = 'info';
 // log.transports.file.file = __dirname + '/electron.log';
-log.warn('App starting...');
+log.warn('App Desktop starting...');
 autoUpdater.autoInstallOnAppQuit = false;
 autoUpdater.autoDownload = false;
 autoUpdater.allowDowngrade = false;
@@ -70,6 +70,9 @@ app.on('will-finish-launching', function () {
     }
   });
 });
+
+// Disable sandbox for all processes
+// app.commandLine.appendSwitch('--no-sandbox');
 
 function createWindow(): BrowserWindow {
   const size = screen.getPrimaryDisplay().workAreaSize;
@@ -140,6 +143,8 @@ function createWindow(): BrowserWindow {
 
   win.on('close', (event) => {
     event.preventDefault();
+    win?.show(); // Show window if hidden or minimized
+    win?.focus(); // Focus the window to bring it to the front
     win?.webContents?.send('before-quit');
   });
 
@@ -215,6 +220,20 @@ function checkForUpdates(channel: string) {
 
 ipcMain.handle('set-title-bar-name', async (_event: any, arg: any) => {
   win?.setTitle(arg?.title);
+});
+
+/**
+ * Covisualization use case: read local file content
+ */
+ipcMain.handle('read-local-file', async (_event: any, filePath: any) => {
+  try {
+    const data = fs.readFileSync(filePath, 'utf8');
+    // console.log('local file loaded:', data);
+    return data;
+  } catch (err) {
+    console.error('Error when loading file:', err);
+    return null;
+  }
 });
 
 autoUpdater.on('checking-for-update', () => {

@@ -10,7 +10,7 @@
     {
       "provider": "github",
       "owner": "KhiopsML",
-      "repo": "kv-electron"
+      "repo": "khiops-visualization-desktop"
     }
   ],
   "files": [
@@ -37,6 +37,11 @@
       {
         "ext": "khj",
         "name": "khj File"
+      },
+
+      {
+        "ext": "khcj",
+        "name": "khcj File"
       }
     ]
   },
@@ -61,6 +66,12 @@
         "ext": "khj",
         "name": "khj File",
         "role": "Editor"
+      },
+
+      {
+        "ext": "khcj",
+        "name": "khcj File",
+        "role": "Editor"
       }
     ]
   },
@@ -73,6 +84,13 @@
         "ext": "khj",
         "name": "khj File",
         "mimeType": "application/khj",
+        "role": "Editor"
+      },
+
+      {
+        "ext": "khcj",
+        "name": "khcj File",
+        "mimeType": "application/khcj",
         "role": "Editor"
       }
     ]

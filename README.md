@@ -1,6 +1,6 @@
 # Khiops Visualization Electron
 
-![Build Releases](https://github.com/KhiopsML/kv-electron/actions/workflows/release.yml/badge.svg) ![Test Workflow](https://github.com/KhiopsML/khiops-visualization/actions/workflows/test.yml/badge.svg) [![Latest Stable Version](https://img.shields.io/github/v/release/KhiopsML/kv-electron?label=Latest%20stable%20version)](https://github.com/KhiopsML/kv-electron/releases) [![End-to-end tests](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml/badge.svg)](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml) ![gitleaks badge](https://img.shields.io/badge/protected%20by-gitleaks-blue)
+![Build Releases](https://github.com/KhiopsML/khiops-visualization-desktop/actions/workflows/release.yml/badge.svg) ![Test Workflow](https://github.com/KhiopsML/khiops-visualization/actions/workflows/test.yml/badge.svg) [![Latest Stable Version](https://img.shields.io/github/v/release/KhiopsML/khiops-visualization-desktop?label=Latest%20stable%20version)](https://github.com/KhiopsML/khiops-visualization-desktop/releases) [![End-to-end tests](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml/badge.svg)](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml) ![gitleaks badge](https://img.shields.io/badge/protected%20by-gitleaks-blue)
 
 A cross-platform Electron application that encapsulates Khiops visualization, offering a native user interface for analyzing and visualizing data with Khiops.
 
@@ -43,8 +43,8 @@ The project is based on the [angular-electron](https://github.com/maximegris/ang
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/KhiopsML/kv-electron.git
-   cd kv-electron
+   git clone https://github.com/KhiopsML/khiops-visualization-desktop.git
+   cd khiops-visualization-desktop
    ```
 
 2. **Install dependencies**
@@ -96,7 +96,7 @@ Distribution builds are automatically generated via GitHub Actions on release. A
 ## 📁 Project Structure
 
 ```text
-khiops-visualization-electron/
+khiops-visualization-desktop/
 ├── app/                           # Main Electron application
 │   ├── main.ts                    # Electron entry point
 │   └── package.json               # Electron dependencies
@@ -136,7 +136,7 @@ This project is licensed under the BSD 3-Clause-clear license. See the [LICENSE]
 ## 🔗 Useful Links
 
 - [Khiops Visualization Repository](https://github.com/KhiopsML/khiops-visualization)
-- [Releases](https://github.com/KhiopsML/kv-electron/releases)
-- [Issues](https://github.com/KhiopsML/kv-electron/issues)
+- [Releases](https://github.com/KhiopsML/khiops-visualization-desktop/releases)
+- [Issues](https://github.com/KhiopsML/khiops-visualization-desktop/issues)
 - [Khiops Documentation](https://khiops.org)
 - [Boilerplate change log](https://github.com/maximegris/angular-electron/blob/master/CHANGELOG.md)

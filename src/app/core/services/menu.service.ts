@@ -48,7 +48,8 @@ export class MenuService {
     btnUpdate: string = '',
     btnUpdateText: string = '',
     refreshCb: Function | undefined = undefined,
-    updateCb: Function | undefined = undefined
+    updateCb: Function | undefined = undefined,
+    activeComponent: 'visualization' | 'covisualization' = 'visualization'
   ) {
     const opendFiles = this.fileSystemService.getFileHistory();
 
@@ -77,23 +78,95 @@ export class MenuService {
         {
           type: 'separator',
         },
+        ...(activeComponent === 'covisualization'
+          ? [
+              {
+                label: this.translate.instant('GLOBAL_MENU_SAVE'),
+                accelerator: 'CommandOrControl+S',
+                click: () => {
+                  this.save();
+                },
+              },
+              {
+                label: this.translate.instant('GLOBAL_MENU_SAVE_AS'),
+                accelerator: 'CommandOrControl+Shift+S',
+                click: () => {
+                  this.saveAs();
+                },
+              },
+              {
+                label: this.translate.instant(
+                  'GLOBAL_MENU_SAVE_CURRENT_HIERARCHY_AS'
+                ),
+                accelerator: 'CommandOrControl+Shift+Alt+S',
+                click: () => {
+                  this.saveCurrentHierarchyAs();
+                },
+              },
+              {
+                type: 'separator',
+              },
+            ]
+          : []),
         {
           label: this.translate.instant('GLOBAL_MENU_RESTART_APP'),
           accelerator: 'CommandOrControl+R',
           click: () => {
-            this.storageService.saveAll(() => {
-              this.electronService.remote.app.relaunch();
-              this.electronService.remote.app.exit(0);
-            });
+            if (activeComponent === 'covisualization') {
+              this.configService.openSaveBeforeQuitDialog((e: string) => {
+                if (e === 'confirm') {
+                  const datasToSave = this.configService
+                    .getConfig()
+                    .constructDatasToSave();
+                  this.fileSystemService.save(datasToSave);
+                  this.storageService.saveAll(() => {
+                    this.electronService.remote.app.relaunch();
+                    this.electronService.remote.app.exit(0);
+                  });
+                } else if (e === 'cancel') {
+                  return;
+                } else if (e === 'reject') {
+                  this.storageService.saveAll(() => {
+                    this.electronService.remote.app.relaunch();
+                    this.electronService.remote.app.exit(0);
+                  });
+                }
+              });
+            } else {
+              this.storageService.saveAll(() => {
+                this.electronService.remote.app.relaunch();
+                this.electronService.remote.app.exit(0);
+              });
+            }
           },
         },
         {
           label: this.translate.instant('GLOBAL_MENU_EXIT'),
           accelerator: 'CommandOrControl+Q',
           click: () => {
-            this.storageService.saveAll(() => {
-              this.electronService.remote.app.quit();
-            });
+            if (activeComponent === 'covisualization') {
+              this.configService.openSaveBeforeQuitDialog((e: string) => {
+                if (e === 'confirm') {
+                  const datasToSave = this.configService
+                    .getConfig()
+                    .constructDatasToSave();
+                  this.fileSystemService.save(datasToSave);
+                  this.storageService.saveAll(() => {
+                    this.electronService.remote.app.quit();
+                  });
+                } else if (e === 'cancel') {
+                  return;
+                } else if (e === 'reject') {
+                  this.storageService.saveAll(() => {
+                    this.electronService.remote.app.quit();
+                  });
+                }
+              });
+            } else {
+              this.storageService.saveAll(() => {
+                this.electronService.remote.app.quit();
+              });
+            }
           },
         },
       ],
@@ -108,8 +181,8 @@ export class MenuService {
         if (typeof opendFiles.files[i] === 'string') {
           menuFile.submenu.splice(2, 0, {
             label: this.fileSystemService.getFileHistory().files[i],
-            click: () => {
-              this.openFile(
+            click: async () => {
+              await this.openFile(
                 this.fileSystemService.getFileHistory().files[i],
                 refreshCb
               );
@@ -135,7 +208,7 @@ export class MenuService {
             LibVersionService.getAppVersion(),
           click: () => {
             this.electronService.shell.openExternal(
-              'https://github.com/KhiopsML/kv-electron/releases'
+              'https://github.com/KhiopsML/khiops-visualization-desktop/releases'
             );
           },
         },
@@ -157,7 +230,7 @@ export class MenuService {
           label: this.translate.instant('GLOBAL_MENU_RELEASE_NOTES'),
           click: () => {
             this.electronService.shell.openExternal(
-              'https://github.com/KhiopsML/kv-electron/releases'
+              'https://github.com/KhiopsML/khiops-visualization-desktop/releases'
             );
           },
         },
@@ -293,8 +366,8 @@ export class MenuService {
     });
   }
 
-  openFile(filename: string, callbackDone: Function | undefined) {
-    this.fileSystemService.openFile(filename, () => {
+  async openFile(filename: string, callbackDone: Function | undefined) {
+    await this.fileSystemService.openFile(filename, () => {
       callbackDone && callbackDone();
     });
   }
@@ -317,5 +390,26 @@ export class MenuService {
         console.log('error', error);
       }
     })();
+  }
+
+  save() {
+    const datasToSave = this.configService.getConfig().constructDatasToSave();
+    this.fileSystemService.save(datasToSave);
+  }
+
+  saveAs() {
+    const datasToSave = this.configService.getConfig().constructDatasToSave();
+    this.fileSystemService.saveAs(datasToSave);
+  }
+
+  saveCurrentHierarchyAs() {
+    document.body.style.cursor = 'wait';
+    setTimeout(() => {
+      const datasToSave = this.configService
+        .getConfig()
+        .constructPrunedDatasToSave();
+      this.fileSystemService.saveAs(datasToSave);
+      document.body.style.cursor = 'default';
+    }, 1000);
   }
 }

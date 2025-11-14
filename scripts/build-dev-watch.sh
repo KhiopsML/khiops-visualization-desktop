@@ -10,7 +10,7 @@ cd ../visualization-component
 yarn buildDev:webcomponents &
 
 # Start the application
-cd ../khiops-visualization-electron
+cd ../khiops-visualization-desktop
 sleep 30
 yarn start 
 

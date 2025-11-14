@@ -7,6 +7,7 @@
 /* eslint-disable no-console */
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   NgZone,
@@ -32,14 +33,21 @@ export class AppComponent implements AfterViewInit {
     static: false,
   })
   visualizationComponent?: ElementRef<HTMLElement>;
+  @ViewChild('covisualizationComponent', {
+    static: false,
+  })
+  covisualizationComponent?: ElementRef<HTMLElement>;
 
   config: any;
+  activeComponent: 'visualization' | 'covisualization' = 'visualization';
+  currentFileType?: string;
   btnUpdateText: string =
     '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
   btnUpdate?: string;
 
   constructor(
     public ngzone: NgZone,
+    private cdr: ChangeDetectorRef,
     private electronService: ElectronService,
     private fileSystemService: FileSystemService,
     private storageService: StorageService,
@@ -54,6 +62,10 @@ export class AppComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
+    this.configService.setComponentChangeCallback((componentType) => {
+      this.setActiveComponent(componentType);
+    });
+
     this.setAppConfig();
     if (this.electronService.isElectron) {
       this.addIpcRendererEvents();
@@ -61,7 +73,44 @@ export class AppComponent implements AfterViewInit {
   }
 
   setAppConfig() {
-    this.config = this.visualizationComponent?.nativeElement;
+    // Initialiser avec le composant visualization par défaut
+    this.setActiveComponent('visualization');
+  }
+
+  setActiveComponent(componentType: 'visualization' | 'covisualization') {
+    this.activeComponent = componentType;
+    this.cdr.detectChanges();
+
+    setTimeout(() => {
+      if (componentType === 'visualization') {
+        this.config = this.visualizationComponent?.nativeElement;
+      } else {
+        this.config = this.covisualizationComponent?.nativeElement;
+      }
+
+      if (!this.config) {
+        setTimeout(() => {
+          this.continueSetActiveComponent(componentType);
+        }, 100);
+        return;
+      }
+
+      this.continueSetActiveComponent(componentType);
+    }, 50);
+  }
+
+  continueSetActiveComponent(
+    componentType: 'visualization' | 'covisualization'
+  ) {
+    if (componentType === 'visualization') {
+      this.config = this.visualizationComponent?.nativeElement;
+    } else {
+      this.config = this.covisualizationComponent?.nativeElement;
+    }
+
+    if (!this.config) {
+      return;
+    }
 
     //@ts-ignore
     this.config.setConfig({
@@ -77,6 +126,9 @@ export class AppComponent implements AfterViewInit {
         const natImage =
           this.electronService.nativeImage.createFromDataURL(base64data);
         this.electronService.clipboard.writeImage(natImage);
+      },
+      readLocalFile: (file: File | any, cb: Function) => {
+        return this.readLocalFile(file, cb);
       },
       onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
         if (event.message === 'forgetConsentGiven') {
@@ -94,7 +146,59 @@ export class AppComponent implements AfterViewInit {
         }
       },
     });
+
+    // Mettre à jour le service de configuration
     this.configService.setConfig(this.config);
+    this.configService.setActiveComponentType(componentType);
+  }
+
+  determineComponentFromFile(
+    filePath: string
+  ): 'visualization' | 'covisualization' {
+    if (!filePath) {
+      return 'visualization';
+    }
+
+    const extension = filePath.toLowerCase().split('.').pop();
+
+    switch (extension) {
+      case 'khj':
+        return 'visualization';
+      case 'khcj':
+        return 'covisualization';
+      case 'json':
+        return 'visualization';
+      default:
+        return 'visualization';
+    }
+  }
+
+  readLocalFile(input: File | any, cb: Function) {
+    (async () => {
+      try {
+        if (this.electronService.isElectron) {
+          let path: string = '';
+
+          if (input?.path) {
+            // If command is called by saved json datas
+            path = input?.path;
+          } else {
+            // If command is called by user
+            path = this.electronService.electron.webUtils.getPathForFile(input);
+          }
+
+          this.currentFileType = path;
+
+          const content = await this.electronService.ipcRenderer?.invoke(
+            'read-local-file',
+            path
+          );
+          cb(content, path);
+        }
+      } catch (error) {
+        console.log('error', error);
+      }
+    })();
   }
 
   addIpcRendererEvents() {
@@ -150,18 +254,17 @@ export class AppComponent implements AfterViewInit {
       this.electronService.ipcRenderer?.sendSync('get-input-file');
     if (inputFile && inputFile !== '.') {
       setTimeout(() => {
+        this.currentFileType = inputFile;
         this.fileSystemService.openFile(inputFile, () => {
-          // Refresh
           this.constructMenu();
         });
       });
     }
-    // Get input files on Mac or Linux
     this.electronService.ipcRenderer?.on('file-open-system', (event, arg) => {
       if (arg) {
         setTimeout(() => {
+          this.currentFileType = arg;
           this.fileSystemService.openFile(arg, () => {
-            // Refresh
             this.constructMenu();
           });
         });
@@ -169,10 +272,39 @@ export class AppComponent implements AfterViewInit {
     });
   }
 
-  beforeQuit() {
-    this.storageService.saveAll(() => {
-      this.electronService.remote.app.exit(0);
-    });
+  beforeQuit(mustRestart: boolean = false) {
+    if (this.activeComponent === 'covisualization') {
+      this.configService.openSaveBeforeQuitDialog((e: string) => {
+        if (e === 'confirm') {
+          const datasToSave = this.configService
+            .getConfig()
+            .constructDatasToSave();
+          this.fileSystemService.save(datasToSave);
+          this.storageService.saveAll(() => {
+            if (mustRestart) {
+              this.electronService.remote.app.relaunch();
+            }
+            this.electronService.remote.app.exit(0);
+          });
+        } else if (e === 'cancel') {
+          return;
+        } else if (e === 'reject') {
+          if (mustRestart) {
+            this.electronService.remote.app.relaunch();
+          }
+          this.storageService.saveAll(() => {
+            this.electronService.remote.app.exit(0);
+          });
+        }
+      });
+    } else {
+      this.storageService.saveAll(() => {
+        if (mustRestart) {
+          this.electronService.remote.app.relaunch();
+        }
+        this.electronService.remote.app.exit(0);
+      });
+    }
   }
 
   constructMenu() {
@@ -180,11 +312,9 @@ export class AppComponent implements AfterViewInit {
       this.btnUpdate,
       this.btnUpdateText,
       () => {
-        // Refresh
         this.constructMenu();
       },
       () => {
-        // launch-update-available
         (async () => {
           this.menuService.setUpdateInProgress(true);
 
@@ -197,7 +327,8 @@ export class AppComponent implements AfterViewInit {
           );
           this.constructMenu();
         })();
-      }
+      },
+      this.activeComponent
     );
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);

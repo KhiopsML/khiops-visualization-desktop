@@ -35,11 +35,12 @@
   "GLOBAL_MENU_VIEW": "View",
   "GLOBAL_MENU_UPDATE": "Update",
   "GLOBAL_UPDATE_CLICK_TO_UPDATE": "Click to update",
+  "GLOBAL_SNACKS_SAVE_FILE_SUCCESS": "Save file success",
   "GLOBAL_UPDATE_DOWNLOADING": "Downloading",
   "GLOBAL_UPDATE_UP_TO_DATE": "App is up do date",
   "GLOBAL_UPDATE_DOWNLOAD_COMPLETE": "The installation will start",
   "GLOBAL_UPDATE_UPDATE_AVAILABLE": "Update available",
   "GLOBAL_UPDATE_UPDATE_ERROR": "Update error",
   "GLOBAL_UPDATE_WAITING_FOR_DOWNLOAD": "Waiting For download",
-  "OPEN_FILE_ERROR": "No data or file error !"
+  "OPEN_FILE_ERROR": "----No data or file error !"
 }

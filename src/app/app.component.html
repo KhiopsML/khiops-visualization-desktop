@@ -1,2 +1,12 @@
 <app-big-file-loading></app-big-file-loading>
-<khiops-visualization #visualizationComponent></khiops-visualization>
+
+<khiops-visualization 
+  #visualizationComponent 
+  *ngIf="activeComponent === 'visualization'"
+  style="display: block !important; visibility: visible !important; width: 100%; height: 100%;">
+</khiops-visualization>
+<khiops-covisualization 
+  #covisualizationComponent 
+  *ngIf="activeComponent === 'covisualization'"
+  style="display: block !important; visibility: visible !important; width: 100%; height: 100%;">
+</khiops-covisualization>

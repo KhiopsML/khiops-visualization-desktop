@@ -36,6 +36,7 @@ export class FileSystemService {
     isBigJsonFile: boolean;
     loadingInfo: string;
   };
+  currentFilePath = '';
 
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
   public fileLoader$: Observable<any> = this._fileLoaderSub.asObservable();
@@ -64,6 +65,7 @@ export class FileSystemService {
 
     const associationFiles = ['json'];
     associationFiles.push('khj');
+    associationFiles.push('khcj');
 
     this.electronService.dialog
       .showOpenDialog(null, {
@@ -85,12 +87,21 @@ export class FileSystemService {
       });
   }
 
-  setTitleBar(filename: string) {
-    // Set the filename to the title bar
+  setTitleBar(filepath: string) {
+    this.currentFilePath = filepath;
     (async () => {
       try {
+        const extension = filepath.toLowerCase().split('.').pop();
+        let appType = 'Khiops Visualization';
+        
+        if (extension === 'khcj') {
+          appType = 'Khiops Covisualization';
+        } else if (extension === 'khj') {
+          appType = 'Khiops Visualization';
+        }
+        
         await this.electronService.ipcRenderer?.invoke('set-title-bar-name', {
-          title: 'Khiops Visualization ' + filename,
+          title: appType + ' ' + filepath,
         });
       } catch (error) {
         console.log('error', error);
@@ -98,9 +109,10 @@ export class FileSystemService {
     })();
   }
 
-  openFile(filename: string, callbackDone?: Function) {
+  async openFile(filename: string, callbackDone?: Function) {
     if (filename) {
-      // Important to reset datas before loading a new file
+      await this.configService.requestComponentChange(filename);
+      
       this.configService.setDatas();
 
       this.readFile(filename)
@@ -126,6 +138,11 @@ export class FileSystemService {
     }
   }
   readFile(filename: string): any {
+    const activeComponentType = this.configService.getActiveComponentType();
+
+    if (activeComponentType === 'covisualization') {
+      return this.readFileSimple(filename);
+    }
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
@@ -216,6 +233,51 @@ export class FileSystemService {
     });
   }
 
+  readFileSimple(filename: string): Promise<any> {
+    this.fileLoaderDatas!.datas = undefined;
+    this.fileLoaderDatas!.isLoadingDatas = true;
+    this.fileLoaderDatas!.isBigJsonFile = false;
+    this.fileLoaderDatas!.loadingInfo = '';
+    this._fileLoaderSub.next(this.fileLoaderDatas);
+    
+    return new Promise((resolve, reject) => {
+      this.electronService.fs.stat(filename, (err: any) => {
+        if (err) {
+          this.fileLoaderDatas!.isLoadingDatas = false;
+          this._fileLoaderSub.next(this.fileLoaderDatas);
+          reject(err);
+        } else {
+          this.electronService.fs.readFile(
+            filename,
+            'utf-8',
+            (errReadFile: NodeJS.ErrnoException, datas: string) => {
+              if (errReadFile) {
+                this.fileLoaderDatas!.isLoadingDatas = false;
+                this._fileLoaderSub.next(this.fileLoaderDatas);
+                reject(errReadFile);
+              } else {
+                try {
+                  const parsedDatas = JSON.parse(datas);
+                  parsedDatas.filename = filename;
+                  
+                  this.fileLoaderDatas!.datas = parsedDatas;
+                  this.fileLoaderDatas!.isLoadingDatas = false;
+                  this._fileLoaderSub.next(this.fileLoaderDatas);
+                  
+                  resolve(parsedDatas);
+                } catch (e) {
+                  this.fileLoaderDatas!.isLoadingDatas = false;
+                  this._fileLoaderSub.next(this.fileLoaderDatas);
+                  reject(e);
+                }
+              }
+            }
+          );
+        }
+      });
+    });
+  }
+
   closeFile() {
     this.initialize();
     this.ngzone.run(() => {
@@ -254,6 +316,43 @@ export class FileSystemService {
       filesHistory || {
         files: [],
       }
+    );
+  }
+
+  save(datas: any) {
+    this.saveFile(this.currentFilePath, datas);
+  }
+
+  saveAs(datas: any) {
+    const dialogOpts: any = {
+      defaultPath: '',
+      filters: [
+        {
+          name: 'json',
+          extensions: ['khcj', 'json'],
+        },
+      ],
+    };
+    this.electronService.dialog
+      .showSaveDialog(dialogOpts)
+      .then((result: any) => {
+        const filename = result.filePath;
+        if (filename) {
+          this.saveFile(filename, datas);
+        }
+      });
+  }
+
+  saveFile(filename: string, datas: any) {
+    this.electronService.fs.writeFileSync(
+      filename,
+      JSON.stringify(datas, null, 2), // spacing level = 2
+      'utf-8'
+    );
+    this.configService.snack(
+      this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS'),
+      4000,
+      'success'
     );
   }
 }

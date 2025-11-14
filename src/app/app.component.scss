@@ -1,2 +1,21 @@
 :host {
 }
+
+/* S'assurer que les composants sont visibles quand ils doivent l'être */
+khiops-visualization {
+  &[style*="display: block"] {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+khiops-covisualization {
+  &[style*="display: block"] {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
