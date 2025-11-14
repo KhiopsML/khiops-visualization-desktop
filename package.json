@@ -8,7 +8,7 @@
     "name": "Orange",
     "email": "khiops.team@orange.com"
   },
-  "description": "The Electron application that encapsulates Khiops Visualization",
+  "description": "Khiops Visualization Desktop application for Windows, Mac and Linux",
   "repository": {
     "type": "git",
     "url": "https://github.com/KhiopsML/khiops-visualization-desktop.git"
