@@ -13,7 +13,7 @@ sed -i "s/\"version\": \".*\"/\"version\": \"$TAG\"/" ./app/package.json
 git add .
 git commit -am "$TAG"
 git tag v$TAG
-git push origin master --tags
+git push origin main --tags
 
 # exit 0
 # $SHELL
