@@ -8,6 +8,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { ElectronService } from './electron.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from './config.service';
+import { TabService } from './tab.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 // @ts-ignore
 import Toastify from 'toastify-js';
@@ -46,7 +47,8 @@ export class FileSystemService {
     private configService: ConfigService,
     private electronService: ElectronService,
     private translate: TranslateService,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private tabService: TabService
   ) {
     this.initialize();
   }
@@ -111,15 +113,21 @@ export class FileSystemService {
 
   async openFile(filename: string, callbackDone?: Function) {
     if (filename) {
-      await this.configService.requestComponentChange(filename);
+      // Open file in new tab
+      const fileName = filename.split(/[/\\]/).pop() || filename;
+      const tabId = this.tabService.openFile(filename, fileName);
       
-      this.configService.setDatas();
+      // Add to file history immediately
+      this.setFileHistory(filename);
 
-      this.readFile(filename)
+      // Wait for component to be fully initialized in the tab container
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      this.readFile(filename, tabId)
         .then((datas: any) => {
           this.setTitleBar(filename);
-          this.setFileHistory(filename);
-          this.configService.setDatas(datas);
+          // Save data to tab for later retrieval - TabsContainerComponent will handle setDatas
+          this.tabService.setTabData(tabId, datas);
           if (callbackDone) {
             callbackDone();
           }
@@ -137,12 +145,22 @@ export class FileSystemService {
         });
     }
   }
-  readFile(filename: string): any {
-    const activeComponentType = this.configService.getActiveComponentType();
+  readFile(filename: string, tabId?: string): any {
+    // Determine component type based on file extension
+    const extension = filename.toLowerCase().split('.').pop();
+    const isKhcj = extension === 'khcj';
+    const isJson = extension === 'json';
 
-    if (activeComponentType === 'covisualization') {
+    // For JSON files, we'll determine type after reading the content
+    if (isJson) {
+      return this.readFileWithJsonTypeDetection(filename, tabId);
+    }
+
+    if (isKhcj) {
       return this.readFileSimple(filename);
     }
+
+    // For KHJ files and others, use the normal visualization flow
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
@@ -275,6 +293,52 @@ export class FileSystemService {
           );
         }
       });
+    });
+  }
+
+  readFileWithJsonTypeDetection(filename: string, tabId?: string): Promise<any> {
+    this.fileLoaderDatas!.datas = undefined;
+    this.fileLoaderDatas!.isLoadingDatas = true;
+    this.fileLoaderDatas!.isBigJsonFile = false;
+    this.fileLoaderDatas!.loadingInfo = '';
+    this._fileLoaderSub.next(this.fileLoaderDatas);
+    
+    return new Promise((resolve, reject) => {
+      this.electronService.fs.readFile(
+        filename,
+        'utf-8',
+        (errReadFile: NodeJS.ErrnoException, datas: string) => {
+          if (errReadFile) {
+            this.fileLoaderDatas!.isLoadingDatas = false;
+            this._fileLoaderSub.next(this.fileLoaderDatas);
+            reject(errReadFile);
+          } else {
+            try {
+              const parsedDatas = JSON.parse(datas);
+              parsedDatas.filename = filename;
+              
+              // Check if this is a Coclustering file (KHCJ) or Visualization file (KHJ)
+              const tool = parsedDatas.tool;
+              const isCovisualization = tool === 'Khiops Coclustering';
+              
+              // Update the tab's component type if needed
+              if (tabId && isCovisualization) {
+                this.tabService.updateTabComponentType(tabId, 'covisualization');
+              }
+              
+              this.fileLoaderDatas!.datas = parsedDatas;
+              this.fileLoaderDatas!.isLoadingDatas = false;
+              this._fileLoaderSub.next(this.fileLoaderDatas);
+              
+              resolve(parsedDatas);
+            } catch (e) {
+              this.fileLoaderDatas!.isLoadingDatas = false;
+              this._fileLoaderSub.next(this.fileLoaderDatas);
+              reject(e);
+            }
+          }
+        }
+      );
     });
   }
 

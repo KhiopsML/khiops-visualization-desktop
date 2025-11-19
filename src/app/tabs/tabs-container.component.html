@@ -1,0 +1,30 @@
+<div class="tabs-wrapper">
+  <div #tabsElement class="chrome-tabs">
+    <div *ngFor="let tab of tabs" 
+         [attr.data-tab-id]="tab.id" 
+         class="chrome-tab" 
+         [class.chrome-tab-active]="isTabActive(tab.id)"
+         (click)="switchTab(tab.id)">
+      <div class="chrome-tab-title">{{ tab.title }}</div>
+      <button class="tab-close-btn" 
+              (click)="closeTab(tab.id); $event.stopPropagation();" 
+              aria-label="Close tab"
+              type="button">×</button>
+    </div>
+  </div>
+</div>
+
+<app-big-file-loading></app-big-file-loading>
+
+<div class="tab-content">
+  <ng-container *ngFor="let tab of tabs; trackBy: trackByTabId">
+    <khiops-visualization
+      *ngIf="activeTabId === tab.id && tab.componentType === 'visualization'"
+      style="display: block !important; visibility: visible !important; width: 100%; height: 100%;">
+    </khiops-visualization>
+    <khiops-covisualization
+      *ngIf="activeTabId === tab.id && tab.componentType === 'covisualization'"
+      style="display: block !important; visibility: visible !important; width: 100%; height: 100%;">
+    </khiops-covisualization>
+  </ng-container>
+</div>

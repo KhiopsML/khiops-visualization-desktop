@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2023-2025 Orange. All rights reserved.
+ * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
+ * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.tabs-wrapper {
+  height: auto;
+  border-bottom: 1px solid #d0d0d0;
+  background-color: #f5f5f5;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+}
+
+.chrome-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px 8px 0 8px;
+  margin: 0;
+  width: 100%;
+
+  .chrome-tab {
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 12px;
+    margin: 0;
+    background: linear-gradient(to bottom, #f0f0f0, #e8e8e8);
+    border: 1px solid #c0c0c0;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    position: relative;
+    font-size: 13px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    user-select: none;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+      border-color: #a0a0a0;
+    }
+
+    &.chrome-tab-active {
+      background: #ffffff;
+      border-bottom-color: #ffffff;
+      z-index: 1;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+      .chrome-tab-title {
+        font-weight: 500;
+        color: #000;
+      }
+    }
+
+    .chrome-tab-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 4px;
+    }
+
+    .tab-close-btn {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: none;
+      background: none;
+      color: #666;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      flex-shrink: 0;
+      line-height: 1;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+        color: #000;
+      }
+
+      &:active {
+        background-color: rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+}
+
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  khiops-visualization,
+  khiops-covisualization {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+  }
+}

@@ -17,7 +17,6 @@ applyTo: "**"
 - **MANDATORY**: ALL variable names, function names, and documentation MUST be in English
 - **FORBIDDEN**: Never write comments in French or any other language than English
 - **FORBIDDEN**: Never use French words in code, even for variable names
-- All communication about code should be in English
 
 ## Important Reminders
 

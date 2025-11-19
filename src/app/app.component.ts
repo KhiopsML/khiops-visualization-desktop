@@ -5,20 +5,14 @@
  */
 
 /* eslint-disable no-console */
-import {
-  AfterViewInit,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  NgZone,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, NgZone } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { ElectronService } from './core/services/electron.service';
 import { ConfigService } from './core/services/config.service';
 import { MenuService } from './core/services/menu.service';
 import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
+import { TabService } from './core/services/tab.service';
 import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
 
@@ -29,17 +23,6 @@ import { StorageService } from './core/services/storage.service';
   standalone: false,
 })
 export class AppComponent implements AfterViewInit {
-  @ViewChild('visualizationComponent', {
-    static: false,
-  })
-  visualizationComponent?: ElementRef<HTMLElement>;
-  @ViewChild('covisualizationComponent', {
-    static: false,
-  })
-  covisualizationComponent?: ElementRef<HTMLElement>;
-
-  config: any;
-  activeComponent: 'visualization' | 'covisualization' = 'visualization';
   currentFileType?: string;
   btnUpdateText: string =
     '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
@@ -54,7 +37,8 @@ export class AppComponent implements AfterViewInit {
     private configService: ConfigService,
     private translate: TranslateService,
     private menuService: MenuService,
-    private trackerService: TrackerService
+    private trackerService: TrackerService,
+    private tabService: TabService
   ) {
     this.translate.setFallbackLang('en');
 
@@ -62,10 +46,6 @@ export class AppComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.configService.setComponentChangeCallback((componentType) => {
-      this.setActiveComponent(componentType);
-    });
-
     this.setAppConfig();
     if (this.electronService.isElectron) {
       this.addIpcRendererEvents();
@@ -73,104 +53,8 @@ export class AppComponent implements AfterViewInit {
   }
 
   setAppConfig() {
-    // Initialiser avec le composant visualization par défaut
-    this.setActiveComponent('visualization');
-  }
-
-  setActiveComponent(componentType: 'visualization' | 'covisualization') {
-    this.activeComponent = componentType;
-    this.cdr.detectChanges();
-
-    setTimeout(() => {
-      if (componentType === 'visualization') {
-        this.config = this.visualizationComponent?.nativeElement;
-      } else {
-        this.config = this.covisualizationComponent?.nativeElement;
-      }
-
-      if (!this.config) {
-        setTimeout(() => {
-          this.continueSetActiveComponent(componentType);
-        }, 100);
-        return;
-      }
-
-      this.continueSetActiveComponent(componentType);
-    }, 50);
-  }
-
-  continueSetActiveComponent(
-    componentType: 'visualization' | 'covisualization'
-  ) {
-    if (componentType === 'visualization') {
-      this.config = this.visualizationComponent?.nativeElement;
-    } else {
-      this.config = this.covisualizationComponent?.nativeElement;
-    }
-
-    if (!this.config) {
-      return;
-    }
-
-    //@ts-ignore
-    this.config.setConfig({
-      appSource: 'ELECTRON',
-      storage: 'ELECTRON',
-      onFileOpen: () => {
-        console.log('fileOpen');
-        this.menuService.openFileDialog(() => {
-          this.constructMenu();
-        });
-      },
-      onCopyImage: (base64data: any) => {
-        const natImage =
-          this.electronService.nativeImage.createFromDataURL(base64data);
-        this.electronService.clipboard.writeImage(natImage);
-      },
-      readLocalFile: (file: File | any, cb: Function) => {
-        return this.readLocalFile(file, cb);
-      },
-      onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
-        if (event.message === 'forgetConsentGiven') {
-          this.trackerService.forgetConsentGiven();
-        } else if (event.message === 'setConsentGiven') {
-          this.trackerService.setConsentGiven();
-        } else if (event.message === 'trackEvent') {
-          this.trackerService.trackEvent(event.data);
-        } else if (event.message === 'ls.getAll') {
-          cb && cb(this.storageService.getAll());
-        } else if (event.message === 'ls.saveAll') {
-          this.storageService.saveAll();
-        } else if (event.message === 'ls.delAll') {
-          this.storageService.delAll();
-        }
-      },
-    });
-
-    // Mettre à jour le service de configuration
-    this.configService.setConfig(this.config);
-    this.configService.setActiveComponentType(componentType);
-  }
-
-  determineComponentFromFile(
-    filePath: string
-  ): 'visualization' | 'covisualization' {
-    if (!filePath) {
-      return 'visualization';
-    }
-
-    const extension = filePath.toLowerCase().split('.').pop();
-
-    switch (extension) {
-      case 'khj':
-        return 'visualization';
-      case 'khcj':
-        return 'covisualization';
-      case 'json':
-        return 'visualization';
-      default:
-        return 'visualization';
-    }
+    // Initialize with no tabs - wait for files to be opened
+    this.constructMenu();
   }
 
   readLocalFile(input: File | any, cb: Function) {
@@ -273,7 +157,8 @@ export class AppComponent implements AfterViewInit {
   }
 
   beforeQuit(mustRestart: boolean = false) {
-    if (this.activeComponent === 'covisualization') {
+    const activeTab = this.tabService.getActiveTab();
+    if (activeTab && activeTab.componentType === 'covisualization') {
       this.configService.openSaveBeforeQuitDialog((e: string) => {
         if (e === 'confirm') {
           const datasToSave = this.configService
@@ -328,7 +213,7 @@ export class AppComponent implements AfterViewInit {
           this.constructMenu();
         })();
       },
-      this.activeComponent
+      this.tabService.getActiveTab()?.componentType || 'visualization'
     );
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);
