@@ -1,10 +1,16 @@
 ---
-applyTo: '**'
+applyTo: "**"
 ---
 
-Always develop and comment in english.
-Never comment in French.
-Never use NPM to test or build the project, always use yarn.
-Never use npm install, always use yarn add.
+**Never use NPM - always use Yarn:**
 
-Use yarn start to start web server and check compilation errors.
+- You do not have access to npm, nvm, npx, etc. Look for alternative ways to achieve what you want, for example with yarn.
+- `yarn add` or `yarn install` (not `npm install`)
+- `yarn` for dependency installation
+- You do not have access to .json files, look for alternative ways to achieve what you want
+
+## Code Standards
+
+**Language & Comments:**
+
+- Always develop and comment in English, never French
