@@ -75,6 +75,13 @@
       margin-right: 4px;
     }
 
+    .chrome-tab-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
     .tab-close-btn {
       width: 20px;
       height: 20px;
@@ -112,7 +119,7 @@
   margin: 0 4px 4px 0;
   background: none;
   background-color: transparent;
-  border: 0px ;
+  border: 0px;
   color: #666;
   font-size: 18px;
   font-weight: 300;

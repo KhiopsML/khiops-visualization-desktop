@@ -7,6 +7,11 @@
       [class.chrome-tab-active]="isTabActive(tab.id)"
       (click)="switchTab(tab.id)"
     >
+      <img
+        class="chrome-tab-icon"
+        [src]="getTabIcon(tab.componentType)"
+        [alt]="tab.componentType"
+      />
       <div class="chrome-tab-title">{{ tab.title }}</div>
       <button
         class="tab-close-btn"

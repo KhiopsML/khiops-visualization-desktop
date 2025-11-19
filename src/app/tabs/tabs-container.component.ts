@@ -383,6 +383,13 @@ export class TabsContainerComponent implements AfterViewInit {
     return tab.id;
   }
 
+  getTabIcon(componentType: 'visualization' | 'covisualization'): string {
+    if (componentType === 'covisualization') {
+      return 'assets/icons/icon-covisu.png';
+    }
+    return 'assets/icons/icon-visu.png';
+  }
+
   openFileDialog() {
     this.menuService.openFileDialog(() => {
       // Callback after file open
