@@ -1,30 +1,51 @@
-<div class="tabs-wrapper">
+<div class="tabs-wrapper" *ngIf="tabs.length !== 0">
   <div #tabsElement class="chrome-tabs">
-    <div *ngFor="let tab of tabs" 
-         [attr.data-tab-id]="tab.id" 
-         class="chrome-tab" 
-         [class.chrome-tab-active]="isTabActive(tab.id)"
-         (click)="switchTab(tab.id)">
+    <div
+      *ngFor="let tab of tabs"
+      [attr.data-tab-id]="tab.id"
+      class="chrome-tab"
+      [class.chrome-tab-active]="isTabActive(tab.id)"
+      (click)="switchTab(tab.id)"
+    >
       <div class="chrome-tab-title">{{ tab.title }}</div>
-      <button class="tab-close-btn" 
-              (click)="closeTab(tab.id); $event.stopPropagation();" 
-              aria-label="Close tab"
-              type="button">×</button>
+      <button
+        class="tab-close-btn"
+        (click)="closeTab(tab.id); $event.stopPropagation()"
+        aria-label="Close tab"
+        type="button"
+      >
+        ×
+      </button>
     </div>
   </div>
+  <button
+    class="tab-add-btn"
+    (click)="openFileDialog()"
+    aria-label="Open file"
+    type="button"
+  >
+    +
+  </button>
 </div>
 
 <app-big-file-loading></app-big-file-loading>
 
 <div class="tab-content">
+  <div *ngIf="tabs.length === 0">Open file</div>
   <ng-container *ngFor="let tab of tabs; trackBy: trackByTabId">
     <khiops-visualization
-      *ngIf="activeTabId === tab.id && tab.componentType === 'visualization'"
-      style="display: block !important; visibility: visible !important; width: 100%; height: 100%;">
+      *ngIf="tab.componentType === 'visualization'"
+      [style.display]="activeTabId === tab.id ? 'block' : 'none'"
+      [style.visibility]="activeTabId === tab.id ? 'visible' : 'hidden'"
+      style="width: 100%; height: 100%"
+    >
     </khiops-visualization>
     <khiops-covisualization
-      *ngIf="activeTabId === tab.id && tab.componentType === 'covisualization'"
-      style="display: block !important; visibility: visible !important; width: 100%; height: 100%;">
+      *ngIf="tab.componentType === 'covisualization'"
+      [style.display]="activeTabId === tab.id ? 'block' : 'none'"
+      [style.visibility]="activeTabId === tab.id ? 'visible' : 'hidden'"
+      style="width: 100%; height: 100%"
+    >
     </khiops-covisualization>
   </ng-container>
 </div>

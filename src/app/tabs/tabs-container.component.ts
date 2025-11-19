@@ -382,4 +382,10 @@ export class TabsContainerComponent implements AfterViewInit {
   trackByTabId(index: number, tab: Tab): string {
     return tab.id;
   }
+
+  openFileDialog() {
+    this.menuService.openFileDialog(() => {
+      // Callback after file open
+    });
+  }
 }
