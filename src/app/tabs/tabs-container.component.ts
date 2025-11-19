@@ -55,7 +55,7 @@ export class TabsContainerComponent implements AfterViewInit {
       this.tabs = tabs;
       // Update active component if the current active tab's type changed
       if (this.activeTabId) {
-        const activeTab = tabs.find(t => t.id === this.activeTabId);
+        const activeTab = tabs.find((t) => t.id === this.activeTabId);
         if (activeTab && activeTab.componentType !== this.activeComponent) {
           this.activeComponent = activeTab.componentType;
         }
@@ -91,29 +91,34 @@ export class TabsContainerComponent implements AfterViewInit {
 
   private setupVisualizationComponent() {
     // Wait for the component to be rendered in the DOM
-    console.log('setupVisualizationComponent: starting, activeComponent:', this.activeComponent);
+    console.log(
+      'setupVisualizationComponent: starting, activeComponent:',
+      this.activeComponent
+    );
     setTimeout(async () => {
       // Request component change based on file type first
       const activeTab = this.tabService.getActiveTab();
-      console.log('setupVisualizationComponent: activeTab:', activeTab?.id, 'componentType:', activeTab?.componentType);
+      console.log(
+        'setupVisualizationComponent: activeTab:',
+        activeTab?.id,
+        'componentType:',
+        activeTab?.componentType
+      );
       if (activeTab) {
         await this.configService.requestComponentChange(activeTab.filePath);
         // Force change detection after component type change
         this.cdr.detectChanges();
         // Wait for DOM to update with new component type
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
       const component = this.getActiveComponentElement();
-      console.log('setupVisualizationComponent: got component:', !!component, 'activeComponent:', this.activeComponent);
-      if (!component) {
-        // Component not yet rendered, retry
-        console.log('setupVisualizationComponent: component not found, retrying...');
-        setTimeout(() => {
-          this.setupVisualizationComponent();
-        }, 0);
-        return;
-      }
+      console.log(
+        'setupVisualizationComponent: got component:',
+        !!component,
+        'activeComponent:',
+        this.activeComponent
+      );
 
       console.log('setupVisualizationComponent: initializing config');
       this.initializeComponentConfig(component);
@@ -133,34 +138,60 @@ export class TabsContainerComponent implements AfterViewInit {
       return undefined;
     }
 
-    console.log('getActiveComponentElement: searching for type:', this.activeComponent);
+    console.log(
+      'getActiveComponentElement: searching for type:',
+      this.activeComponent
+    );
     if (this.activeComponent === 'visualization') {
-      const result = tabContent.querySelector('khiops-visualization') as HTMLElement | null;
-      console.log('getActiveComponentElement: found khiops-visualization:', !!result);
+      const result = tabContent.querySelector(
+        'khiops-visualization'
+      ) as HTMLElement | null;
+      console.log(
+        'getActiveComponentElement: found khiops-visualization:',
+        !!result
+      );
       return result || undefined;
     } else {
-      const result = tabContent.querySelector('khiops-covisualization') as HTMLElement | null;
-      console.log('getActiveComponentElement: found khiops-covisualization:', !!result);
+      const result = tabContent.querySelector(
+        'khiops-covisualization'
+      ) as HTMLElement | null;
+      console.log(
+        'getActiveComponentElement: found khiops-covisualization:',
+        !!result
+      );
       return result || undefined;
     }
   }
 
-  private loadTabData() {
+  private loadTabData(retryCount: number = 0) {
+    const MAX_RETRIES = 10;
     if (!this.activeTabId) {
       console.log('loadTabData: No active tab ID');
       return;
     }
 
     const tabData = this.tabService.getTabData(this.activeTabId);
-    
+
     console.log('loadTabData: tabId:', this.activeTabId, 'hasData:', !!tabData);
-    
+
     if (!tabData) {
-      // Data not yet available, retry after a shorter delay
-      console.log('loadTabData: Data not yet available, retrying...');
-      setTimeout(() => {
-        this.loadTabData();
-      }, 0);
+      // Data not yet available, retry with limit
+      if (retryCount < MAX_RETRIES) {
+        console.log(
+          'loadTabData: Data not yet available, retrying... (attempt',
+          retryCount + 1,
+          'of',
+          MAX_RETRIES + ')'
+        );
+        setTimeout(() => {
+          this.loadTabData(retryCount + 1);
+        }, 100);
+      } else {
+        console.error(
+          'loadTabData: Max retries reached, data not available for tab:',
+          this.activeTabId
+        );
+      }
       return;
     }
 
