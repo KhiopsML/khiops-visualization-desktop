@@ -9,10 +9,11 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .tabs-wrapper {
-  height: 40px;
+  height: 39px;
   border-bottom: 1px solid #d0d0d0;
   background-color: #f5f5f5;
   flex-shrink: 0;
@@ -145,11 +146,23 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-
+  height: calc(100% - 40px);
+  max-height: calc(100% - 40px);
+  min-height: 0;
+  position: absolute;
+  top: 40px;
   khiops-visualization,
   khiops-covisualization {
     flex: 1;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    min-height: 0;
+
+    // ::ng-deep app-home-layout {
+    //   position: relative !important;
+    //   height: 100% !important;
+    //   width: 100% !important;
+    // }
   }
 }
