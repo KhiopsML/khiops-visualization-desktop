@@ -37,6 +37,7 @@ export class TabsContainerComponent implements AfterViewInit {
   activeComponent: 'visualization' | 'covisualization' = 'visualization';
   tabsInstance?: any;
   private visualizationConfigs: Map<string, any> = new Map();
+  private initializedTabs: Set<string> = new Set();
 
   constructor(
     private tabService: TabService,
@@ -70,10 +71,12 @@ export class TabsContainerComponent implements AfterViewInit {
       this.activeTabId = id;
       this.updateActiveComponent();
       this.cdr.detectChanges();
-      // Wait for view to update before setting up component
-      setTimeout(() => {
-        this.setupVisualizationComponent();
-      }, 0);
+      // Only setup component if not already initialized
+      if (id && !this.initializedTabs.has(id)) {
+        setTimeout(() => {
+          this.setupVisualizationComponent();
+        }, 0);
+      }
     });
 
     // Initialize tabs container
@@ -127,6 +130,10 @@ export class TabsContainerComponent implements AfterViewInit {
       setTimeout(() => {
         console.log('setupVisualizationComponent: loading tab data');
         this.loadTabData();
+        // Mark this tab as initialized
+        if (this.activeTabId) {
+          this.initializedTabs.add(this.activeTabId);
+        }
       }, 0);
     }, 0);
   }
@@ -140,11 +147,13 @@ export class TabsContainerComponent implements AfterViewInit {
 
     console.log(
       'getActiveComponentElement: searching for type:',
-      this.activeComponent
+      this.activeComponent,
+      'activeTabId:',
+      this.activeTabId
     );
     if (this.activeComponent === 'visualization') {
       const result = tabContent.querySelector(
-        'khiops-visualization'
+        `khiops-visualization[data-tab-id="${this.activeTabId}"]`
       ) as HTMLElement | null;
       console.log(
         'getActiveComponentElement: found khiops-visualization:',
@@ -153,7 +162,7 @@ export class TabsContainerComponent implements AfterViewInit {
       return result || undefined;
     } else {
       const result = tabContent.querySelector(
-        'khiops-covisualization'
+        `khiops-covisualization[data-tab-id="${this.activeTabId}"]`
       ) as HTMLElement | null;
       console.log(
         'getActiveComponentElement: found khiops-covisualization:',
@@ -376,6 +385,7 @@ export class TabsContainerComponent implements AfterViewInit {
 
   closeTab(tabId: string) {
     this.visualizationConfigs.delete(tabId);
+    this.initializedTabs.delete(tabId);
     this.tabService.closeTab(tabId);
   }
 

@@ -40,20 +40,20 @@
 
   <ng-container *ngFor="let tab of tabs; trackBy: trackByTabId">
     <khiops-visualization
-      *ngIf="activeTabId === tab.id && tab.componentType === 'visualization'"
+      *ngIf="tab.componentType === 'visualization'"
+      [attr.data-tab-id]="tab.id"
+      [style.display]="activeTabId === tab.id ? 'block' : 'none'"
       style="
-        display: block !important;
-        visibility: visible !important;
         width: 100%;
         height: 100%;
       "
     >
     </khiops-visualization>
     <khiops-covisualization
-      *ngIf="activeTabId === tab.id && tab.componentType === 'covisualization'"
+      *ngIf="tab.componentType === 'covisualization'"
+      [attr.data-tab-id]="tab.id"
+      [style.display]="activeTabId === tab.id ? 'block' : 'none'"
       style="
-        display: block !important;
-        visibility: visible !important;
         width: 100%;
         height: 100%;
       "
