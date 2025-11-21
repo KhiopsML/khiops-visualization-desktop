@@ -19,6 +19,33 @@ const { ipcMain } = require('electron');
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
+// Implement single instance lock to handle multiple instances
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    log.info('second-instance event triggered', commandLine);
+    if (win) {
+      if (win.isMinimized()) {
+        win.restore();
+      }
+      win.focus();
+
+      // Handle the file passed from second instance
+      // On Windows, the file path is typically the last argument
+      const filePath = commandLine[commandLine.length - 1];
+      if (filePath && !filePath.startsWith('--')) {
+        log.info('Opening file from second instance:', filePath);
+        setTimeout(() => {
+          win?.webContents?.send('file-open-system', filePath);
+        }, 500);
+      }
+    }
+  });
+}
+
 // log.transports.file.level = 'info';
 // log.transports.file.file = __dirname + '/electron.log';
 log.warn('App Desktop starting...');
@@ -53,18 +80,18 @@ app.on('will-finish-launching', function () {
     event.preventDefault();
 
     if (fileToLoad) {
-      log.info('fileToLoad');
+      log.info('fileToLoad:', filepath);
 
       if (win) {
         setTimeout(() => {
           win?.webContents?.send('file-open-system', fileToLoad);
-        }, 2500);
+        }, 500);
       } else {
         // if win is not ready, wait for it
         app.once('browser-window-created', () => {
           setTimeout(() => {
             win?.webContents?.send('file-open-system', fileToLoad);
-          }, 2500);
+          }, 500);
         });
       }
     }
