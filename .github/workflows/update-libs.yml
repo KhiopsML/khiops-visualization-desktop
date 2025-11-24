@@ -3,7 +3,7 @@ name: Update libs
 on:
   schedule:
     # Every Monday at 09:00 UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -31,6 +31,8 @@ jobs:
           # Install npm-check-updates
           npm install -g npm-check-updates
 
+          ncu -u
+
           # Install updated dependencies
           yarn install
 
@@ -38,12 +40,12 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: update dependencies'
-          title: 'chore: update dependencies'
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
           body: |
             Automated dependency update.
 
-            This PR updates all dependencies in `package.json` and `yarn.lock` except for `@ag-grid-community/*` packages.
+            This PR updates all dependencies in `package.json` and `yarn.lock`.
 
             Please review and merge if all checks pass.
           branch: chore/update-dependencies
