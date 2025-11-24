@@ -31,16 +31,13 @@ jobs:
           # Install npm-check-updates
           npm install -g npm-check-updates
 
-          # Update all dependencies except @ag-grid-community/*
-          ncu -u --reject "@ag-grid-community/*"
-
           # Install updated dependencies
           yarn install
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore: update dependencies'
           title: 'chore: update dependencies'
           body: |
