@@ -4,7 +4,7 @@
 
 **Khiops Visualization Desktop** is a cross-platform application designed to make machine learning on structured data easier, faster, and more intuitive. It provides a native interface for exploring, analyzing, and interpreting the results of Khiops’ advanced AutoML algorithms.
 
-<img width="791" height="546" alt="image" src="https://github.com/user-attachments/assets/c1adabec-555f-4e72-9465-94c3e69aceaf" />
+![image](https://github.com/user-attachments/assets/c1adabec-555f-4e72-9465-94c3e69aceaf)
 
 This Electron application integrates [Khiops visualization](https://github.com/KhiopsML/khiops-visualization) into a native desktop interface. It enables users to intuitively and efficiently analyze and visualize machine learning data.
 
