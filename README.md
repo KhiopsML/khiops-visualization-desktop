@@ -13,7 +13,6 @@ This Electron application integrates [Khiops visualization](https://github.com/K
 - [About](#-about)
 - [Features](#-features)
 - [Downloads](#️-downloads)
-- [Build and Distribution](#-build-and-distribution)
 - [Project Structure](#-project-structure)
 - [Technologies Used](#️-technologies-used)
 - [Contributing](#-contributing)
@@ -42,22 +41,6 @@ The project is based on the [angular-electron](https://github.com/maximegris/ang
 ## ⬇️ Downloads
 
 You can download the latest version of Khiops Visualization Desktop for Windows, macOS, and Linux from the [Releases page](https://github.com/KhiopsML/khiops-visualization-desktop/releases).
-
-## 📦 Build and Distribution
-
-### Local build
-
-```bash
-yarn build
-```
-
-### Generating installers
-
-Distribution builds are automatically generated via GitHub Actions on release. Artifacts are available in the `release/` folder:
-
-- **Windows**: `khiops visualization Setup [version].exe`
-- **macOS**: Support with entitlements and code signing
-- **Linux**: AppImage and other formats
 
 ## 📁 Project Structure
 
