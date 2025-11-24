@@ -8,7 +8,7 @@
 
 - [About](#-about)
 - [Features](#-features)
-- [Downloads](#-downloads)
+- [Downloads](#️-downloads)
 - [Build and Distribution](#-build-and-distribution)
 - [Project Structure](#-project-structure)
 - [Technologies Used](#️-technologies-used)
