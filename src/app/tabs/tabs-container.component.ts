@@ -77,6 +77,8 @@ export class TabsContainerComponent implements AfterViewInit {
           this.setupVisualizationComponent();
         }, 0);
       }
+      // Propagate resize event when tab changes
+      this.propagateResizeEvent();
     });
 
     // Initialize tabs container
@@ -90,6 +92,33 @@ export class TabsContainerComponent implements AfterViewInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private propagateResizeEvent() {
+    const component = this.getActiveComponentElement();
+    if (!component) {
+      return;
+    }
+
+    // Dispatch a resize event to the component
+    try {
+      // Try calling a method on the component if available
+      if (typeof (component as any).onResize === 'function') {
+        (component as any).onResize();
+      }
+
+      // Also dispatch a native resize event
+      const resizeEvent = new Event('resize', {
+        bubbles: true,
+        cancelable: true,
+      });
+      component.dispatchEvent(resizeEvent);
+
+      // Dispatch a window resize event inside the component's shadow DOM
+      window.dispatchEvent(new Event('resize'));
+    } catch (error) {
+      console.error('Error propagating resize event:', error);
+    }
   }
 
   private setupVisualizationComponent() {
