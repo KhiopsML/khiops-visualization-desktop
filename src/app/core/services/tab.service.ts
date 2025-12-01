@@ -12,7 +12,6 @@ export interface Tab {
   title: string;
   filePath: string;
   componentType: 'visualization' | 'covisualization';
-  isDirty: boolean;
   data?: any;
 }
 
@@ -38,10 +37,6 @@ export class TabService {
       return null;
     }
     return this.tabs$.getValue().find((tab) => tab.id === activeId) || null;
-  }
-
-  getCurrentTabs(): Tab[] {
-    return this.tabs$.getValue();
   }
 
   determineComponentFromFile(
@@ -77,7 +72,6 @@ export class TabService {
       title,
       filePath,
       componentType,
-      isDirty: false,
     };
 
     const currentTabs = this.tabs$.getValue();
@@ -115,22 +109,6 @@ export class TabService {
     }
   }
 
-  setTabDirty(tabId: string, isDirty: boolean) {
-    const currentTabs = this.tabs$.getValue();
-    const updated = currentTabs.map((tab) =>
-      tab.id === tabId ? { ...tab, isDirty } : tab
-    );
-    this.tabs$.next(updated);
-  }
-
-  updateTabTitle(tabId: string, title: string) {
-    const currentTabs = this.tabs$.getValue();
-    const updated = currentTabs.map((tab) =>
-      tab.id === tabId ? { ...tab, title } : tab
-    );
-    this.tabs$.next(updated);
-  }
-
   setTabData(tabId: string, data: any) {
     const currentTabs = this.tabs$.getValue();
     const updated = currentTabs.map((tab) =>
@@ -153,10 +131,6 @@ export class TabService {
       tab.id === tabId ? { ...tab, componentType } : tab
     );
     this.tabs$.next(updated);
-  }
-
-  reorderTabs(tabs: Tab[]) {
-    this.tabs$.next(tabs);
   }
 
   private getFileNameFromPath(filePath: string): string {

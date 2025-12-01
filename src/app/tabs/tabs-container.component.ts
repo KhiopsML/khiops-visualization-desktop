@@ -62,26 +62,19 @@ export class TabsContainerComponent implements AfterViewInit {
         }
       }
       this.cdr.detectChanges();
-      this.reinitializeTabs();
     });
 
     // Subscribe to active tab
     this.tabService.getActiveTabId().subscribe((id) => {
       this.activeTabId = id;
-      this.updateActiveComponent();
       this.cdr.detectChanges();
       // Only setup component if not already initialized
       if (id && !this.initializedTabs.has(id)) {
-        setTimeout(() => {
-          this.setupVisualizationComponent();
-        }, 0);
+        this.setupVisualizationComponent();
       }
       // Propagate resize event when tab changes
       this.propagateResizeEvent();
     });
-
-    // Initialize tabs container
-    this.initializeTabs();
 
     // Setup component change callback
     this.configService.setComponentChangeCallback((componentType) => {
@@ -134,7 +127,7 @@ export class TabsContainerComponent implements AfterViewInit {
       if (this.activeTabId) {
         this.initializedTabs.add(this.activeTabId);
       }
-    }, 100);
+    }, 250);
   }
 
   private getActiveComponentElement(): HTMLElement | undefined {
@@ -178,9 +171,7 @@ export class TabsContainerComponent implements AfterViewInit {
 
     //@ts-ignore
     if (!component.setConfig) {
-      setTimeout(() => {
-        this.initializeComponentConfig(component);
-      }, 0);
+      this.initializeComponentConfig(component);
       return;
     }
 
@@ -245,85 +236,6 @@ export class TabsContainerComponent implements AfterViewInit {
         console.log('error', error);
       }
     })();
-  }
-
-  private initializeTabs() {
-    setTimeout(() => {
-      const tabsEl = this.tabsElement?.nativeElement;
-      if (tabsEl) {
-        this.tabsInstance = new Tabs(tabsEl, {
-          draggable: true,
-          // Allow sorting tabs
-          sortable: true,
-        });
-
-        // Listen for tab added/removed events
-        tabsEl.addEventListener('addTab', (e: any) => {
-          this.cdr.detectChanges();
-        });
-
-        tabsEl.addEventListener('removeTab', (e: any) => {
-          this.cdr.detectChanges();
-        });
-
-        tabsEl.addEventListener('activeTabChange', (e: any) => {
-          const tabId = e.detail?.tabEl?.getAttribute('data-tab-id');
-          if (tabId) {
-            this.ngzone.run(() => {
-              this.tabService.switchToTab(tabId);
-            });
-          }
-        });
-
-        // Listen for tab reorder (drag & drop)
-        tabsEl.addEventListener('tabMoveComplete', (e: any) => {
-          this.onTabsReordered();
-        });
-      }
-    }, 0);
-  }
-
-  private onTabsReordered() {
-    // Get the new order from the DOM
-    const tabsEl = this.tabsElement?.nativeElement;
-    if (!tabsEl) {
-      return;
-    }
-
-    const tabElements = tabsEl.querySelectorAll('[data-tab-id]');
-    const newOrder: Tab[] = [];
-
-    tabElements.forEach((el: HTMLElement) => {
-      const tabId = el.getAttribute('data-tab-id');
-      const tab = this.tabs.find((t) => t.id === tabId);
-      if (tab) {
-        newOrder.push(tab);
-      }
-    });
-
-    // Update the service with the new order
-    if (newOrder.length > 0) {
-      this.tabService.reorderTabs(newOrder);
-    }
-  }
-
-  private reinitializeTabs() {
-    // Reinitialize the tabs component after DOM updates
-    setTimeout(() => {
-      const tabsEl = this.tabsElement?.nativeElement;
-      if (tabsEl && this.tabsInstance) {
-        // Update the tabs instance with the new tabs
-        this.tabsInstance.update();
-      }
-    }, 0);
-  }
-
-  private updateActiveComponent() {
-    const activeTab = this.tabService.getActiveTab();
-    if (activeTab) {
-      this.activeComponent = activeTab.componentType;
-      this.cdr.detectChanges();
-    }
   }
 
   getTabById(id: string): Tab | undefined {
