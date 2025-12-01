@@ -127,7 +127,7 @@ export class TabsContainerComponent implements AfterViewInit {
       if (this.activeTabId) {
         this.initializedTabs.add(this.activeTabId);
       }
-    }, 300);
+    }, 500);
   }
 
   private getActiveComponentElement(): HTMLElement | undefined {

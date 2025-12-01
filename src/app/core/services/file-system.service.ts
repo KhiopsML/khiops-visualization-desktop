@@ -113,49 +113,59 @@ export class FileSystemService {
 
   async openFile(filename: string, callbackDone?: Function) {
     if (filename) {
-      // Open file in new tab
-      const fileName = filename.split(/[/\\]/).pop() || filename;
-      const tabId = this.tabService.openFile(filename, fileName);
+      try {
+        // Validate file first before creating a tab
+        const datas = await this.readFile(filename);
 
-      // Add to file history immediately
-      this.setFileHistory(filename);
+        // Only create tab after successful validation
+        const fileName = filename.split(/[/\\]/).pop() || filename;
+        const tabId = this.tabService.openFile(filename, fileName);
 
-      // Wait for component to be fully initialized in the tab container
-      await new Promise((resolve) => setTimeout(resolve, 0));
+        // Add to file history
+        this.setFileHistory(filename);
 
-      this.readFile(filename, tabId)
-        .then((datas: any) => {
-          this.setTitleBar(filename);
-          // Save data to tab for later retrieval - TabsContainerComponent will handle setDatas
-          this.tabService.setTabData(tabId, datas);
-          if (callbackDone) {
-            callbackDone();
-          }
-        })
-        .catch((error: any) => {
-          console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
-          this.closeFile();
-          Toastify({
-            text: this.translate.instant('OPEN_FILE_ERROR'),
-            gravity: 'bottom',
-            position: 'center',
-            duration: 3000,
-          }).showToast();
-          this._fileLoaderSub.next(this.fileLoaderDatas);
-        });
+        // Set title bar
+        this.setTitleBar(filename);
+
+        // Update component type if needed
+        const tool = datas.tool;
+        let componentType: 'visualization' | 'covisualization' =
+          'visualization';
+
+        if (tool === 'Khiops Coclustering') {
+          componentType = 'covisualization';
+        }
+
+        // Update the tab's component type
+        this.tabService.updateTabComponentType(tabId, componentType);
+
+        // Save data to tab for later retrieval
+        this.tabService.setTabData(tabId, datas);
+
+        if (callbackDone) {
+          callbackDone();
+        }
+      } catch (error: any) {
+        console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
+        Toastify({
+          text: this.translate.instant('OPEN_FILE_ERROR'),
+          gravity: 'bottom',
+          position: 'center',
+          duration: 3000,
+        }).showToast();
+        this.fileLoaderDatas!.isLoadingDatas = false;
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+      }
     }
   }
 
-  readFile(filename: string, tabId?: string): any {
+  readFile(filename: string): any {
     // Always use readFileWithJsonTypeDetection to properly detect file type
     // based on content, regardless of file extension (json, khj, khcj)
-    return this.readFileWithJsonTypeDetection(filename, tabId);
+    return this.readFileWithJsonTypeDetection(filename);
   }
 
-  readFileWithJsonTypeDetection(
-    filename: string,
-    tabId?: string
-  ): Promise<any> {
+  readFileWithJsonTypeDetection(filename: string): Promise<any> {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
@@ -175,21 +185,6 @@ export class FileSystemService {
             try {
               const parsedDatas = JSON.parse(datas);
               parsedDatas.filename = filename;
-
-              // Detect component type based on the tool field
-              const tool = parsedDatas.tool;
-              let componentType: 'visualization' | 'covisualization' =
-                'visualization';
-
-              if (tool === 'Khiops Coclustering') {
-                componentType = 'covisualization';
-              }
-
-              // Update the tab's component type - do this BEFORE resolving
-              // so the correct component is created before setDatas is called
-              if (tabId) {
-                this.tabService.updateTabComponentType(tabId, componentType);
-              }
 
               this.fileLoaderDatas!.datas = parsedDatas;
               this.fileLoaderDatas!.isLoadingDatas = false;

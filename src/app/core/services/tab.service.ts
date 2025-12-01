@@ -102,6 +102,33 @@ export class TabService {
     }
   }
 
+  removeTabWithoutChangingActive(tabId: string) {
+    const currentTabs = this.tabs$.getValue();
+    const activeId = this.activeTabId$.getValue();
+
+    // If the tab to remove is not the active one, just remove it
+    if (activeId !== tabId) {
+      const filtered = currentTabs.filter((tab) => tab.id !== tabId);
+      this.tabs$.next(filtered);
+      return;
+    }
+
+    // If it's the active tab and there are other tabs, switch to another one
+    if (currentTabs.length > 1) {
+      const closedIndex = currentTabs.findIndex((tab) => tab.id === tabId);
+      const filtered = currentTabs.filter((tab) => tab.id !== tabId);
+      const newActiveTab =
+        filtered[Math.max(0, closedIndex - 1)] || filtered[0];
+
+      this.tabs$.next(filtered);
+      this.activeTabId$.next(newActiveTab.id);
+    } else {
+      // If it's the only tab, just remove it
+      this.tabs$.next([]);
+      this.activeTabId$.next(null);
+    }
+  }
+
   switchToTab(tabId: string) {
     const tabs = this.tabs$.getValue();
     if (tabs.find((tab) => tab.id === tabId)) {
