@@ -67,7 +67,6 @@ export class TabsContainerComponent implements AfterViewInit {
 
     // Subscribe to active tab
     this.tabService.getActiveTabId().subscribe((id) => {
-      console.log('Active tab changed to:', id);
       this.activeTabId = id;
       this.updateActiveComponent();
       this.cdr.detectChanges();
@@ -122,125 +121,53 @@ export class TabsContainerComponent implements AfterViewInit {
   }
 
   private setupVisualizationComponent() {
-    // Wait for the component to be rendered in the DOM
-    console.log(
-      'setupVisualizationComponent: starting, activeComponent:',
-      this.activeComponent
-    );
-    setTimeout(async () => {
-      // Request component change based on file type first
-      const activeTab = this.tabService.getActiveTab();
-      console.log(
-        'setupVisualizationComponent: activeTab:',
-        activeTab?.id,
-        'componentType:',
-        activeTab?.componentType
-      );
-      if (activeTab) {
-        await this.configService.requestComponentChange(activeTab.filePath);
-        // Force change detection after component type change
-        this.cdr.detectChanges();
-        // Wait for DOM to update with new component type
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
+    // Component type should already be resolved at this point
 
+    setTimeout(() => {
       const component = this.getActiveComponentElement();
-      console.log(
-        'setupVisualizationComponent: got component:',
-        !!component,
-        'activeComponent:',
-        this.activeComponent
-      );
 
-      console.log('setupVisualizationComponent: initializing config');
       this.initializeComponentConfig(component);
       // Load tab data after a longer delay to ensure data is available
       // The file reading and data storage happens in FileSystemService
-      setTimeout(() => {
-        console.log('setupVisualizationComponent: loading tab data');
-        this.loadTabData();
-        // Mark this tab as initialized
-        if (this.activeTabId) {
-          this.initializedTabs.add(this.activeTabId);
-        }
-      }, 0);
-    }, 0);
+      this.loadTabData();
+      // Mark this tab as initialized
+      if (this.activeTabId) {
+        this.initializedTabs.add(this.activeTabId);
+      }
+    }, 100);
   }
 
   private getActiveComponentElement(): HTMLElement | undefined {
     const tabContent = document.querySelector('.tab-content');
     if (!tabContent) {
-      console.log('getActiveComponentElement: tab-content not found');
       return undefined;
     }
 
-    console.log(
-      'getActiveComponentElement: searching for type:',
-      this.activeComponent,
-      'activeTabId:',
-      this.activeTabId
-    );
     if (this.activeComponent === 'visualization') {
       const result = tabContent.querySelector(
         `khiops-visualization[data-tab-id="${this.activeTabId}"]`
       ) as HTMLElement | null;
-      console.log(
-        'getActiveComponentElement: found khiops-visualization:',
-        !!result
-      );
+
       return result || undefined;
     } else {
       const result = tabContent.querySelector(
         `khiops-covisualization[data-tab-id="${this.activeTabId}"]`
       ) as HTMLElement | null;
-      console.log(
-        'getActiveComponentElement: found khiops-covisualization:',
-        !!result
-      );
+
       return result || undefined;
     }
   }
 
   private loadTabData(retryCount: number = 0) {
-    const MAX_RETRIES = 10;
     if (!this.activeTabId) {
-      console.log('loadTabData: No active tab ID');
       return;
     }
-
     const tabData = this.tabService.getTabData(this.activeTabId);
-
-    console.log('loadTabData: tabId:', this.activeTabId, 'hasData:', !!tabData);
-
-    if (!tabData) {
-      // Data not yet available, retry with limit
-      if (retryCount < MAX_RETRIES) {
-        console.log(
-          'loadTabData: Data not yet available, retrying... (attempt',
-          retryCount + 1,
-          'of',
-          MAX_RETRIES + ')'
-        );
-        setTimeout(() => {
-          this.loadTabData(retryCount + 1);
-        }, 100);
-      } else {
-        console.error(
-          'loadTabData: Max retries reached, data not available for tab:',
-          this.activeTabId
-        );
-      }
-      return;
-    }
-
     // Get the current component element and call setDatas directly on it
     const component = this.getActiveComponentElement();
     if (component) {
-      console.log('loadTabData: Setting data on component');
       //@ts-ignore
       component.setDatas(tabData);
-    } else {
-      console.log('loadTabData: Component not found!');
     }
   }
 
@@ -262,7 +189,6 @@ export class TabsContainerComponent implements AfterViewInit {
       appSource: 'ELECTRON',
       storage: 'ELECTRON',
       onFileOpen: () => {
-        console.log('fileOpen');
         this.menuService.openFileDialog(() => {
           // Callback after file open
         });

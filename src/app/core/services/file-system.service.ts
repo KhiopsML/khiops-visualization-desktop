@@ -95,13 +95,13 @@ export class FileSystemService {
       try {
         const extension = filepath.toLowerCase().split('.').pop();
         let appType = 'Khiops Visualization';
-        
+
         if (extension === 'khcj') {
           appType = 'Khiops Covisualization';
         } else if (extension === 'khj') {
           appType = 'Khiops Visualization';
         }
-        
+
         await this.electronService.ipcRenderer?.invoke('set-title-bar-name', {
           title: appType + ' ' + filepath,
         });
@@ -116,12 +116,12 @@ export class FileSystemService {
       // Open file in new tab
       const fileName = filename.split(/[/\\]/).pop() || filename;
       const tabId = this.tabService.openFile(filename, fileName);
-      
+
       // Add to file history immediately
       this.setFileHistory(filename);
 
       // Wait for component to be fully initialized in the tab container
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       this.readFile(filename, tabId)
         .then((datas: any) => {
@@ -145,164 +145,23 @@ export class FileSystemService {
         });
     }
   }
+
   readFile(filename: string, tabId?: string): any {
-    // Determine component type based on file extension
-    const extension = filename.toLowerCase().split('.').pop();
-    const isKhcj = extension === 'khcj';
-    const isJson = extension === 'json';
-
-    // For JSON files, we'll determine type after reading the content
-    if (isJson) {
-      return this.readFileWithJsonTypeDetection(filename, tabId);
-    }
-
-    if (isKhcj) {
-      return this.readFileSimple(filename);
-    }
-
-    // For KHJ files and others, use the normal visualization flow
-    this.fileLoaderDatas!.datas = undefined;
-    this.fileLoaderDatas!.isLoadingDatas = true;
-    this.fileLoaderDatas!.isBigJsonFile = false;
-    this._fileLoaderSub.next(this.fileLoaderDatas);
-
-    return new Promise((resolve, reject) => {
-      this.electronService.fs.stat(filename, (err: any) => {
-        if (err) {
-          reject();
-        } else {
-          this.electronService.fs.readFile(
-            filename,
-            'utf-8',
-            (errReadFile: NodeJS.ErrnoException, datas: string) => {
-              if (errReadFile) {
-                if (
-                  errReadFile
-                    .toString()
-                    .startsWith('Error: Cannot create a string longer')
-                ) {
-                  this.fileLoaderDatas!.isBigJsonFile = true;
-                  this.fileLoaderDatas!.loadingInfo = '';
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-
-                  const currentDatas: any = {};
-                  const stream = this.electronService.fs.createReadStream(
-                    filename,
-                    {
-                      encoding: 'utf8',
-                    }
-                  );
-                  const getStream = stream.pipe(
-                    jsonStream.parse([
-                      {
-                        emitKey: true,
-                      },
-                    ])
-                  );
-                  getStream.pipe(
-                    es.map((pipeDatas: any) => {
-                      this.fileLoaderDatas!.loadingInfo = pipeDatas.key;
-                      currentDatas[pipeDatas.key] = pipeDatas.value;
-                      this._fileLoaderSub.next(this.fileLoaderDatas);
-                    })
-                  );
-
-                  getStream
-                    .on('end', () => {
-                      this.fileLoaderDatas!.datas = currentDatas;
-                      this.fileLoaderDatas!.datas.filename = filename;
-                      this.fileLoaderDatas!.isLoadingDatas = false;
-                      this._fileLoaderSub.next(this.fileLoaderDatas);
-
-                      resolve(this.fileLoaderDatas?.datas);
-                    })
-                    .on('error', () => {
-                      reject();
-                    });
-                } else {
-                  this.fileLoaderDatas!.isLoadingDatas = false;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-
-                  reject(errReadFile);
-                }
-              } else {
-                this.fileLoaderDatas!.isLoadingDatas = false;
-                try {
-                  this.fileLoaderDatas!.datas = JSON.parse(datas);
-                  this.fileLoaderDatas!.datas.filename = filename;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-                  resolve(this.fileLoaderDatas?.datas);
-                } catch (e) {
-                  Toastify({
-                    text: this.translate.instant('OPEN_FILE_ERROR'),
-                    gravity: 'bottom',
-                    position: 'center',
-                    duration: 3000,
-                  }).showToast();
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-                  this.closeFile();
-                  reject();
-                }
-              }
-            }
-          );
-        }
-      });
-    });
+    // Always use readFileWithJsonTypeDetection to properly detect file type
+    // based on content, regardless of file extension (json, khj, khcj)
+    return this.readFileWithJsonTypeDetection(filename, tabId);
   }
 
-  readFileSimple(filename: string): Promise<any> {
+  readFileWithJsonTypeDetection(
+    filename: string,
+    tabId?: string
+  ): Promise<any> {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
     this.fileLoaderDatas!.loadingInfo = '';
     this._fileLoaderSub.next(this.fileLoaderDatas);
-    
-    return new Promise((resolve, reject) => {
-      this.electronService.fs.stat(filename, (err: any) => {
-        if (err) {
-          this.fileLoaderDatas!.isLoadingDatas = false;
-          this._fileLoaderSub.next(this.fileLoaderDatas);
-          reject(err);
-        } else {
-          this.electronService.fs.readFile(
-            filename,
-            'utf-8',
-            (errReadFile: NodeJS.ErrnoException, datas: string) => {
-              if (errReadFile) {
-                this.fileLoaderDatas!.isLoadingDatas = false;
-                this._fileLoaderSub.next(this.fileLoaderDatas);
-                reject(errReadFile);
-              } else {
-                try {
-                  const parsedDatas = JSON.parse(datas);
-                  parsedDatas.filename = filename;
-                  
-                  this.fileLoaderDatas!.datas = parsedDatas;
-                  this.fileLoaderDatas!.isLoadingDatas = false;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-                  
-                  resolve(parsedDatas);
-                } catch (e) {
-                  this.fileLoaderDatas!.isLoadingDatas = false;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-                  reject(e);
-                }
-              }
-            }
-          );
-        }
-      });
-    });
-  }
 
-  readFileWithJsonTypeDetection(filename: string, tabId?: string): Promise<any> {
-    this.fileLoaderDatas!.datas = undefined;
-    this.fileLoaderDatas!.isLoadingDatas = true;
-    this.fileLoaderDatas!.isBigJsonFile = false;
-    this.fileLoaderDatas!.loadingInfo = '';
-    this._fileLoaderSub.next(this.fileLoaderDatas);
-    
     return new Promise((resolve, reject) => {
       this.electronService.fs.readFile(
         filename,
@@ -316,20 +175,26 @@ export class FileSystemService {
             try {
               const parsedDatas = JSON.parse(datas);
               parsedDatas.filename = filename;
-              
-              // Check if this is a Coclustering file (KHCJ) or Visualization file (KHJ)
+
+              // Detect component type based on the tool field
               const tool = parsedDatas.tool;
-              const isCovisualization = tool === 'Khiops Coclustering';
-              
-              // Update the tab's component type if needed
-              if (tabId && isCovisualization) {
-                this.tabService.updateTabComponentType(tabId, 'covisualization');
+              let componentType: 'visualization' | 'covisualization' =
+                'visualization';
+
+              if (tool === 'Khiops Coclustering') {
+                componentType = 'covisualization';
               }
-              
+
+              // Update the tab's component type - do this BEFORE resolving
+              // so the correct component is created before setDatas is called
+              if (tabId) {
+                this.tabService.updateTabComponentType(tabId, componentType);
+              }
+
               this.fileLoaderDatas!.datas = parsedDatas;
               this.fileLoaderDatas!.isLoadingDatas = false;
               this._fileLoaderSub.next(this.fileLoaderDatas);
-              
+
               resolve(parsedDatas);
             } catch (e) {
               this.fileLoaderDatas!.isLoadingDatas = false;

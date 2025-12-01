@@ -1,10 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-// Chemin du projet Angular
-const projectDir = './src';
+const projectDir = "./src";
 
-// Header à ajouter
 const headerComment = `/*
  * Copyright (c) 2023-2025 Orange. All rights reserved.
  * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
@@ -14,13 +12,13 @@ const headerComment = `/*
 `;
 
 function addHeaderToFile(filePath) {
-  const fileContent = fs.readFileSync(filePath, 'utf8');
-  if (!fileContent.startsWith('/**')) {
+  const fileContent = fs.readFileSync(filePath, "utf8");
+  if (!fileContent.startsWith("/**")) {
     const newContent = headerComment + fileContent;
-    fs.writeFileSync(filePath, newContent, 'utf8');
-    console.log(`Header ajouté à : ${filePath}`);
+    fs.writeFileSync(filePath, newContent, "utf8");
+    console.log(`Header added to: ${filePath}`);
   } else {
-    console.log(`Header déjà présent dans : ${filePath}`);
+    console.log(`Header already present in: ${filePath}`);
   }
 }
 
@@ -29,7 +27,7 @@ function traverseDirectory(directory) {
     const fullPath = path.join(directory, file);
     if (fs.statSync(fullPath).isDirectory()) {
       traverseDirectory(fullPath);
-    } else if (fullPath.endsWith('.js') || fullPath.endsWith('.ts')) {
+    } else if (fullPath.endsWith(".js") || fullPath.endsWith(".ts")) {
       addHeaderToFile(fullPath);
     }
   });

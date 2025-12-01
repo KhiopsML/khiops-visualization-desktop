@@ -65,10 +65,9 @@ export class TabService {
     }
   }
 
-  openFile(
-    filePath: string,
-    fileName?: string
-  ): string {
+  openFile(filePath: string, fileName?: string): string {
+    // Determine initial component type from file extension
+    // For JSON files, we'll update this after reading the file content
     const componentType = this.determineComponentFromFile(filePath);
     const title = fileName || this.getFileNameFromPath(filePath);
     const id = `tab-${this.tabIdCounter++}`;
@@ -145,7 +144,10 @@ export class TabService {
     return tab?.data;
   }
 
-  updateTabComponentType(tabId: string, componentType: 'visualization' | 'covisualization') {
+  updateTabComponentType(
+    tabId: string,
+    componentType: 'visualization' | 'covisualization'
+  ) {
     const currentTabs = this.tabs$.getValue();
     const updated = currentTabs.map((tab) =>
       tab.id === tabId ? { ...tab, componentType } : tab
