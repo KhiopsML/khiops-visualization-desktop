@@ -5,6 +5,7 @@
       [attr.data-tab-id]="tab.id"
       class="chrome-tab"
       [class.chrome-tab-active]="isTabActive(tab.id)"
+      [attr.title]="tab.filePath"
       (click)="switchTab(tab.id)"
     >
       <img
