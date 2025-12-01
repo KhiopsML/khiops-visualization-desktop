@@ -127,7 +127,7 @@ export class TabsContainerComponent implements AfterViewInit {
       if (this.activeTabId) {
         this.initializedTabs.add(this.activeTabId);
       }
-    }, 250);
+    }, 300);
   }
 
   private getActiveComponentElement(): HTMLElement | undefined {
@@ -136,7 +136,16 @@ export class TabsContainerComponent implements AfterViewInit {
       return undefined;
     }
 
-    if (this.activeComponent === 'visualization') {
+    if (!this.activeTabId) {
+      return undefined;
+    }
+
+    // Get the component type from the active tab, not from this.activeComponent
+    // to avoid race conditions with observable updates
+    const activeTab = this.tabs.find((t) => t.id === this.activeTabId);
+    const componentType = activeTab?.componentType || this.activeComponent;
+
+    if (componentType === 'visualization') {
       const result = tabContent.querySelector(
         `khiops-visualization[data-tab-id="${this.activeTabId}"]`
       ) as HTMLElement | null;
