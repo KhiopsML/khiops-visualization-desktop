@@ -5120,12 +5120,7 @@ chromium-pickle-js@^0.2.0:
   resolved "https://registry.yarnpkg.com/chromium-pickle-js/-/chromium-pickle-js-0.2.0.tgz#04a106672c18b085ab774d983dfa3ea138f22205"
   integrity sha512-1R5Fho+jBq0DDydt+/vHWj5KJNJCKdARKOCwZUen84I5BreWoLqRLANH1U87eJy1tiASPtMnGqJJq0ZsLoRPOw==
 
-ci-info@^4.1.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-4.3.0.tgz#c39b1013f8fdbd28cd78e62318357d02da160cd7"
-  integrity sha512-l+2bNRMiQgcfILUi33labAZYIWlH1kWDp+ecNo5iisRKrbm0xcRyCww71/YU0Fkw0mAFpz9bJayXPjey6vkmaQ==
-
-ci-info@^4.2.0:
+ci-info@^4.1.0, ci-info@^4.2.0:
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-4.3.1.tgz#355ad571920810b5623e11d40232f443f16f1daa"
   integrity sha512-Wdy2Igu8OcBpI2pZePZ5oWjPC38tmDVx5WKUXKwlLYkA0ozo85sLsLvkBbBn/sZaSCMFOGZJ14fvW9t5/d7kdA==
@@ -5649,10 +5644,10 @@ cypress-shadow-dom@1.4.1:
   resolved "https://registry.yarnpkg.com/cypress-shadow-dom/-/cypress-shadow-dom-1.4.1.tgz#51b0d49d2a516571e2c0c7230f7744374771c2e0"
   integrity sha512-q0y6aMMrTB7RgJcj25+ClK9c4O6HvQAb1UxDAKYn1LSyBXdXqr+tCvjFYhpk3dTU+EBXKbPoNrfUZbUH/ijQTQ==
 
-cypress@15.6.0:
-  version "15.6.0"
-  resolved "https://registry.yarnpkg.com/cypress/-/cypress-15.6.0.tgz#bde57b8ae9fbe6473a3324bb1d583437c299230d"
-  integrity sha512-Vqo66GG1vpxZ7H1oDX9umfmzA3nF7Wy80QAc3VjwPREO5zTY4d1xfQFNPpOWleQl9vpdmR2z1liliOcYlRX6rQ==
+cypress@15.7.0:
+  version "15.7.0"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-15.7.0.tgz#4d2a317766360232920f63c7d11ea8f5d83bc358"
+  integrity sha512-1C81zKxnQckYm2XGi37rPV4rN0bzUoWhydhKdOyshJn5gJKszEx5as9VLSZI0jp0ye49QxmnbU4TtMpcD+OmGQ==
   dependencies:
     "@cypress/request" "^3.0.9"
     "@cypress/xvfb" "^1.2.4"
@@ -5690,7 +5685,6 @@ cypress@15.6.0:
     process "^0.11.10"
     proxy-from-env "1.0.0"
     request-progress "^3.0.0"
-    semver "^7.7.1"
     supports-color "^8.1.1"
     systeminformation "5.27.7"
     tmp "~0.2.4"
@@ -5756,10 +5750,10 @@ debug@2.6.9:
   dependencies:
     ms "2.0.0"
 
-debug@4, debug@^4.0.1, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.3.3, debug@^4.3.4, debug@^4.3.6:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.0.tgz#2b3f2aea2ffeb776477460267377dc8710faba8a"
-  integrity sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==
+debug@4, debug@^4.0.1, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.3.3, debug@^4.3.4, debug@^4.3.5, debug@^4.3.6, debug@^4.4.0:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.1.tgz#e5a8bc6cbc4c6cd3e64308b0693a3d4fa550189b"
+  integrity sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==
   dependencies:
     ms "^2.1.3"
 
@@ -5769,13 +5763,6 @@ debug@^3.1.0, debug@^3.2.7:
   integrity sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==
   dependencies:
     ms "^2.1.1"
-
-debug@^4.3.5, debug@^4.4.0:
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.1.tgz#e5a8bc6cbc4c6cd3e64308b0693a3d4fa550189b"
-  integrity sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==
-  dependencies:
-    ms "^2.1.3"
 
 debug@~4.3.1, debug@~4.3.2, debug@~4.3.4:
   version "4.3.7"
@@ -11007,7 +10994,7 @@ semver-compare@^1.0.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.7.2.tgz#48d55db737c3287cd4835e17fa13feace1c41ef8"
   integrity sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==
 
-semver@7.7.2, semver@^7.6.2, semver@^7.7.1:
+semver@7.7.2, semver@^7.6.2:
   version "7.7.2"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.7.2.tgz#67d99fdcd35cec21e6f8b87a7fd515a33f982b58"
   integrity sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==
