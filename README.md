@@ -11,7 +11,7 @@ This Electron application integrates [Khiops visualization](https://github.com/K
 ## 📋 Table of Contents
 
 - [About](#-about)
-- [Features](#-features)
+- [Online demos](#-online-demos)
 - [Downloads](#️-downloads)
 - [Project Structure](#-project-structure)
 - [Technologies Used](#️-technologies-used)
@@ -29,14 +29,12 @@ For reference, you can find the old releases here:
 
 The project is based on the [angular-electron](https://github.com/maximegris/angular-electron) template and uses Angular with TypeScript for the user interface.
 
-## ✨ Features
+## ✨ Online demos
 
-- 🖥️ **Cross-platform native application** (Windows, macOS, Linux)
-- 📊 **Advanced visualization** of Khiops data and models
-- 🔄 **Automatic updates** with electron-updater
-- 🎨 **Modern interface** built with Angular and Electron
-- 🔧 **Development mode** with hot-reload
-- 📦 **Automated builds** via GitHub Actions
+Explore the capabilities of Khiops Visualization through interactive online demos. These demos use sample datasets to showcase the application's features and functionalities:
+
+**🌐 [Access the Khiops Visualization Demo](https://khiopsml.github.io/khiops-visualization/)**
+**🌐 [Access the Khiops Covisualization Demo](https://khiopsml.github.io/khiops-visualization/covisualization.html)**
 
 ## ⬇️ Downloads
 
