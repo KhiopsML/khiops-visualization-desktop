@@ -3,7 +3,7 @@ name: Update libs
 on:
   schedule:
     # Every Monday at 09:00 UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set Electron mirror
+        run: echo "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/" >> $GITHUB_ENV
+
       - name: Check out Git repository
         uses: actions/checkout@v4
 
@@ -31,8 +34,7 @@ jobs:
           # Install npm-check-updates
           npm install -g npm-check-updates
 
-          # Update all dependencies except @ag-grid-community/*
-          ncu -u --reject "@ag-grid-community/*"
+          ncu -u
 
           # Install updated dependencies
           yarn install
@@ -41,12 +43,12 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          commit-message: 'chore: update dependencies'
-          title: 'chore: update dependencies'
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
           body: |
             Automated dependency update.
 
-            This PR updates all dependencies in `package.json` and `yarn.lock` except for `@ag-grid-community/*` packages.
+            This PR updates all dependencies in `package.json` and `yarn.lock`.
 
             Please review and merge if all checks pass.
           branch: chore/update-dependencies
