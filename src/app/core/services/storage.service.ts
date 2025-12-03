@@ -12,13 +12,14 @@ import { ElectronService } from './electron.service';
 })
 export class StorageService {
   private _storage: any = {};
-  private _storageKey: string = 'KHIOPS_VISUALIZATION_';
+  private _storageKey: string = 'KHIOPS_VISUALIZATION_DESKTOP';
 
   constructor(private electronService: ElectronService) {
     try {
       // Use userData directory instead of temp directory to persist data across updates
       // This ensures that settings, cookies consent, channel, history... are preserved during OTA updates
       const userDataPath = this.electronService.remote.app.getPath('userData');
+      // eg. C:\Users\USER\AppData\Roaming\khiops-visualization
       this.electronService.storage?.setDataPath(userDataPath);
       console.log('Storage path set to:', userDataPath);
     } catch (error) {
@@ -40,7 +41,7 @@ export class StorageService {
   getAll() {
     try {
       this._storage =
-        this.electronService.storage?.getSync(this._storageKey) || {};
+      this.electronService.storage?.getSync(this._storageKey) || {};
     } catch {
       this.electronService.storage?.set(this._storageKey, {});
     }
