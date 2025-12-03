@@ -38,7 +38,7 @@ export class ConfigService {
     this.componentChangeCallback = callback;
   }
 
-  async requestComponentChange(filePath: string) {
+  async requestComponentChange(filePath: string, jsonData?: any) {
     if (!this.componentChangeCallback) {
       return;
     }
@@ -54,13 +54,51 @@ export class ConfigService {
         requiredComponent = 'covisualization';
         break;
       case 'json':
-        requiredComponent = await this.analyzeJsonContent(filePath);
+        if (jsonData) {
+          // Use already parsed data to avoid redundant file reading
+          requiredComponent = this.analyzeJsonData(jsonData);
+        } else {
+          // Fallback to file reading if data not provided
+          requiredComponent = await this.analyzeJsonContent(filePath);
+        }
         break;
       default:
         requiredComponent = 'visualization';
     }
 
     this.componentChangeCallback(requiredComponent);
+  }
+
+  private analyzeJsonData(jsonData: any): 'visualization' | 'covisualization' {
+    try {
+      const tool = jsonData?.tool;
+      
+      // Check for Khiops Coclustering format
+      if (tool === 'Khiops Coclustering' && jsonData.coclusteringReport) {
+        return 'covisualization';
+      }
+      
+      // Check for Khiops Modeling format
+      if (tool === 'Khiops' && jsonData.modelingReport && 
+          jsonData.modelingReport.reportType === 'Modeling') {
+        return 'visualization';
+      }
+      
+      // For backwards compatibility, check tool field only
+      if (tool === 'Khiops Coclustering') {
+        return 'covisualization';
+      }
+      
+      if (tool === 'Khiops') {
+        return 'visualization';
+      }
+      
+      // Default to visualization for unknown formats
+      return 'visualization';
+    } catch (error) {
+      console.warn('Error analyzing JSON data structure:', error);
+      return 'visualization';
+    }
   }
 
   private async analyzeJsonContent(filePath: string): Promise<'visualization' | 'covisualization'> {
@@ -76,16 +114,9 @@ export class ConfigService {
       });
 
       const jsonData = JSON.parse(content);
-      const tool = jsonData.tool;
-
-      if (tool === 'Khiops Coclustering') {
-        return 'covisualization';
-      } else if (tool === 'Khiops') {
-        return 'visualization';
-      } else {
-        return 'visualization';
-      }
+      return this.analyzeJsonData(jsonData);
     } catch (error) {
+      console.warn('Error reading or parsing JSON file:', error);
       return 'visualization';
     }
   }
