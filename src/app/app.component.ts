@@ -5,7 +5,12 @@
  */
 
 /* eslint-disable no-console */
-import { AfterViewInit, ChangeDetectorRef, Component, NgZone } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  NgZone,
+} from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { ElectronService } from './core/services/electron.service';
 import { ConfigService } from './core/services/config.service';
@@ -156,7 +161,7 @@ export class AppComponent implements AfterViewInit {
     });
   }
 
-  beforeQuit(mustRestart: boolean = false) {
+  beforeQuit() {
     const activeTab = this.tabService.getActiveTab();
     if (activeTab && activeTab.componentType === 'covisualization') {
       this.configService.openSaveBeforeQuitDialog((e: string) => {
@@ -166,17 +171,11 @@ export class AppComponent implements AfterViewInit {
             .constructDatasToSave();
           this.fileSystemService.save(datasToSave);
           this.storageService.saveAll(() => {
-            if (mustRestart) {
-              this.electronService.remote.app.relaunch();
-            }
             this.electronService.remote.app.exit(0);
           });
         } else if (e === 'cancel') {
           return;
         } else if (e === 'reject') {
-          if (mustRestart) {
-            this.electronService.remote.app.relaunch();
-          }
           this.storageService.saveAll(() => {
             this.electronService.remote.app.exit(0);
           });
@@ -184,9 +183,7 @@ export class AppComponent implements AfterViewInit {
       });
     } else {
       this.storageService.saveAll(() => {
-        if (mustRestart) {
-          this.electronService.remote.app.relaunch();
-        }
+        this.electronService.remote.app.relaunch();
         this.electronService.remote.app.exit(0);
       });
     }
