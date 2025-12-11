@@ -56,3 +56,4 @@ build: Changes affecting the build system or dependencies.
 Ex: build: update webpack
 
 ci: Changes related to CI/CD.
+Ex: ci: add GitHub Actions workflow for testing
