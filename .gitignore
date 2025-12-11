@@ -13,6 +13,8 @@ debug.log
 /.private_keys
 .angular
 .vscode
+/.yarn
+/app/.yarn
 
 # dependencies
 /node_modules
