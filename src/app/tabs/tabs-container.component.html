@@ -7,6 +7,7 @@
       [class.chrome-tab-active]="isTabActive(tab.id)"
       [attr.title]="tab.filePath"
       (click)="switchTab(tab.id)"
+      (mouseup)="handleTabMiddleClick($event, tab.id)"
     >
       <img
         class="chrome-tab-icon"

@@ -259,6 +259,14 @@ export class TabsContainerComponent implements AfterViewInit {
     this.tabService.switchToTab(tabId);
   }
 
+  handleTabMiddleClick(event: MouseEvent, tabId: string) {
+    // Close tab on middle click (button === 1)
+    if (event.button === 1) {
+      event.preventDefault();
+      this.closeTab(tabId);
+    }
+  }
+
   closeTab(tabId: string) {
     this.visualizationConfigs.delete(tabId);
     this.initializedTabs.delete(tabId);
