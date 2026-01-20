@@ -108,7 +108,7 @@
     "@types/jasmine": "5.1.13",
     "@types/jasminewd2": "2.0.13",
     "@typescript-eslint/eslint-plugin": "8.52.0",
-    "@typescript-eslint/parser": "8.52.0",
+    "@typescript-eslint/parser": "8.53.1",
     "cypress": "15.8.1",
     "cypress-shadow-dom": "1.4.1",
     "electron": "39.2.7",
