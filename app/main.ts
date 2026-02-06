@@ -19,33 +19,6 @@ const { ipcMain } = require('electron');
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
-// Implement single instance lock to handle multiple instances
-// const gotLock = app.requestSingleInstanceLock();
-// if (!gotLock) {
-//   app.quit();
-// } else {
-//   app.on('second-instance', (event, commandLine, workingDirectory) => {
-//     // Someone tried to run a second instance, we should focus our window.
-//     log.info('second-instance event triggered', commandLine);
-//     if (win) {
-//       if (win.isMinimized()) {
-//         win.restore();
-//       }
-//       win.focus();
-
-//       // Handle the file passed from second instance
-//       // On Windows, the file path is typically the last argument
-//       const filePath = commandLine[commandLine.length - 1];
-//       if (filePath && !filePath.startsWith('--')) {
-//         log.info('Opening file from second instance:', filePath);
-//         setTimeout(() => {
-//           win?.webContents?.send('file-open-system', filePath);
-//         }, 500);
-//       }
-//     }
-//   });
-// }
-
 // log.transports.file.level = 'info';
 // log.transports.file.file = __dirname + '/electron.log';
 log.warn('App Desktop starting...');
@@ -104,8 +77,6 @@ app.on('will-finish-launching', function () {
 function createWindow(): BrowserWindow {
   const size = screen.getPrimaryDisplay().workAreaSize;
 
-  log.info('Creating window with serve mode:', serve);
-
   // Create the browser window.
   win = new electron.BrowserWindow({
     x: 0,
@@ -118,7 +89,6 @@ function createWindow(): BrowserWindow {
       nodeIntegration: true,
       allowRunningInsecureContent: serve,
       contextIsolation: false, // false if you want to run e2e test with Spectron
-      webSecurity: false, // Add this for local file loading in production
     },
   });
 
@@ -130,23 +100,7 @@ function createWindow(): BrowserWindow {
   // Disable default menu
   win.setMenu(null);
 
-  // Enable dev tools in non-serve mode for debugging
-  if (!serve) {
-    win.webContents.openDevTools();
-  }
-
-  // Add error handling for page load failures
-  win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-    log.error('Page failed to load:', errorCode, errorDescription, validatedURL);
-  });
-
-  win.webContents.on('dom-ready', () => {
-    log.info('DOM is ready');
-  });
-
-  win.webContents.on('did-finish-load', () => {
-    log.info('Page finished loading');
-  });
+  // win.webContents.openDevTools();
 
   if (serve) {
     require('electron-reloader')(module);
@@ -162,40 +116,21 @@ function createWindow(): BrowserWindow {
     const setupReloading = require('../electron-reload.js');
     setupReloading(win);
   } else {
-    // Determine if we're running from asar (packaged) or development
-    const isPackaged = app.isPackaged;
-    log.info('App is packaged:', isPackaged);
-    log.info('__dirname:', __dirname);
-    log.info('process.resourcesPath:', process.resourcesPath);
-    
+    // Path when running electron executable
     let pathIndex = './index.html';
-    
-    if (isPackaged) {
-      // When packaged, the dist files are copied directly to app folder
-      pathIndex = './index.html';
-    } else {
-      // Development mode - use the dist folder
-      if (fs.existsSync(path.join(__dirname, '../dist/browser/index.html'))) {
-        pathIndex = '../dist/browser/index.html';
-      } else if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
-        pathIndex = '../dist/index.html';
-      }
+
+    if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
+      // Path when running electron in local folder
+      pathIndex = '../dist/index.html';
     }
 
-    const finalPath = path.join(__dirname, pathIndex);
-    
     const urlPath = url.format({
-      pathname: finalPath,
+      pathname: path.join(__dirname, pathIndex),
       protocol: 'file:',
       slashes: true,
     });
 
-    log.info('Final loading URL:', urlPath);
-    log.info('File exists check result for final path:', fs.existsSync(finalPath));
-    
-    win.loadURL(urlPath).catch((error) => {
-      log.error('Failed to load URL:', error);
-    });
+    win.loadURL(urlPath);
   }
 
   // Emitted when the window is closed.
@@ -207,16 +142,10 @@ function createWindow(): BrowserWindow {
   });
 
   win.on('close', (event) => {
-    log.info('Window close event triggered');
     event.preventDefault();
     win?.show(); // Show window if hidden or minimized
     win?.focus(); // Focus the window to bring it to the front
     win?.webContents?.send('before-quit');
-  });
-
-  win.on('closed', () => {
-    log.info('Window closed event triggered');
-    win = null;
   });
 
   return win;
@@ -227,24 +156,18 @@ try {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
-  app.on('ready', () => {
-    log.info('App ready event triggered');
-    setTimeout(createWindow, 400);
-  });
+  app.on('ready', () => setTimeout(createWindow, 400));
 
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
-    log.info('All windows closed event triggered');
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
-      log.info('Quitting application');
       app.quit();
     }
   });
 
   app.on('activate', () => {
-    log.info('App activate event triggered');
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (win === null) {
@@ -366,8 +289,8 @@ autoUpdater.on(
     dialog.showMessageBox(win, dialogOpts).then(function (res) {
       log.info('showMessageBox', res);
       if (res.response === 0) {
-        // isSilent: true → no confirmation message
-        // isForceRunAfter: true → automatic restart
+        // isSilent: true â†’ no confirmation message
+        // isForceRunAfter: true â†’ automatic restart
         autoUpdater.quitAndInstall(true, true);
       }
     });

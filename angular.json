@@ -21,23 +21,21 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-builders/custom-webpack:browser",
           "options": {
             "outputPath": "dist",
             "index": "src/index.html",
-            "browser": "src/main.ts",
+            "main": "src/main.ts",
             "tsConfig": "src/tsconfig.app.json",
-            "polyfills": ["src/polyfills.ts"],
+            "polyfills": "src/polyfills.ts",
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
             "styles": ["src/styles.scss"],
-            "scripts":[],
-            "allowedCommonJsDependencies": [
-              "khiops-visualization",
-              "toastify-js",
-              "event-stream",
-              "JSONStream"
-            ]
+            "scripts": ["../visualization-component/dist/khiops-webcomponent/main.js"],
+            "customWebpackConfig": {
+              "path": "./angular.webpack.js",
+              "replaceDuplicatePlugins": true
+            }
           },
           "configurations": {
             "dev": {
@@ -45,7 +43,10 @@
               "outputHashing": "none",
               "sourceMap": true,
               "namedChunks": false,
+              "aot": false,
               "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": false,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -58,7 +59,10 @@
               "outputHashing": "all",
               "sourceMap": true,
               "namedChunks": false,
+              "aot": true,
               "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -71,7 +75,10 @@
               "outputHashing": "none",
               "sourceMap": true,
               "namedChunks": false,
+              "aot": false,
               "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": false,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -84,7 +91,10 @@
               "outputHashing": "all",
               "sourceMap": true,
               "namedChunks": false,
+              "aot": true,
               "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -95,7 +105,7 @@
           }
         },
         "serve": {
-          "builder": "@angular/build:dev-server",
+          "builder": "@angular-builders/custom-webpack:dev-server",
           "options": {
             "buildTarget": "angular-electron:build"
           },
@@ -121,13 +131,19 @@
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+          "builder": "@angular-builders/custom-webpack:karma",
           "options": {
+            "main": "src/test.ts",
+            "polyfills": "src/polyfills-test.ts",
             "tsConfig": "src/tsconfig.spec.json",
             "karmaConfig": "src/karma.conf.js",
             "inlineStyleLanguage": "scss",
             "styles": ["src/styles.scss"],
-            "assets": ["src/favicon.ico", "src/assets"]
+            "assets": ["src/favicon.ico", "src/assets"],
+            "customWebpackConfig": {
+              "path": "./angular.webpack.js",
+              "replaceDuplicatePlugins": true
+            }
           }
         },
         "lint": {
