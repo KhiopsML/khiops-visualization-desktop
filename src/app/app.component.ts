@@ -272,7 +272,7 @@ export class AppComponent implements AfterViewInit {
     });
   }
 
-  beforeQuit(mustRestart: boolean = false) {
+  beforeQuit() {
     if (this.activeComponent === 'covisualization') {
       this.configService.openSaveBeforeQuitDialog((e: string) => {
         if (e === 'confirm') {
@@ -281,17 +281,11 @@ export class AppComponent implements AfterViewInit {
             .constructDatasToSave();
           this.fileSystemService.save(datasToSave);
           this.storageService.saveAll(() => {
-            if (mustRestart) {
-              this.electronService.remote.app.relaunch();
-            }
             this.electronService.remote.app.exit(0);
           });
         } else if (e === 'cancel') {
           return;
         } else if (e === 'reject') {
-          if (mustRestart) {
-            this.electronService.remote.app.relaunch();
-          }
           this.storageService.saveAll(() => {
             this.electronService.remote.app.exit(0);
           });
@@ -299,9 +293,6 @@ export class AppComponent implements AfterViewInit {
       });
     } else {
       this.storageService.saveAll(() => {
-        if (mustRestart) {
-          this.electronService.remote.app.relaunch();
-        }
         this.electronService.remote.app.exit(0);
       });
     }
