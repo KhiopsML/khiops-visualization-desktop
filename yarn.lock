@@ -163,7 +163,7 @@
     lodash "^4.17.15"
     webpack-merge "^6.0.0"
 
-"@angular-devkit/architect@0.2003.15", "@angular-devkit/architect@>= 0.2000.0 < 0.2100.0":
+"@angular-devkit/architect@0.2003.15":
   version "0.2003.15"
   resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2003.15.tgz#09d4e520205dcfe44ae0dd5e4f865596c1fdec98"
   integrity sha512-HmGnUTLVwpvOFilc3gTP6CL9o+UbkVyu9S4WENkQbInbW3zp54lkzY71uWJIP7QvuXPa+bS4WHEmoGNQtNvv1A==
@@ -171,7 +171,7 @@
     "@angular-devkit/core" "20.3.15"
     rxjs "7.8.2"
 
-"@angular-devkit/architect@0.2101.2", "@angular-devkit/architect@>=0.2100.0 < 0.2200.0":
+"@angular-devkit/architect@0.2101.2", "@angular-devkit/architect@>= 0.2100.0 < 0.2200.0", "@angular-devkit/architect@>=0.2100.0 < 0.2200.0":
   version "0.2101.2"
   resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2101.2.tgz#c6e76c31e1f0ecc19fec2879ff416cd16293ba58"
   integrity sha512-pV2onJgp16xO0vAqEfRWVynRPPLVHydYLANNa3UX3l5T39JcYdMIoOHSIIl8tWrxVeOwiWd1ajub0VsFTUok4Q==
@@ -261,7 +261,7 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/core@21.1.2", "@angular-devkit/core@^21.0.0":
+"@angular-devkit/core@21.1.2", "@angular-devkit/core@>= 21.0.0 < 22.0.0", "@angular-devkit/core@^21.0.0":
   version "21.1.2"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.1.2.tgz#a5d21f7ac12627882676a44d64fb32d226b61621"
   integrity sha512-0wl5nJlFWsbwfUB2CQeTSmnVQ8AtqqwM3bYPYtXSc+vA8+hzsOAjjDuRnBxZS9zTnqtXKXB1e7M3Iy7KUwh7LA==
@@ -284,13 +284,13 @@
     ora "8.2.0"
     rxjs "7.8.2"
 
-"@angular-eslint/builder@20.7.0":
-  version "20.7.0"
-  resolved "https://registry.yarnpkg.com/@angular-eslint/builder/-/builder-20.7.0.tgz#57df5635e287f3a583d495cabad0b1661d85aa87"
-  integrity sha512-qgf4Cfs1z0VsVpzF/OnxDRvBp60OIzeCsp4mzlckWYVniKo19EPIN6kFDol5eTAIOMPgiBQlMIwgQMHgocXEig==
+"@angular-eslint/builder@21.0.1":
+  version "21.0.1"
+  resolved "https://registry.yarnpkg.com/@angular-eslint/builder/-/builder-21.0.1.tgz#d1d2915dcd28cc371251911f064751d3de50c767"
+  integrity sha512-6BqpmW0XvjTOs2YOHwzeZcQ32eL8vs8SCHjt1cQnq1+libOVDXky1eb/jRs7ouyA49UagLDoM34K1kjrYo8P3Q==
   dependencies:
-    "@angular-devkit/architect" ">= 0.2000.0 < 0.2100.0"
-    "@angular-devkit/core" ">= 20.0.0 < 21.0.0"
+    "@angular-devkit/architect" ">= 0.2100.0 < 0.2200.0"
+    "@angular-devkit/core" ">= 21.0.0 < 22.0.0"
 
 "@angular-eslint/bundled-angular-compiler@20.7.0":
   version "20.7.0"
