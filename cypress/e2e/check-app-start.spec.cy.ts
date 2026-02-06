@@ -4,10 +4,10 @@ describe("Electron App UI", () => {
   it('should display "open a file from the menu"', () => {
     cy.visit("/");
 
-    cy.get("khiops-visualization", { timeout: 15000 }).should("exist");
+    cy.get("khiops-visualization-desktop", { timeout: 15000 }).should("exist");
     cy.wait(3000);
 
-    cy.get("khiops-visualization")
+    cy.get("khiops-visualization-desktop")
       .shadow()
       .find("app-home-layout", { timeout: 10000 })
       .should("exist")
@@ -17,7 +17,7 @@ describe("Electron App UI", () => {
         );
       });
 
-    cy.get("khiops-visualization")
+    cy.get("khiops-visualization-desktop")
       .shadow()
       .find("app-home-layout")
       .contains("open a file from the menu", {

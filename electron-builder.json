@@ -1,7 +1,7 @@
 {
   "asar": true,
-  "productName": "khiops visualization",
-  "appId": "com.khiops.visualization",
+  "productName": "khiops visualization desktop",
+  "appId": "com.khiops.visualization.desktop",
   "afterSign": "./scripts/notarize.js",
   "directories": {
     "output": "release/"
@@ -31,7 +31,7 @@
     "installerLanguages": ["en_US"]
   },
   "win": {
-    "icon": "dist/khiops-visualization/icons/256x256.png",
+    "icon": "dist/khiops-visualization-desktop/icons/256x256.png",
     "target": ["nsis"],
     "fileAssociations": [
       {
@@ -76,7 +76,7 @@
     ]
   },
   "linux": {
-    "icon": "dist/khiops-visualization/icons/",
+    "icon": "dist/khiops-visualization-desktop/icons/",
     "target": ["deb", "AppImage", "zip", "rpm"],
     "category": "Utility",
     "fileAssociations": [

@@ -86,27 +86,16 @@ export class FileSystemService {
         console.log(err);
       });
   }
-
-  setTitleBar(filepath: string) {
+  
+  setTitleBar(filepath: string, componentType?: 'visualization' | 'covisualization') {
     this.currentFilePath = filepath;
     (async () => {
       try {
-        const extension = filepath.toLowerCase().split('.').pop();
-        let appType = 'Khiops Visualization';
-        
-        if (extension === 'khcj') {
-          appType = 'Khiops Covisualization';
-        } else if (extension === 'khj') {
-          appType = 'Khiops Visualization';
-        } else if (extension === 'json') {
-          // For JSON files, use the active component type to determine app type
-          const activeComponentType = this.configService.getActiveComponentType();
-          appType = activeComponentType === 'covisualization' ? 
-                   'Khiops Covisualization' : 'Khiops Visualization';
-        }
+        const appType = 'Khiops Visualization Desktop';
+        const title = filepath ? appType + ' ' + filepath : appType;
         
         await this.electronService.ipcRenderer?.invoke('set-title-bar-name', {
-          title: appType + ' ' + filepath,
+          title: title,
         });
       } catch (error) {
         console.log('error', error);
@@ -119,6 +108,7 @@ export class FileSystemService {
       // For JSON files, read and analyze content first to determine component type
       const extension = filename.toLowerCase().split('.').pop();
       let jsonData: any = null;
+      let componentType: 'visualization' | 'covisualization' = 'visualization';
       
       if (extension === 'json') {
         try {
@@ -126,8 +116,11 @@ export class FileSystemService {
           jsonData = JSON.parse(content);
         } catch (error) {
           console.warn('Error pre-reading JSON file for analysis:', error);
-          // Continue without pre-analysis, let the normal flow handle the error
         }
+      } else if (extension === 'khcj') {
+        componentType = 'covisualization';
+      } else if (extension === 'khj') {
+        componentType = 'visualization';
       }
       
       await this.configService.requestComponentChange(filename, jsonData);
@@ -136,7 +129,7 @@ export class FileSystemService {
 
       this.readFile(filename)
         .then((datas: any) => {
-          this.setTitleBar(filename);
+          this.setTitleBar(filename, componentType);
           this.setFileHistory(filename);
           this.configService.setDatas(datas);
           if (callbackDone) {

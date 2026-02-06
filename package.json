@@ -1,6 +1,6 @@
 {
-  "name": "khiops-visualization",
-  "title": "khiops Visualization",
+  "name": "khiops-visualization-desktop",
+  "title": "khiops Visualization Desktop",
   "main": "app/main.js",
   "version": "11.4.0",
   "license": "BSD-3-Clause-Clear",
@@ -53,7 +53,7 @@
     "electron:build": "npm run build:prod && electron-builder build --publish=never",
     "publishReleases": "npm run build-visu && cd ../khiops-visualization-desktop && npm run build:prod && electron-builder build --windows --ia32 -p always && electron-builder build --linux -p always && electron-builder build --mac -p always",
     "removeDist": "rimraf dist && rimraf release && rimraf .cache",
-    "removeMocks": "rimraf dist/khiops-visualization/mocks",
+    "removeMocks": "rimraf dist/khiops-visualization-desktop/mocks",
     "electron:linux": "npm run build:prod && electron-builder build --linux -p always",
     "electron:windows": "npm run build:prod && electron-builder build --windows --ia32 -p always",
     "electron:windows:local": "npm run build:prod && electron-builder build --windows --ia32",

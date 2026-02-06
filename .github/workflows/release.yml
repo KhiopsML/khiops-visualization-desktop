@@ -253,7 +253,7 @@ jobs:
         run: |
           Write-Output "🔄 Renaming signed executable and blockmap..."
           # Find the signed executable and rename it
-          $signed_exe = Get-ChildItem -Path release -Filter "khiops visualization Setup *.exe" | Select-Object -First 1
+          $signed_exe = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe" | Select-Object -First 1
           if (-not $signed_exe) {
             Write-Output "❌ No signed executable found to rename"
             exit 1
@@ -264,7 +264,7 @@ jobs:
           Write-Output "✅ Renamed signed executable to: $new_exe_name"
 
           # Find and rename the corresponding blockmap file
-          $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Setup *.exe.blockmap" | Select-Object -First 1
+          $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe.blockmap" | Select-Object -First 1
           if ($blockmap_file) {
             $new_blockmap_name = "release/khiops-visualization-Setup-$version.exe.blockmap"
             Move-Item $blockmap_file.FullName $new_blockmap_name
