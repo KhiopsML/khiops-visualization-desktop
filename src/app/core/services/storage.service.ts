@@ -18,10 +18,14 @@ export class StorageService {
     try {
       // Use userData directory instead of temp directory to persist data across updates
       // This ensures that settings, cookies consent, channel, history... are preserved during OTA updates
-      const userDataPath = this.electronService.remote.app.getPath('userData');
-      // eg. C:\Users\USER\AppData\Roaming\khiops-visualization-desktop
-      this.electronService.storage?.setDataPath(userDataPath);
-      console.log('Storage path set to:', userDataPath);
+      const userDataPath = this.electronService.remote?.app?.getPath('userData');
+      if (userDataPath) {
+        // eg. C:\Users\USER\AppData\Roaming\khiops-visualization-desktop
+        this.electronService.storage?.setDataPath(userDataPath);
+        console.log('Storage path set to:', userDataPath);
+      } else {
+        console.warn('Could not get userData path, using default storage location');
+      }
     } catch (error) {
       console.error(
         'Failed to set persistent storage path, falling back to default:',
