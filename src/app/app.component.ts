@@ -11,7 +11,7 @@ import {
   Component,
   ElementRef,
   NgZone,
-  ViewChild,
+  ViewChild
 } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { ElectronService } from './core/services/electron.service';
@@ -26,15 +26,15 @@ import { StorageService } from './core/services/storage.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  standalone: false,
+  standalone: false
 })
 export class AppComponent implements AfterViewInit {
   @ViewChild('visualizationComponent', {
-    static: false,
+    static: false
   })
   visualizationComponent?: ElementRef<HTMLElement>;
   @ViewChild('covisualizationComponent', {
-    static: false,
+    static: false
   })
   covisualizationComponent?: ElementRef<HTMLElement>;
 
@@ -116,6 +116,7 @@ export class AppComponent implements AfterViewInit {
     this.config.setConfig({
       appSource: 'ELECTRON',
       storage: 'ELECTRON',
+      lsId: this.storageService.getStorageKey(),
       onFileOpen: () => {
         console.log('fileOpen');
         this.menuService.openFileDialog(() => {
@@ -144,7 +145,7 @@ export class AppComponent implements AfterViewInit {
         } else if (event.message === 'ls.delAll') {
           this.storageService.delAll();
         }
-      },
+      }
     });
 
     // Mettre à jour le service de configuration

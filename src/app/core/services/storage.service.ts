@@ -8,7 +8,7 @@ import { Injectable } from '@angular/core';
 import { ElectronService } from './electron.service';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class StorageService {
   private _storage: any = {};
@@ -18,13 +18,16 @@ export class StorageService {
     try {
       // Use userData directory instead of temp directory to persist data across updates
       // This ensures that settings, cookies consent, channel, history... are preserved during OTA updates
-      const userDataPath = this.electronService.remote?.app?.getPath('userData');
+      const userDataPath =
+        this.electronService.remote?.app?.getPath('userData');
       if (userDataPath) {
         // eg. C:\Users\USER\AppData\Roaming\khiops-visualization-desktop
         this.electronService.storage?.setDataPath(userDataPath);
         console.log('Storage path set to:', userDataPath);
       } else {
-        console.warn('Could not get userData path, using default storage location');
+        console.warn(
+          'Could not get userData path, using default storage location'
+        );
       }
     } catch (error) {
       console.error(
@@ -33,19 +36,25 @@ export class StorageService {
       );
       // If userData path fails, electron-json-storage will use its default location
     }
+    // this.electronService.storage?.setDataPath(this.electronService.os.tmpdir());
+
     this.getAll();
   }
 
   saveAll(cb?: Function) {
-    this.electronService.storage?.set(this._storageKey, this._storage, () => {
-      cb && cb();
-    });
+    this.electronService.storage?.setSync(
+      this._storageKey,
+      this._storage,
+      () => {
+        cb && cb();
+      }
+    );
   }
 
   getAll() {
     try {
       this._storage =
-      this.electronService.storage?.getSync(this._storageKey) || {};
+        this.electronService.storage?.getSync(this._storageKey) || {};
     } catch {
       this.electronService.storage?.set(this._storageKey, {});
     }
@@ -62,5 +71,11 @@ export class StorageService {
 
   setOne(elt: string, value: any) {
     this._storage[elt] = value;
+    // Automatically save to disk after each modification to ensure persistence
+    // this.saveAll();
+  }
+
+  getStorageKey() {
+    return this._storageKey;
   }
 }
