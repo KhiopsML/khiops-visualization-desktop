@@ -179,13 +179,11 @@ export class MenuService {
       // in reverse order
       for (let i = opendFiles.files.length - 1; i >= 0; i--) {
         if (typeof opendFiles.files[i] === 'string') {
+          const filename = opendFiles.files[i];
           menuFile.submenu.splice(2, 0, {
-            label: this.fileSystemService.getFileHistory().files[i],
+            label: filename,
             click: async () => {
-              await this.openFile(
-                this.fileSystemService.getFileHistory().files[i],
-                refreshCb
-              );
+              await this.openFile(filename, refreshCb);
             }
           });
         }
@@ -370,6 +368,7 @@ export class MenuService {
   async openFile(filename: string, callbackDone: Function | undefined) {
     await this.fileSystemService.openFile(filename, () => {
       callbackDone && callbackDone();
+      this.storageService.saveAll();
     });
   }
 
