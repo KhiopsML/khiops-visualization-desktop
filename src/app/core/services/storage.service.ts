@@ -42,7 +42,7 @@ export class StorageService {
   }
 
   saveAll(cb?: Function) {
-    this.electronService.storage?.setSync(
+    this.electronService.storage?.set(
       this._storageKey,
       this._storage,
       () => {

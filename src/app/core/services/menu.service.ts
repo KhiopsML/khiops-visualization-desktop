@@ -119,23 +119,20 @@ export class MenuService {
                     .getConfig()
                     .constructDatasToSave();
                   this.fileSystemService.save(datasToSave);
-                  this.storageService.saveAll(() => {
-                    this.electronService.remote.app.relaunch();
-                    this.electronService.remote.app.exit(0);
+                  this.storageService.saveAll(async () => {
+                    await this.electronService.ipcRenderer?.invoke('app-relaunch');
                   });
                 } else if (e === 'cancel') {
                   return;
                 } else if (e === 'reject') {
-                  this.storageService.saveAll(() => {
-                    this.electronService.remote.app.relaunch();
-                    this.electronService.remote.app.exit(0);
+                  this.storageService.saveAll(async () => {
+                    await this.electronService.ipcRenderer?.invoke('app-relaunch');
                   });
                 }
               });
             } else {
-              this.storageService.saveAll(() => {
-                this.electronService.remote.app.relaunch();
-                this.electronService.remote.app.exit(0);
+              this.storageService.saveAll(async () => {
+                await this.electronService.ipcRenderer?.invoke('app-relaunch');
               });
             }
           }
@@ -151,20 +148,20 @@ export class MenuService {
                     .getConfig()
                     .constructDatasToSave();
                   this.fileSystemService.save(datasToSave);
-                  this.storageService.saveAll(() => {
-                    this.electronService.remote.app.quit();
+                  this.storageService.saveAll(async () => {
+                    await this.electronService.ipcRenderer?.invoke('app-quit');
                   });
                 } else if (e === 'cancel') {
                   return;
                 } else if (e === 'reject') {
-                  this.storageService.saveAll(() => {
-                    this.electronService.remote.app.quit();
+                  this.storageService.saveAll(async () => {
+                    await this.electronService.ipcRenderer?.invoke('app-quit');
                   });
                 }
               });
             } else {
-              this.storageService.saveAll(() => {
-                this.electronService.remote.app.quit();
+              this.storageService.saveAll(async () => {
+                await this.electronService.ipcRenderer?.invoke('app-quit');
               });
             }
           }

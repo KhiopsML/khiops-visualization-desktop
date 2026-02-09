@@ -236,6 +236,23 @@ ipcMain.handle('read-local-file', async (_event: any, filePath: any) => {
   }
 });
 
+/**
+ * Handle application quit request from renderer process
+ */
+ipcMain.handle('app-quit', () => {
+  log.info('app-quit requested');
+  app.quit();
+});
+
+/**
+ * Handle application relaunch request from renderer process
+ */
+ipcMain.handle('app-relaunch', () => {
+  log.info('app-relaunch requested');
+  app.relaunch();
+  app.exit(0);
+});
+
 autoUpdater.on('checking-for-update', () => {
   log.info('checking-for-update');
 });
