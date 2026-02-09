@@ -13,7 +13,7 @@ import { ConfigService } from './config.service';
 import { StorageService } from './storage.service';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class MenuService {
   private currentChannel: string = 'latest';
@@ -61,22 +61,22 @@ export class MenuService {
           accelerator: 'CommandOrControl+O',
           click: () => {
             this.openFileDialog(refreshCb);
-          },
+          }
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CLOSE_FILE'),
           click: () => {
             this.closeFile();
-          },
+          }
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         ...(activeComponent === 'covisualization'
           ? [
@@ -85,14 +85,14 @@ export class MenuService {
                 accelerator: 'CommandOrControl+S',
                 click: () => {
                   this.save();
-                },
+                }
               },
               {
                 label: this.translate.instant('GLOBAL_MENU_SAVE_AS'),
                 accelerator: 'CommandOrControl+Shift+S',
                 click: () => {
                   this.saveAs();
-                },
+                }
               },
               {
                 label: this.translate.instant(
@@ -101,11 +101,11 @@ export class MenuService {
                 accelerator: 'CommandOrControl+Shift+Alt+S',
                 click: () => {
                   this.saveCurrentHierarchyAs();
-                },
+                }
               },
               {
-                type: 'separator',
-              },
+                type: 'separator'
+              }
             ]
           : []),
         {
@@ -138,7 +138,7 @@ export class MenuService {
                 this.electronService.remote.app.exit(0);
               });
             }
-          },
+          }
         },
         {
           label: this.translate.instant('GLOBAL_MENU_EXIT'),
@@ -167,9 +167,9 @@ export class MenuService {
                 this.electronService.remote.app.quit();
               });
             }
-          },
-        },
-      ],
+          }
+        }
+      ]
     };
 
     menuFile.submenu[3].accelerator = 'CommandOrControl+W';
@@ -186,7 +186,7 @@ export class MenuService {
                 this.fileSystemService.getFileHistory().files[i],
                 refreshCb
               );
-            },
+            }
           });
         }
       }
@@ -196,10 +196,10 @@ export class MenuService {
       label: this.translate.instant('GLOBAL_MENU_HELP'),
       submenu: [
         {
-          role: 'toggleDevTools',
+          role: 'toggleDevTools'
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
           label:
@@ -210,7 +210,7 @@ export class MenuService {
             this.electronService.shell.openExternal(
               'https://github.com/KhiopsML/khiops-visualization-desktop/releases'
             );
-          },
+          }
         },
         {
           label:
@@ -221,10 +221,10 @@ export class MenuService {
             this.electronService.shell.openExternal(
               'https://github.com/KhiopsML/khiops-visualization/releases'
             );
-          },
+          }
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
           label: this.translate.instant('GLOBAL_MENU_RELEASE_NOTES'),
@@ -232,10 +232,10 @@ export class MenuService {
             this.electronService.shell.openExternal(
               'https://github.com/KhiopsML/khiops-visualization-desktop/releases'
             );
-          },
+          }
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
           label: this.translate.instant('GLOBAL_MENU_REPORT_A_BUG'),
@@ -266,33 +266,33 @@ export class MenuService {
               // @ts-ignore
               '_self'
             );
-          },
-        },
-      ],
+          }
+        }
+      ]
     };
 
     const menuView = {
       label: this.translate.instant('GLOBAL_MENU_VIEW'),
       submenu: [
         {
-          role: 'togglefullscreen',
+          role: 'togglefullscreen'
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
           role: 'resetZoom',
-          accelerator: 'CommandOrControl+nummult',
+          accelerator: 'CommandOrControl+nummult'
         },
         {
           role: 'zoomIn',
-          accelerator: 'CommandOrControl+numadd',
+          accelerator: 'CommandOrControl+numadd'
         },
         {
           role: 'zoomOut',
-          accelerator: 'CommandOrControl+numsub',
-        },
-      ],
+          accelerator: 'CommandOrControl+numsub'
+        }
+      ]
     };
 
     const menuTemplate = [];
@@ -313,10 +313,10 @@ export class MenuService {
             if (btnUpdate === 'update-available' && !this.updateInProgress) {
               updateCb && updateCb();
             }
-          },
+          }
         },
         {
-          type: 'separator',
+          type: 'separator'
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CHANNELS'),
@@ -329,7 +329,7 @@ export class MenuService {
                   this.setChannel('latest');
                 }
               },
-              checked: this.currentChannel === 'latest',
+              checked: this.currentChannel === 'latest'
             },
             {
               label: this.translate.instant('GLOBAL_MENU_BETA'),
@@ -348,11 +348,11 @@ export class MenuService {
                   });
                 }
               },
-              checked: this.currentChannel === 'beta',
-            },
-          ],
-        },
-      ],
+              checked: this.currentChannel === 'beta'
+            }
+          ]
+        }
+      ]
     };
 
     menuTemplate.push(menuUpdate);
@@ -363,6 +363,7 @@ export class MenuService {
   openFileDialog(cb: any = undefined) {
     this.fileSystemService.openFileDialog(() => {
       cb();
+      this.storageService.saveAll();
     });
   }
 
