@@ -12,6 +12,7 @@ const storage = require('electron-json-storage');
 require('electron-debug');
 
 let win: BrowserWindow | null = null;
+let isQuitting = false;
 const args = process.argv.slice(1),
   serve = args.some((val) => val === '--serve');
 const { dialog } = require('electron');
@@ -142,10 +143,12 @@ function createWindow(): BrowserWindow {
   });
 
   win.on('close', (event) => {
-    event.preventDefault();
-    win?.show(); // Show window if hidden or minimized
-    win?.focus(); // Focus the window to bring it to the front
-    win?.webContents?.send('before-quit');
+    if (!isQuitting) {
+      event.preventDefault();
+      win?.show(); // Show window if hidden or minimized
+      win?.focus(); // Focus the window to bring it to the front
+      win?.webContents?.send('before-quit');
+    }
   });
 
   return win;
@@ -157,6 +160,11 @@ try {
   // Some APIs can only be used after this event occurs.
   // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
   app.on('ready', () => setTimeout(createWindow, 400));
+
+  // Handle before-quit event to allow window closing
+  app.on('before-quit', () => {
+    isQuitting = true;
+  });
 
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
@@ -241,6 +249,7 @@ ipcMain.handle('read-local-file', async (_event: any, filePath: any) => {
  */
 ipcMain.handle('app-quit', () => {
   log.info('app-quit requested');
+  isQuitting = true;
   app.quit();
 });
 
