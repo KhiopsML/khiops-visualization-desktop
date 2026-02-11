@@ -122,25 +122,37 @@ export class ConfigService {
   }
 
   setDatas(datas = undefined) {
-    this.config.setDatas(datas);
+    if (this.config && this.config.setDatas) {
+      this.config.setDatas(datas);
+    }
   }
   constructDatasToSave() {
-    this.config.constructDatasToSave();
+    if (this.config && this.config.constructDatasToSave) {
+      this.config.constructDatasToSave();
+    }
   }
 
   constructPrunedDatasToSave() {
-    this.config.constructPrunedDatasToSave();
+    if (this.config && this.config.constructPrunedDatasToSave) {
+      this.config.constructPrunedDatasToSave();
+    }
   }
 
   openChannelDialog(cb: Function) {
-    this.config.openChannelDialog(cb);
+    if (this.config && this.config.openChannelDialog) {
+      this.config.openChannelDialog(cb);
+    }
   }
 
   openSaveBeforeQuitDialog(cb: Function) {
-    this.config.openSaveBeforeQuitDialog(cb);
+    if (this.config && this.config.openSaveBeforeQuitDialog) {
+      this.config.openSaveBeforeQuitDialog(cb);
+    }
   }
 
   snack(text: string, duration: number, panelClass: string) {
-    this.config.snack(text, duration, panelClass);
+    if (this.config && this.config.snack) {
+      this.config.snack(text, duration, panelClass);
+    }
   }
 }

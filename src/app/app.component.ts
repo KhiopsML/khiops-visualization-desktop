@@ -263,12 +263,13 @@ export class AppComponent implements AfterViewInit {
     }
     this.electronService.ipcRenderer?.on('file-open-system', (event, arg) => {
       if (arg) {
+        // Add delay to ensure component is fully loaded before opening file
         setTimeout(() => {
           this.currentFileType = arg;
           this.fileSystemService.openFile(arg, () => {
             this.constructMenu();
           });
-        });
+        }, 500); // 500ms delay to ensure component initialization
       }
     });
   }

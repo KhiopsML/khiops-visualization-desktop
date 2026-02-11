@@ -46,7 +46,7 @@ export class FileSystemService {
     private configService: ConfigService,
     private electronService: ElectronService,
     private translate: TranslateService,
-    private storageService: StorageService
+    private storageService: StorageService,
   ) {
     this.initialize();
   }
@@ -86,14 +86,17 @@ export class FileSystemService {
         console.log(err);
       });
   }
-  
-  setTitleBar(filepath: string, componentType?: 'visualization' | 'covisualization') {
+
+  setTitleBar(
+    filepath: string,
+    componentType?: 'visualization' | 'covisualization',
+  ) {
     this.currentFilePath = filepath;
     (async () => {
       try {
         const appType = 'Khiops Visualization Desktop';
         const title = filepath ? appType + ' ' + filepath : appType;
-        
+
         await this.electronService.ipcRenderer?.invoke('set-title-bar-name', {
           title: title,
         });
@@ -109,7 +112,7 @@ export class FileSystemService {
       const extension = filename.toLowerCase().split('.').pop();
       let jsonData: any = null;
       let componentType: 'visualization' | 'covisualization' = 'visualization';
-      
+
       if (extension === 'json') {
         try {
           const content = await this.readFileContent(filename);
@@ -122,16 +125,17 @@ export class FileSystemService {
       } else if (extension === 'khj') {
         componentType = 'visualization';
       }
-      
+
       await this.configService.requestComponentChange(filename, jsonData);
-      
-      this.configService.setDatas();
 
       this.readFile(filename)
         .then((datas: any) => {
           this.setTitleBar(filename, componentType);
           this.setFileHistory(filename);
-          this.configService.setDatas(datas);
+          // Add small delay to ensure component is fully rendered before setting data
+          setTimeout(() => {
+            this.configService.setDatas(datas);
+          }, 250);
           if (callbackDone) {
             callbackDone();
           }
@@ -151,13 +155,17 @@ export class FileSystemService {
   }
   private readFileContent(filename: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.electronService.fs.readFile(filename, 'utf-8', (err: any, data: string) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
+      this.electronService.fs.readFile(
+        filename,
+        'utf-8',
+        (err: any, data: string) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
+        },
+      );
     });
   }
 
@@ -196,21 +204,21 @@ export class FileSystemService {
                     filename,
                     {
                       encoding: 'utf8',
-                    }
+                    },
                   );
                   const getStream = stream.pipe(
                     jsonStream.parse([
                       {
                         emitKey: true,
                       },
-                    ])
+                    ]),
                   );
                   getStream.pipe(
                     es.map((pipeDatas: any) => {
                       this.fileLoaderDatas!.loadingInfo = pipeDatas.key;
                       currentDatas[pipeDatas.key] = pipeDatas.value;
                       this._fileLoaderSub.next(this.fileLoaderDatas);
-                    })
+                    }),
                   );
 
                   getStream
@@ -235,29 +243,42 @@ export class FileSystemService {
                 this.fileLoaderDatas!.isLoadingDatas = false;
                 try {
                   this.fileLoaderDatas!.datas = JSON.parse(datas);
-                  
+
                   // Validate JSON structure based on file extension and content
                   const extension = filename.toLowerCase().split('.').pop();
                   const jsonData = this.fileLoaderDatas!.datas;
-                  
+
                   if (extension === 'json') {
                     // Additional validation for generic JSON files
                     if (!jsonData.tool) {
                       console.warn('JSON file missing required "tool" field');
-                    } else if (jsonData.tool === 'Khiops Coclustering' && !jsonData.coclusteringReport) {
-                      console.warn('Khiops Coclustering JSON file missing coclusteringReport structure');
-                    } else if (jsonData.tool === 'Khiops' && (!jsonData.modelingReport || jsonData.modelingReport.reportType !== 'Modeling')) {
-                      console.warn('Khiops JSON file missing proper modelingReport structure');
+                    } else if (
+                      jsonData.tool === 'Khiops Coclustering' &&
+                      !jsonData.coclusteringReport
+                    ) {
+                      console.warn(
+                        'Khiops Coclustering JSON file missing coclusteringReport structure',
+                      );
+                    } else if (
+                      jsonData.tool === 'Khiops' &&
+                      (!jsonData.modelingReport ||
+                        jsonData.modelingReport.reportType !== 'Modeling')
+                    ) {
+                      console.warn(
+                        'Khiops JSON file missing proper modelingReport structure',
+                      );
                     }
                   }
-                  
+
                   this.fileLoaderDatas!.datas.filename = filename;
                   this._fileLoaderSub.next(this.fileLoaderDatas);
                   resolve(this.fileLoaderDatas?.datas);
                 } catch (e) {
                   console.error('JSON parsing error:', e);
                   Toastify({
-                    text: this.translate.instant('OPEN_FILE_ERROR') + ' - Invalid JSON format',
+                    text:
+                      this.translate.instant('OPEN_FILE_ERROR') +
+                      ' - Invalid JSON format',
                     gravity: 'bottom',
                     position: 'center',
                     duration: 3000,
@@ -267,7 +288,7 @@ export class FileSystemService {
                   reject(e);
                 }
               }
-            }
+            },
           );
         }
       });
@@ -280,7 +301,7 @@ export class FileSystemService {
     this.fileLoaderDatas!.isBigJsonFile = false;
     this.fileLoaderDatas!.loadingInfo = '';
     this._fileLoaderSub.next(this.fileLoaderDatas);
-    
+
     return new Promise((resolve, reject) => {
       this.electronService.fs.stat(filename, (err: any) => {
         if (err) {
@@ -299,35 +320,45 @@ export class FileSystemService {
               } else {
                 try {
                   const parsedDatas = JSON.parse(datas);
-                  
+
                   // Validate covisualization JSON structure
-                  if (parsedDatas.tool === 'Khiops Coclustering' && !parsedDatas.coclusteringReport) {
-                    console.warn('Covisualization file missing expected coclusteringReport structure');
+                  if (
+                    parsedDatas.tool === 'Khiops Coclustering' &&
+                    !parsedDatas.coclusteringReport
+                  ) {
+                    console.warn(
+                      'Covisualization file missing expected coclusteringReport structure',
+                    );
                   }
-                  
+
                   parsedDatas.filename = filename;
-                  
+
                   this.fileLoaderDatas!.datas = parsedDatas;
                   this.fileLoaderDatas!.isLoadingDatas = false;
                   this._fileLoaderSub.next(this.fileLoaderDatas);
-                  
+
                   resolve(parsedDatas);
                 } catch (e) {
-                  console.error('JSON parsing error in covisualization file:', e);
+                  console.error(
+                    'JSON parsing error in covisualization file:',
+                    e,
+                  );
                   this.fileLoaderDatas!.isLoadingDatas = false;
                   this._fileLoaderSub.next(this.fileLoaderDatas);
-                  
+
                   Toastify({
-                    text: this.translate.instant('OPEN_FILE_ERROR') + ' - Invalid JSON format',
+                    text:
+                      this.translate.instant('OPEN_FILE_ERROR') +
+                      ' - Invalid JSON format',
                     gravity: 'bottom',
                     position: 'center',
                     duration: 3000,
                   }).showToast();
-                  
+
                   reject(e);
                 }
               }
-            }
+            },
           );
         }
       });
@@ -403,12 +434,12 @@ export class FileSystemService {
     this.electronService.fs.writeFileSync(
       filename,
       JSON.stringify(datas, null, 2), // spacing level = 2
-      'utf-8'
+      'utf-8',
     );
     this.configService.snack(
       this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS'),
       4000,
-      'success'
+      'success',
     );
   }
 }
