@@ -22,7 +22,7 @@ export class BigFileLoadingComponent {
 
   constructor(
     public fileSystemService: FileSystemService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnDestroy(): void {
@@ -41,7 +41,7 @@ export class BigFileLoadingComponent {
           this.isTextVisible = true;
         }
         this.cdr.detectChanges();
-      }
+      },
     );
   }
 }
