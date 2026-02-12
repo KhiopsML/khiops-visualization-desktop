@@ -1,7 +1,12 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "cli": {
-    "analytics": false
+    "analytics": false,
+    "cache": {
+      "enabled": true,
+      "path": ".angular/cache",
+      "environment": "all"
+    }
   },
   "version": 1,
   "newProjectRoot": "projects",
@@ -31,7 +36,9 @@
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
             "styles": ["src/styles.scss"],
-            "scripts": ["../visualization-component/dist/khiops-webcomponent/main.js"],
+            "scripts": [
+              "../visualization-component/dist/khiops-webcomponent/main.js"
+            ],
             "customWebpackConfig": {
               "path": "./angular.webpack.js",
               "replaceDuplicatePlugins": true
@@ -41,11 +48,11 @@
             "dev": {
               "optimization": false,
               "outputHashing": "none",
-              "sourceMap": true,
+              "sourceMap": false,
               "namedChunks": false,
-              "aot": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
+              "aot": true,
+              "extractLicenses": false,
+              "vendorChunk": true,
               "buildOptimizer": false,
               "fileReplacements": [
                 {

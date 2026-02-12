@@ -2,6 +2,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "skipLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "outDir": "./dist/out-tsc",
@@ -22,11 +24,10 @@
   "exclude": ["node_modules"],
   "angularCompilerOptions": {
     "strictTemplates": true,
-    "fullTemplateTypeCheck": true,
     "annotateForClosureCompiler": true,
     "strictInjectionParameters": true,
     "skipTemplateCodegen": false,
-    "preserveWhitespaces": true,
+    "preserveWhitespaces": false,
     "skipMetadataEmit": false,
     "disableTypeScriptVersionCheck": true
   }
