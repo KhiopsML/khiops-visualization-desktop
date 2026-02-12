@@ -18,7 +18,6 @@ export class BigFileLoadingComponent {
   private fileLoaderSub?: Subscription;
 
   visible: boolean = false;
-  isTextVisible: boolean = false;
 
   constructor(
     public fileSystemService: FileSystemService,
@@ -32,13 +31,8 @@ export class BigFileLoadingComponent {
   ngOnInit(): void {
     this.fileLoaderSub = this.fileSystemService.fileLoader$.subscribe(
       (data: any) => {
-        if (data?.isLoadingDatas) {
-          this.visible = true;
-        } else {
-          this.visible = false;
-        }
         if (data?.isBigJsonFile) {
-          this.isTextVisible = true;
+          this.visible = true;
         }
         this.cdr.detectChanges();
       },
