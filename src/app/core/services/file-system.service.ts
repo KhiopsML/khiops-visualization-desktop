@@ -127,6 +127,7 @@ export class FileSystemService {
       }
 
       await this.configService.requestComponentChange(filename, jsonData);
+      this.configService.setDatas();
 
       this.readFile(filename)
         .then((datas: any) => {
@@ -135,10 +136,10 @@ export class FileSystemService {
           // Add small delay to ensure component is fully rendered before setting data
           setTimeout(() => {
             this.configService.setDatas(datas);
+            if (callbackDone) {
+              callbackDone();
+            }
           }, 250);
-          if (callbackDone) {
-            callbackDone();
-          }
         })
         .catch((error: any) => {
           console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
