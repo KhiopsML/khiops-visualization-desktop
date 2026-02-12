@@ -11,7 +11,7 @@ yarn buildDev:webcomponents &
 
 # Start the application
 cd ../khiops-visualization-desktop
-sleep 10
+sleep 30
 yarn start 
 
 $SHELL
