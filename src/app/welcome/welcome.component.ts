@@ -32,7 +32,6 @@ export class WelcomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fileLoaderSub = this.fileSystemService.fileLoader$.subscribe(
       (res: FileLoaderI) => {
-        console.log("🚀 ~ WelcomeComponent ~ ngOnInit ~ res:", res)
         if (res?.datas) {
           this.visible = false;
         } else {
