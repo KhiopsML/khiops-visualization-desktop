@@ -11,7 +11,7 @@ import {
   Component,
   ElementRef,
   NgZone,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { ElectronService } from './core/services/electron.service';
@@ -26,23 +26,22 @@ import { StorageService } from './core/services/storage.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  standalone: false
+  standalone: false,
 })
 export class AppComponent implements AfterViewInit {
   @ViewChild('visualizationComponent', {
-    static: false
+    static: false,
   })
   visualizationComponent?: ElementRef<HTMLElement>;
   @ViewChild('covisualizationComponent', {
-    static: false
+    static: false,
   })
   covisualizationComponent?: ElementRef<HTMLElement>;
 
   config: any;
   activeComponent: 'visualization' | 'covisualization' = 'visualization';
   currentFileType?: string;
-  btnUpdateText: string =
-    '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
+  btnUpdateText: string = '';
   btnUpdate?: string;
 
   constructor(
@@ -54,7 +53,7 @@ export class AppComponent implements AfterViewInit {
     private configService: ConfigService,
     private translate: TranslateService,
     private menuService: MenuService,
-    private trackerService: TrackerService
+    private trackerService: TrackerService,
   ) {
     this.translate.setFallbackLang('en');
 
@@ -62,6 +61,9 @@ export class AppComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
+    this.btnUpdateText =
+      '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
+
     this.configService.setComponentChangeCallback((componentType) => {
       this.setActiveComponent(componentType);
     });
@@ -100,7 +102,7 @@ export class AppComponent implements AfterViewInit {
   }
 
   continueSetActiveComponent(
-    componentType: 'visualization' | 'covisualization'
+    componentType: 'visualization' | 'covisualization',
   ) {
     if (componentType === 'visualization') {
       this.config = this.visualizationComponent?.nativeElement;
@@ -145,7 +147,7 @@ export class AppComponent implements AfterViewInit {
         } else if (event.message === 'ls.delAll') {
           this.storageService.delAll();
         }
-      }
+      },
     });
 
     // Mettre à jour le service de configuration
@@ -154,7 +156,7 @@ export class AppComponent implements AfterViewInit {
   }
 
   determineComponentFromFile(
-    filePath: string
+    filePath: string,
   ): 'visualization' | 'covisualization' {
     if (!filePath) {
       return 'visualization';
@@ -192,7 +194,7 @@ export class AppComponent implements AfterViewInit {
 
           const content = await this.electronService.ipcRenderer?.invoke(
             'read-local-file',
-            path
+            path,
           );
           cb(content, path);
         }
@@ -215,7 +217,7 @@ export class AppComponent implements AfterViewInit {
       (event, arg) => {
         console.info('update-not-available', event, arg);
         this.menuService.setUpdateInProgress(false);
-      }
+      },
     );
     this.electronService.ipcRenderer?.on('update-error', (event, arg) => {
       console.info('update-error', event, arg);
@@ -242,7 +244,7 @@ export class AppComponent implements AfterViewInit {
             '%';
         }
         this.constructMenu();
-      }
+      },
     );
     this.electronService.ipcRenderer?.on('before-quit', (event, arg) => {
       this.beforeQuit();
@@ -316,12 +318,12 @@ export class AppComponent implements AfterViewInit {
             this.translate.instant('GLOBAL_UPDATE_WAITING_FOR_DOWNLOAD') +
             ' ...';
           await this.electronService.ipcRenderer?.invoke(
-            'launch-update-available'
+            'launch-update-available',
           );
           this.constructMenu();
         })();
       },
-      this.activeComponent
+      this.activeComponent,
     );
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);

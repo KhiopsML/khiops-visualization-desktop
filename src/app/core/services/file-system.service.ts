@@ -12,6 +12,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 // @ts-ignore
 import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
+import { FileLoaderI } from '../../interfaces/file-system';
 
 let es: any;
 try {
@@ -30,12 +31,7 @@ try {
   providedIn: 'root',
 })
 export class FileSystemService {
-  fileLoaderDatas?: {
-    isLoadingDatas: any;
-    datas: any;
-    isBigJsonFile: boolean;
-    loadingInfo: string;
-  };
+  fileLoaderDatas?: FileLoaderI;
   currentFilePath = '';
 
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
@@ -51,6 +47,11 @@ export class FileSystemService {
     this.initialize();
   }
 
+  /**
+   * Initialize file loader data to default state when no file is loaded
+   * or when a file is closed. This ensures that the application state is reset
+   * and ready for a new file to be loaded without residual data from previous files.
+   */
   initialize() {
     this.fileLoaderDatas = {
       isLoadingDatas: false,
@@ -60,6 +61,10 @@ export class FileSystemService {
     };
   }
 
+  /**
+   * Open a file dialog for the user to select a file.
+   * @param callbackDone A callback function to be executed after a file is selected and opened.
+   */
   openFileDialog(callbackDone: Function) {
     // this.trackerService.trackEvent('click', 'open_file');
 
@@ -87,6 +92,11 @@ export class FileSystemService {
       });
   }
 
+  /**
+   * Set the title bar of the application window.
+   * @param filepath The path of the currently opened file.
+   * @param componentType The type of the active component ('visualization' or 'covisualization').
+   */
   setTitleBar(
     filepath: string,
     componentType?: 'visualization' | 'covisualization',
@@ -170,6 +180,11 @@ export class FileSystemService {
     });
   }
 
+  /**
+   * Reads a file and returns its content. If the file is a large JSON file, it uses streaming to read and parse the content without blocking the UI.
+   * @param filename The path of the file to be read.
+   * @returns A promise that resolves with the file content or rejects with an error.
+   */
   readFile(filename: string): any {
     const activeComponentType = this.configService.getActiveComponentType();
 
@@ -371,6 +386,7 @@ export class FileSystemService {
     this.ngzone.run(() => {
       this.configService.setDatas();
       this.setTitleBar('');
+      this._fileLoaderSub.next(this.fileLoaderDatas);
     });
   }
 

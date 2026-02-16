@@ -4,21 +4,21 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { Subscription } from 'rxjs';
 import { FileLoaderI } from '../interfaces/file-system';
 
 @Component({
-  selector: 'app-big-file-loading',
-  templateUrl: './big-file-loading.component.html',
-  styleUrl: './big-file-loading.component.scss',
+  selector: 'app-welcome',
+  templateUrl: './welcome.component.html',
+  styleUrl: './welcome.component.scss',
   standalone: false,
 })
-export class BigFileLoadingComponent implements OnInit, OnDestroy {
+export class WelcomeComponent implements OnInit, OnDestroy {
   private fileLoaderSub?: Subscription;
 
-  visible: boolean = false;
+  visible: boolean = true;
 
   constructor(
     public fileSystemService: FileSystemService,
@@ -32,10 +32,11 @@ export class BigFileLoadingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fileLoaderSub = this.fileSystemService.fileLoader$.subscribe(
       (res: FileLoaderI) => {
-        if (res?.isBigJsonFile) {
-          this.visible = true;
-        } else {
+        console.log("🚀 ~ WelcomeComponent ~ ngOnInit ~ res:", res)
+        if (res?.datas) {
           this.visible = false;
+        } else {
+          this.visible = true;
         }
         this.cdr.detectChanges();
       },

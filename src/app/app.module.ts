@@ -30,6 +30,7 @@ import { AppComponent } from './app.component';
 import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
 import { CommonModule } from '@angular/common';
 import { MatomoModule } from 'ngx-matomo-client';
+import { WelcomeComponent } from './welcome/welcome.component';
 
 export function setupTranslateFactory(service: TranslateService) {
   const serv = () => service.use('en');
@@ -37,7 +38,7 @@ export function setupTranslateFactory(service: TranslateService) {
 }
 
 @NgModule({
-  declarations: [AppComponent, BigFileLoadingComponent],
+  declarations: [AppComponent, BigFileLoadingComponent, WelcomeComponent],
   imports: [
     CommonModule,
     BrowserModule,

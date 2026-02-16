@@ -42,6 +42,7 @@
   "GLOBAL_UPDATE_UPDATE_AVAILABLE": "Update available",
   "GLOBAL_UPDATE_UPDATE_ERROR": "Update error",
   "GLOBAL_UPDATE_WAITING_FOR_DOWNLOAD": "Waiting For download",
-  "OPEN_FILE_ERROR": "----No data or file error !",
-  "WELCOME": "Open a file from the menu"
+  "OPEN_FILE_ERROR": "No data or file error !",
+  "WELCOME": "Open a file from the menu",
+  "LONG_LOADING": "Loading very large reports may take more than a minute..."
 }
