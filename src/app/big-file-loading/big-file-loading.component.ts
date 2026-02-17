@@ -33,15 +33,17 @@ export class BigFileLoadingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fileLoaderSub = this.fileSystemService.fileLoader$.subscribe(
       (res: FileLoaderI) => {
+        this.visible = false;
+        this.isTextVisible = false;
         if (res?.isLoadingDatas) {
           setTimeout(() => {
             this.visible = true;
-          }, 250);
+          }, 0);
         } else {
           this.visible = false;
         }
         if (res?.isBigJsonFile) {
-          this.visible = true;
+          this.isTextVisible = true;
         }
         this.cdr.detectChanges();
       },

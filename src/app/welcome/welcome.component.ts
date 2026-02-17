@@ -32,10 +32,13 @@ export class WelcomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fileLoaderSub = this.fileSystemService.fileLoader$.subscribe(
       (res: FileLoaderI) => {
-        if (res?.datas) {
+        this.visible = false;
+        if (res?.datas && !res.isLoadingDatas) {
           this.visible = false;
         } else {
-          this.visible = true;
+          setTimeout(() => {
+            this.visible = true;
+          }, 0);
         }
         this.cdr.detectChanges();
       },
