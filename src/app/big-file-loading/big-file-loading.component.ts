@@ -19,6 +19,7 @@ export class BigFileLoadingComponent implements OnInit, OnDestroy {
   private fileLoaderSub?: Subscription;
 
   visible: boolean = false;
+  isTextVisible: boolean = false;
 
   constructor(
     public fileSystemService: FileSystemService,
@@ -32,10 +33,15 @@ export class BigFileLoadingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fileLoaderSub = this.fileSystemService.fileLoader$.subscribe(
       (res: FileLoaderI) => {
-        if (res?.isBigJsonFile) {
-          this.visible = true;
+        if (res?.isLoadingDatas) {
+          setTimeout(() => {
+            this.visible = true;
+          }, 250);
         } else {
           this.visible = false;
+        }
+        if (res?.isBigJsonFile) {
+          this.visible = true;
         }
         this.cdr.detectChanges();
       },
