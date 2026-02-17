@@ -277,29 +277,9 @@ export class AppComponent implements AfterViewInit {
   }
 
   beforeQuit() {
-    if (this.activeComponent === 'covisualization') {
-      this.configService.openSaveBeforeQuitDialog((e: string) => {
-        if (e === 'confirm') {
-          const datasToSave = this.configService
-            .getConfig()
-            .constructDatasToSave();
-          this.fileSystemService.save(datasToSave);
-          this.storageService.saveAll(async () => {
-            await this.electronService.ipcRenderer?.invoke('app-quit');
-          });
-        } else if (e === 'cancel') {
-          return;
-        } else if (e === 'reject') {
-          this.storageService.saveAll(async () => {
-            await this.electronService.ipcRenderer?.invoke('app-quit');
-          });
-        }
-      });
-    } else {
-      this.storageService.saveAll(async () => {
-        await this.electronService.ipcRenderer?.invoke('app-quit');
-      });
-    }
+    this.fileSystemService.handleSaveBeforeAction(async () => {
+      await this.electronService.ipcRenderer?.invoke('app-quit');
+    });
   }
 
   constructMenu() {
