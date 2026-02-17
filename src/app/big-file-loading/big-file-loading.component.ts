@@ -36,9 +36,7 @@ export class BigFileLoadingComponent implements OnInit, OnDestroy {
         this.visible = false;
         this.isTextVisible = false;
         if (res?.isLoadingDatas) {
-          setTimeout(() => {
-            this.visible = true;
-          }, 0);
+          this.visible = true;
         } else {
           this.visible = false;
         }
