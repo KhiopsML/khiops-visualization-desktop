@@ -8,7 +8,7 @@ import { Injectable } from '@angular/core';
 import { ElectronService } from './electron.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class StorageService {
   private _storage: any = {};
@@ -18,21 +18,20 @@ export class StorageService {
     try {
       // Use userData directory instead of temp directory to persist data across updates
       // This ensures that settings, cookies consent, channel, history... are preserved during OTA updates
-      const userDataPath =
-        this.electronService.remote?.app?.getPath('userData');
+      const userDataPath = this.electronService.remote?.app?.getPath('home');
       if (userDataPath) {
-        // eg. C:\Users\USER\AppData\Roaming\khiops-visualization-desktop
+        // eg. C:\Users\USER\
         this.electronService.storage?.setDataPath(userDataPath);
         console.log('Storage path set to:', userDataPath);
       } else {
         console.warn(
-          'Could not get userData path, using default storage location'
+          'Could not get userData path, using default storage location',
         );
       }
     } catch (error) {
       console.error(
         'Failed to set persistent storage path, falling back to default:',
-        error
+        error,
       );
       // If userData path fails, electron-json-storage will use its default location
     }
@@ -42,13 +41,9 @@ export class StorageService {
   }
 
   saveAll(cb?: Function) {
-    this.electronService.storage?.set(
-      this._storageKey,
-      this._storage,
-      () => {
-        cb && cb();
-      }
-    );
+    this.electronService.storage?.set(this._storageKey, this._storage, () => {
+      cb && cb();
+    });
   }
 
   getAll() {
@@ -72,7 +67,7 @@ export class StorageService {
   setOne(elt: string, value: any) {
     this._storage[elt] = value;
     // Automatically save to disk after each modification to ensure persistence
-    // this.saveAll();
+    this.saveAll();
   }
 
   getStorageKey() {
