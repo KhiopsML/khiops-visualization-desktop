@@ -91,6 +91,9 @@ function createWindow(): BrowserWindow {
       allowRunningInsecureContent: serve,
       contextIsolation: false, // false if you want to run e2e test with Spectron
     },
+    titleBarStyle: 'default',
+    darkTheme: false,
+    backgroundColor: '#ffffff',
   });
 
   // Enable remote for main process
@@ -111,8 +114,8 @@ function createWindow(): BrowserWindow {
     electronReload(
       path.join(
         __dirname,
-        '../visualization-component/dist/khiops-webcomponent/'
-      )
+        '../visualization-component/dist/khiops-webcomponent/',
+      ),
     );
     const setupReloading = require('../electron-reload.js');
     setupReloading(win);
@@ -216,7 +219,7 @@ ipcMain.handle(
     } catch (error) {
       console.log('error', error);
     }
-  }
+  },
 );
 
 function checkForUpdates(channel: string) {
@@ -320,7 +323,7 @@ autoUpdater.on(
         autoUpdater.quitAndInstall(true, true);
       }
     });
-  }
+  },
 );
 
 autoUpdater.on('error', (message: any) => {
