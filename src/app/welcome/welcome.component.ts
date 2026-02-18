@@ -38,7 +38,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
         } else {
           setTimeout(() => {
             this.visible = true;
-          }, 0);
+          }, 250);
         }
         this.cdr.detectChanges();
       },
