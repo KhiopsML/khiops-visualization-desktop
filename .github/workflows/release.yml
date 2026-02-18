@@ -215,13 +215,13 @@ jobs:
         continue-on-error: true
 
       # Delete old non signed exe from release
-      # it is named like : khiops-visualization-Setup-X.Y.Z.exe
+      # it is named like : khiops-visualization-desktop-Setup-X.Y.Z.exe
       - name: Delete old non signed exe from release
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           Write-Output "🗑️  Deleting old non-signed executables..."
-          $files = Get-ChildItem -Path release -Filter "khiops-visualization-Setup-*.exe"
+          $files = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe"
           if ($files) {
               Remove-Item $files.FullName -Force
               Write-Output "✅ Old non-signed executables deleted."
@@ -245,9 +245,9 @@ jobs:
           }
         continue-on-error: true
 
-      # Rename signed exe from khiops.visualization.Setup-X.Y.Z.exe to khiops-visualization-Setup-X.Y.Z.exe
-      # and blockmap from khiops.visualization.Setup-X.Y.Z.exe.blockmap to khiops-visualization-Setup-X.Y.Z.exe.blockmap
-      - name: Rename signed executable and blockmap khiops-visualization-Setup-*.exe
+      # Rename signed exe from khiops.visualization.Setup-X.Y.Z.exe to khiops-visualization-desktop-Setup-X.Y.Z.exe
+      # and blockmap from khiops.visualization.Setup-X.Y.Z.exe.blockmap to khiops-visualization-desktop-Setup-X.Y.Z.exe.blockmap
+      - name: Rename signed executable and blockmap khiops-visualization-desktop-Setup-*.exe
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -259,14 +259,14 @@ jobs:
             exit 1
           }
           $version = $env:GITHUB_REF.Split('/')[-1].TrimStart('v')
-          $new_exe_name = "release/khiops-visualization-Setup-$version.exe"
+          $new_exe_name = "release/khiops-visualization-desktop-Setup-$version.exe"
           Move-Item $signed_exe.FullName $new_exe_name
           Write-Output "✅ Renamed signed executable to: $new_exe_name"
 
           # Find and rename the corresponding blockmap file
           $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe.blockmap" | Select-Object -First 1
           if ($blockmap_file) {
-            $new_blockmap_name = "release/khiops-visualization-Setup-$version.exe.blockmap"
+            $new_blockmap_name = "release/khiops-visualization-desktop-Setup-$version.exe.blockmap"
             Move-Item $blockmap_file.FullName $new_blockmap_name
             Write-Output "✅ Renamed blockmap file to: $new_blockmap_name"
           } else {
@@ -279,7 +279,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Filter "khiops-visualization-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe" | Select-Object -First 1
           if (-not $exe) {
             Write-Error "No signed executable found in release directory."
             exit 1
