@@ -402,8 +402,9 @@ export class FileSystemService {
    */
   handleSaveBeforeAction(finalAction: () => void | Promise<void>) {
     const activeComponentType = this.configService.getActiveComponentType();
+    const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
-    if (activeComponentType === 'covisualization') {
+    if (activeComponentType === 'covisualization' && hasCurrentFile) {
       this.configService.openSaveBeforeQuitDialog((e: string) => {
         if (e === 'confirm') {
           const datasToSave = this.configService
@@ -428,9 +429,10 @@ export class FileSystemService {
     }
   }
 
-  closeFile() {
+  closeFile(callbackDone?: Function) {
     this.handleSaveBeforeAction(() => {
       this.performCloseFile();
+      callbackDone && callbackDone();
     });
   }
 

@@ -71,8 +71,14 @@ export class MenuService {
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CLOSE_FILE'),
+          enabled: !!(
+            this.fileSystemService.currentFilePath &&
+            this.fileSystemService.currentFilePath !== ''
+          ),
           click: () => {
-            this.closeFile();
+            this.closeFile(() => {
+              refreshCb && refreshCb();
+            });
           },
         },
         {
@@ -183,8 +189,9 @@ export class MenuService {
           const filename = opendFiles.files[i];
           menuFile.submenu.splice(2, 0, {
             label: filename,
-            click: async () => {
-              await this.openFile(filename, refreshCb);
+            enabled: true,
+            click: () => {
+              this.openFile(filename, refreshCb);
             },
           });
         }
@@ -373,8 +380,10 @@ export class MenuService {
     });
   }
 
-  closeFile() {
-    this.fileSystemService.closeFile();
+  closeFile(callbackDone?: Function) {
+    this.fileSystemService.closeFile(() => {
+      callbackDone && callbackDone();
+    });
   }
 
   setChannel(channel: string) {
