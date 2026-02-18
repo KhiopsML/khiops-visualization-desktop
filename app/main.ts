@@ -6,22 +6,22 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { machineIdSync } from 'node-machine-id';
 const { autoUpdater } = require('electron-updater');
-const log = require('electron-log');
 import * as url from 'url';
-const storage = require('electron-json-storage');
-require('electron-debug');
 
+const log = require('electron-log');
 let win: BrowserWindow | null = null;
 let isQuitting = false;
 const args = process.argv.slice(1),
   serve = args.some((val) => val === '--serve');
 const { dialog } = require('electron');
 const { ipcMain } = require('electron');
+if (serve) require('electron-debug');
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
 // log.transports.file.level = 'info';
 // log.transports.file.file = __dirname + '/electron.log';
+// const storage = require('electron-json-storage');
 log.warn('App Desktop starting...');
 autoUpdater.autoInstallOnAppQuit = false;
 autoUpdater.autoDownload = false;
@@ -29,11 +29,11 @@ autoUpdater.allowDowngrade = false;
 
 // Try to fix ERR_HTTP2_PROTOCOL_ERROR
 // https://github.com/electron-userland/electron-builder/issues/4987
-app.commandLine.appendSwitch('disable-http2');
-autoUpdater.requestHeaders = {
-  'Cache-Control':
-    'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-};
+// app.commandLine.appendSwitch('disable-http2');
+// autoUpdater.requestHeaders = {
+//   'Cache-Control':
+//     'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+// };
 
 ipcMain.handle('get-machine-id', async () => {
   try {
@@ -86,6 +86,7 @@ function createWindow(): BrowserWindow {
     height: size.height,
     minWidth: 600,
     minHeight: 300,
+    show: false, // Show the window after it is ready to prevent visual glitches
     webPreferences: {
       nodeIntegration: true,
       allowRunningInsecureContent: serve,
@@ -94,6 +95,10 @@ function createWindow(): BrowserWindow {
     titleBarStyle: 'default',
     darkTheme: false,
     backgroundColor: '#ffffff',
+  });
+
+  win.once('ready-to-show', () => {
+    win?.show();
   });
 
   // Enable remote for main process
@@ -226,7 +231,9 @@ function checkForUpdates(channel: string) {
   autoUpdater.allowPrerelease = channel === 'beta';
   log.info('checkForUpdates');
   // autoUpdater.forceDevUpdateConfig = true;
-  autoUpdater.checkForUpdates();
+  setTimeout(() => {
+    autoUpdater.checkForUpdates();
+  }, 10000);
 }
 
 ipcMain.handle('set-title-bar-name', async (_event: any, arg: any) => {
