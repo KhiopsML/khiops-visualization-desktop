@@ -33,6 +33,7 @@
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
     "ng": "ng",
+    "e2e": "ng e2e",
     "dev": "./scripts/build-dev-watch.sh",
     "buildNstart": "npm run build-visu && npm-run-all -p electron:serve ng:serve",
     "quickbuildNstart": "npm run quickbuild-visu && npm-run-all -p electron:serve ng:serve",
@@ -64,7 +65,9 @@
     "lint": "ng lint",
     "addHeader": "ts-node scripts/add-header.js",
     "updateElectron": "npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxypac.si.francetelecom.fr:8080/ yarn add electron@latest --force --legacy-peer-deps",
-    "updateVersions": "ncu -u --target minor"
+    "updateVersions": "ncu -u --target minor",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
   },
   "dependencies": {
     "@angular/common": "20.3.16",
@@ -102,6 +105,7 @@
     "@angular/build": "20.3.15",
     "@angular/cli": "20.3.15",
     "@angular/compiler-cli": "20.3.16",
+    "@cypress/schematic": "5.0.0",
     "@electron/notarize": "3.1.1",
     "@ngx-translate/core": "17.0.0",
     "@ngx-translate/http-loader": "17.0.0",

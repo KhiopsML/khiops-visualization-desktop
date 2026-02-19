@@ -6,7 +6,8 @@
       "enabled": true,
       "path": ".angular/cache",
       "environment": "all"
-    }
+    },
+    "schematicCollections": ["@cypress/schematic", "@schematics/angular"]
   },
   "version": 1,
   "newProjectRoot": "projects",
@@ -158,6 +159,51 @@
           "options": {
             "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
           }
+        },
+        "cypress-run": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "angular-electron:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "angular-electron:serve:production"
+            }
+          }
+        },
+        "cypress-open": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "watch": true,
+            "headless": false
+          }
+        },
+        "ct": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "angular-electron:serve",
+            "watch": true,
+            "headless": false,
+            "testingType": "component"
+          },
+          "configurations": {
+            "development": {
+              "devServerTarget": "angular-electron:serve:development"
+            }
+          }
+        },
+        "e2e": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "angular-electron:serve",
+            "watch": true,
+            "headless": false
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "angular-electron:serve:production"
+            }
+          }
         }
       }
     },
@@ -169,6 +215,53 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": ["e2e/**/*.ts"]
+          }
+        },
+        "cypress-run": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "angular-electron-e2e:serve",
+            "configFile": "e2e/cypress.config.js"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "angular-electron-e2e:serve:production"
+            }
+          }
+        },
+        "cypress-open": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "watch": true,
+            "headless": false,
+            "configFile": "e2e/cypress.config.js"
+          }
+        },
+        "ct": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "angular-electron-e2e:serve",
+            "watch": true,
+            "headless": false,
+            "testingType": "component"
+          },
+          "configurations": {
+            "development": {
+              "devServerTarget": "angular-electron-e2e:serve:development"
+            }
+          }
+        },
+        "e2e": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "angular-electron-e2e:serve",
+            "watch": true,
+            "headless": false
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "angular-electron-e2e:serve:production"
+            }
           }
         }
       }
