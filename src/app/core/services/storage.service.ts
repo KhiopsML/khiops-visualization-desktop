@@ -6,7 +6,6 @@
 
 import { Injectable } from '@angular/core';
 import { ElectronService } from './electron.service';
-import * as path from 'path';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +18,16 @@ export class StorageService {
     try {
       // Use userData directory instead of temp directory to persist data across updates
       // This ensures that settings, cookies consent, channel, history... are preserved during OTA updates
+      const path = this.electronService.isElectron
+        ? window.require('path')
+        : null;
+      if (!path) {
+        console.warn(
+          'Path module not available, using default storage location',
+        );
+        return;
+      }
+
       const userDataPath = path.join(
         this.electronService.remote?.app?.getPath('documents') || '',
         'khiops-visualization-desktop',
