@@ -18,11 +18,11 @@ jobs:
     strategy:
       matrix:
         include:
-          # - os: macos-latest
-          # - os: ubuntu-latest
-          #   arch: x64
-          # - os: ubuntu-24.04-arm
-          #   arch: arm64
+          - os: macos-latest
+          - os: ubuntu-latest
+            arch: x64
+          - os: ubuntu-24.04-arm
+            arch: arm64
           - os: windows-latest
     steps:
       - name: Check out Git repository
