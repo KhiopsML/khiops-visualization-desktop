@@ -18,11 +18,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-latest
-          - os: ubuntu-latest
-            arch: x64
-          - os: ubuntu-24.04-arm
-            arch: arm64
+          # - os: macos-latest
+          # - os: ubuntu-latest
+          #   arch: x64
+          # - os: ubuntu-24.04-arm
+          #   arch: arm64
           - os: windows-latest
     steps:
       - name: Check out Git repository
@@ -125,7 +125,7 @@ jobs:
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
           # On Windows, we sign the exe after building, so we release via ncipollo/release-action instead
-          release: ${{ startsWith(github.ref, 'refs/tags/v') && runner.os != 'Windows' }}
+          release: false
           args: ${{ matrix.arch == 'arm64' && '--arm64 --linux' || '' }}
 
           mac_certs: ${{ secrets.mac_certs }}
