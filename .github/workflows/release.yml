@@ -126,7 +126,9 @@ jobs:
           # release the app after building
           # On Windows, we sign the exe after building, so we release via ncipollo/release-action instead
           release: false
-          args: ${{ matrix.arch == 'arm64' && '--arm64 --linux' || '' }}
+          args: >-
+            ${{ runner.os == 'Windows' && '--publish never' ||
+                matrix.arch == 'arm64' && '--arm64 --linux' || '' }}
 
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
