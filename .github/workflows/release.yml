@@ -124,8 +124,8 @@ jobs:
 
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
-          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-          # release: true
+          # On Windows, we sign the exe after building, so we release via ncipollo/release-action instead
+          release: ${{ startsWith(github.ref, 'refs/tags/v') && runner.os != 'Windows' }}
           args: ${{ matrix.arch == 'arm64' && '--arm64 --linux' || '' }}
 
           mac_certs: ${{ secrets.mac_certs }}
@@ -221,7 +221,7 @@ jobs:
           }
         continue-on-error: true
 
-      # Update latest.yml sha for Windows
+      # Update latest.yml sha, size, path, and url for the signed Windows exe
       - name: Update latest.yml for Windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -241,8 +241,13 @@ jobs:
             Write-Error "latest.yml not found."
             exit 1
           }
-          (Get-Content $latestYml) -replace "(sha512:\s*).+", "`$1$base64" | Set-Content $latestYml
-          Write-Output "✅ Updated sha512 in latest.yml"
+          $content = Get-Content $latestYml
+          $content = $content -replace "(sha512:\s*).+", "`$1$base64"
+          $content = $content -replace "(size:\s*).+", "`$1$size"
+          $content = $content -replace "(url:\s*).+", "`$1$($exe.Name)"
+          $content = $content -replace "(path:\s*).+", "`$1$($exe.Name)"
+          $content | Set-Content $latestYml
+          Write-Output "✅ Updated latest.yml (sha512, size, path, url) for: $($exe.Name)"
         continue-on-error: true
 
       # Now we can create the release with the signed files
