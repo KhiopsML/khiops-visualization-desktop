@@ -12,7 +12,9 @@ import {
   ElementRef,
   NgZone,
   ViewChild,
+  CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
 import { ElectronService } from './core/services/electron.service';
 import { ConfigService } from './core/services/config.service';
@@ -21,12 +23,16 @@ import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
 import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
+import { WelcomeComponent } from './welcome/welcome.component';
+import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, WelcomeComponent, BigFileLoadingComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AppComponent implements AfterViewInit {
   @ViewChild('visualizationComponent', {

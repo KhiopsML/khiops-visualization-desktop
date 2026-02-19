@@ -11,7 +11,7 @@
     "downlevelIteration": true,
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "strict": true,
     "experimentalDecorators": true,
@@ -26,9 +26,7 @@
     "strictTemplates": true,
     "annotateForClosureCompiler": true,
     "strictInjectionParameters": true,
-    "skipTemplateCodegen": false,
     "preserveWhitespaces": false,
-    "skipMetadataEmit": false,
     "disableTypeScriptVersionCheck": true
   }
 }

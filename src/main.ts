@@ -4,18 +4,42 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { enableProdMode } from '@angular/core';
+import { enableProdMode, provideAppInitializer, inject, importProvidersFrom } from '@angular/core';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
-import { AppModule } from './app/app.module';
+import { setupTranslateFactory } from './app/app.module';
 import { APP_CONFIG } from './environments/environment';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { CommonModule } from '@angular/common';
+import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { MatomoModule } from 'ngx-matomo-client';
+import { AppComponent } from './app/app.component';
+
+
 
 if (APP_CONFIG.production) {
   enableProdMode();
 }
 
-platformBrowserDynamic()
-  .bootstrapModule(AppModule, {
-    preserveWhitespaces: false
-  })
+bootstrapApplication(AppComponent, {
+    providers: [
+        importProvidersFrom(CommonModule, BrowserModule, FormsModule, TranslateModule.forRoot({
+            loader: provideTranslateHttpLoader({
+                prefix: './assets/i18n/',
+                suffix: '.json',
+            }),
+        }), MatomoModule.forRoot({
+            mode: 'deferred', // defer loading to set unique visitorId
+        })),
+        provideHttpClient(withInterceptorsFromDi()),
+        TranslateService,
+        provideAppInitializer(() => {
+            const initializerFn = setupTranslateFactory(inject(TranslateService));
+            return initializerFn();
+        }),
+    ]
+})
   .catch(err => console.error(err));

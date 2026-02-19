@@ -5,6 +5,8 @@
  */
 
 import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { Subscription } from 'rxjs';
 import { FileLoaderI } from '../interfaces/file-system';
@@ -13,7 +15,8 @@ import { FileLoaderI } from '../interfaces/file-system';
   selector: 'app-big-file-loading',
   templateUrl: './big-file-loading.component.html',
   styleUrl: './big-file-loading.component.scss',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, TranslateModule],
 })
 export class BigFileLoadingComponent implements OnInit, OnDestroy {
   private fileLoaderSub?: Subscription;
