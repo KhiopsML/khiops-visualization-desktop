@@ -118,51 +118,66 @@ export class FileSystemService {
 
   async openFile(filename: string, callbackDone?: Function) {
     if (filename) {
-      // For JSON files, read and analyze content first to determine component type
-      const extension = filename.toLowerCase().split('.').pop();
-      let jsonData: any = null;
-      let componentType: 'visualization' | 'covisualization' = 'visualization';
+      // Check if we need to save current work before opening new file
+      const currentActiveType = this.configService.getActiveComponentType();
+      const hasCurrentFile =
+        this.currentFilePath && this.currentFilePath !== '';
 
-      if (extension === 'json') {
-        try {
-          const content = await this.readFileContent(filename);
-          jsonData = JSON.parse(content);
-        } catch (error) {
-          console.warn('Error pre-reading JSON file for analysis:', error);
-        }
-      } else if (extension === 'khcj') {
-        componentType = 'covisualization';
-      } else if (extension === 'khj') {
-        componentType = 'visualization';
-      }
-
-      await this.configService.requestComponentChange(filename, jsonData);
-      this.configService.setDatas();
-
-      this.readFile(filename)
-        .then((datas: any) => {
-          this.setTitleBar(filename, componentType);
-          this.setFileHistory(filename);
-          // Add small delay to ensure component is fully rendered before setting data
-          setTimeout(() => {
-            this.configService.setDatas(datas);
-            if (callbackDone) {
-              callbackDone();
-            }
-          }, 250);
-        })
-        .catch((error: any) => {
-          console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
-          this.closeFile();
-          Toastify({
-            text: this.translate.instant('OPEN_FILE_ERROR'),
-            gravity: 'bottom',
-            position: 'center',
-            duration: 3000,
-          }).showToast();
-          this._fileLoaderSub.next(this.fileLoaderDatas);
+      if (hasCurrentFile && currentActiveType === 'covisualization') {
+        this.handleSaveBeforeAction(async () => {
+          await this.performOpenFile(filename, callbackDone);
         });
+      } else {
+        await this.performOpenFile(filename, callbackDone);
+      }
     }
+  }
+
+  private async performOpenFile(filename: string, callbackDone?: Function) {
+    // For JSON files, read and analyze content first to determine component type
+    const extension = filename.toLowerCase().split('.').pop();
+    let jsonData: any = null;
+    let componentType: 'visualization' | 'covisualization' = 'visualization';
+
+    if (extension === 'json') {
+      try {
+        const content = await this.readFileContent(filename);
+        jsonData = JSON.parse(content);
+      } catch (error) {
+        console.warn('Error pre-reading JSON file for analysis:', error);
+      }
+    } else if (extension === 'khcj') {
+      componentType = 'covisualization';
+    } else if (extension === 'khj') {
+      componentType = 'visualization';
+    }
+
+    await this.configService.requestComponentChange(filename, jsonData);
+    this.configService.setDatas();
+
+    this.readFile(filename)
+      .then((datas: any) => {
+        this.setTitleBar(filename, componentType);
+        this.setFileHistory(filename);
+        // Add small delay to ensure component is fully rendered before setting data
+        setTimeout(() => {
+          this.configService.setDatas(datas);
+          if (callbackDone) {
+            callbackDone();
+          }
+        }, 250);
+      })
+      .catch((error: any) => {
+        console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
+        this.closeFile();
+        Toastify({
+          text: this.translate.instant('OPEN_FILE_ERROR'),
+          gravity: 'bottom',
+          position: 'center',
+          duration: 3000,
+        }).showToast();
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+      });
   }
   private readFileContent(filename: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -381,7 +396,47 @@ export class FileSystemService {
     });
   }
 
-  closeFile() {
+  /**
+   * Generic method to handle save before action logic for covisualization mode
+   * @param finalAction The action to execute after save/cancel operations
+   */
+  handleSaveBeforeAction(finalAction: () => void | Promise<void>) {
+    const activeComponentType = this.configService.getActiveComponentType();
+    const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
+
+    if (activeComponentType === 'covisualization' && hasCurrentFile) {
+      this.configService.openSaveBeforeQuitDialog((e: string) => {
+        if (e === 'confirm') {
+          const datasToSave = this.configService
+            .getConfig()
+            .constructDatasToSave();
+          this.saveFile(this.currentFilePath, datasToSave);
+          this.storageService.saveAll(() => {
+            finalAction();
+          });
+        } else if (e === 'cancel') {
+          return;
+        } else if (e === 'reject') {
+          this.storageService.saveAll(() => {
+            finalAction();
+          });
+        }
+      });
+    } else {
+      this.storageService.saveAll(() => {
+        finalAction();
+      });
+    }
+  }
+
+  closeFile(callbackDone?: Function) {
+    this.handleSaveBeforeAction(() => {
+      this.performCloseFile();
+      callbackDone && callbackDone();
+    });
+  }
+
+  private performCloseFile() {
     this.initialize();
     this.ngzone.run(() => {
       this.configService.setDatas();

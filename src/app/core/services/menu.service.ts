@@ -13,7 +13,7 @@ import { ConfigService } from './config.service';
 import { StorageService } from './storage.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class MenuService {
   private currentChannel: string = 'latest';
@@ -24,7 +24,7 @@ export class MenuService {
     private configService: ConfigService,
     private translate: TranslateService,
     private fileSystemService: FileSystemService,
-    private storageService: StorageService
+    private storageService: StorageService,
   ) {
     this.currentChannel = this.storageService.getOne('CHANNEL') || 'latest';
 
@@ -32,7 +32,7 @@ export class MenuService {
       try {
         await this.electronService.ipcRenderer?.invoke(
           'launch-check-for-update',
-          this.currentChannel
+          this.currentChannel,
         );
       } catch (error) {
         console.log('error', error);
@@ -49,7 +49,7 @@ export class MenuService {
     btnUpdateText: string = '',
     refreshCb: Function | undefined = undefined,
     updateCb: Function | undefined = undefined,
-    activeComponent: 'visualization' | 'covisualization' = 'visualization'
+    activeComponent: 'visualization' | 'covisualization' = 'visualization',
   ) {
     const opendFiles = this.fileSystemService.getFileHistory();
 
@@ -61,22 +61,28 @@ export class MenuService {
           accelerator: 'CommandOrControl+O',
           click: () => {
             this.openFileDialog(refreshCb);
-          }
+          },
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CLOSE_FILE'),
+          enabled: !!(
+            this.fileSystemService.currentFilePath &&
+            this.fileSystemService.currentFilePath !== ''
+          ),
           click: () => {
-            this.closeFile();
-          }
+            this.closeFile(() => {
+              refreshCb && refreshCb();
+            });
+          },
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         ...(activeComponent === 'covisualization'
           ? [
@@ -85,27 +91,27 @@ export class MenuService {
                 accelerator: 'CommandOrControl+S',
                 click: () => {
                   this.save();
-                }
+                },
               },
               {
                 label: this.translate.instant('GLOBAL_MENU_SAVE_AS'),
                 accelerator: 'CommandOrControl+Shift+S',
                 click: () => {
                   this.saveAs();
-                }
+                },
               },
               {
                 label: this.translate.instant(
-                  'GLOBAL_MENU_SAVE_CURRENT_HIERARCHY_AS'
+                  'GLOBAL_MENU_SAVE_CURRENT_HIERARCHY_AS',
                 ),
                 accelerator: 'CommandOrControl+Shift+Alt+S',
                 click: () => {
                   this.saveCurrentHierarchyAs();
-                }
+                },
               },
               {
-                type: 'separator'
-              }
+                type: 'separator',
+              },
             ]
           : []),
         {
@@ -120,13 +126,17 @@ export class MenuService {
                     .constructDatasToSave();
                   this.fileSystemService.save(datasToSave);
                   this.storageService.saveAll(async () => {
-                    await this.electronService.ipcRenderer?.invoke('app-relaunch');
+                    await this.electronService.ipcRenderer?.invoke(
+                      'app-relaunch',
+                    );
                   });
                 } else if (e === 'cancel') {
                   return;
                 } else if (e === 'reject') {
                   this.storageService.saveAll(async () => {
-                    await this.electronService.ipcRenderer?.invoke('app-relaunch');
+                    await this.electronService.ipcRenderer?.invoke(
+                      'app-relaunch',
+                    );
                   });
                 }
               });
@@ -135,7 +145,7 @@ export class MenuService {
                 await this.electronService.ipcRenderer?.invoke('app-relaunch');
               });
             }
-          }
+          },
         },
         {
           label: this.translate.instant('GLOBAL_MENU_EXIT'),
@@ -164,9 +174,9 @@ export class MenuService {
                 await this.electronService.ipcRenderer?.invoke('app-quit');
               });
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     };
 
     menuFile.submenu[3].accelerator = 'CommandOrControl+W';
@@ -179,9 +189,10 @@ export class MenuService {
           const filename = opendFiles.files[i];
           menuFile.submenu.splice(2, 0, {
             label: filename,
-            click: async () => {
-              await this.openFile(filename, refreshCb);
-            }
+            enabled: true,
+            click: () => {
+              this.openFile(filename, refreshCb);
+            },
           });
         }
       }
@@ -191,10 +202,10 @@ export class MenuService {
       label: this.translate.instant('GLOBAL_MENU_HELP'),
       submenu: [
         {
-          role: 'toggleDevTools'
+          role: 'toggleDevTools',
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           label:
@@ -203,9 +214,9 @@ export class MenuService {
             LibVersionService.getAppVersion(),
           click: () => {
             this.electronService.shell.openExternal(
-              'https://github.com/KhiopsML/khiops-visualization-desktop/releases'
+              'https://github.com/KhiopsML/khiops-visualization-desktop/releases',
             );
-          }
+          },
         },
         {
           label:
@@ -214,23 +225,23 @@ export class MenuService {
             LibVersionService.getLibVersion(),
           click: () => {
             this.electronService.shell.openExternal(
-              'https://github.com/KhiopsML/khiops-visualization/releases'
+              'https://github.com/KhiopsML/khiops-visualization/releases',
             );
-          }
+          },
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           label: this.translate.instant('GLOBAL_MENU_RELEASE_NOTES'),
           click: () => {
             this.electronService.shell.openExternal(
-              'https://github.com/KhiopsML/khiops-visualization-desktop/releases'
+              'https://github.com/KhiopsML/khiops-visualization-desktop/releases',
             );
-          }
+          },
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           label: this.translate.instant('GLOBAL_MENU_REPORT_A_BUG'),
@@ -259,35 +270,35 @@ export class MenuService {
                 '&body=' +
                 encodeURIComponent(message),
               // @ts-ignore
-              '_self'
+              '_self',
             );
-          }
-        }
-      ]
+          },
+        },
+      ],
     };
 
     const menuView = {
       label: this.translate.instant('GLOBAL_MENU_VIEW'),
       submenu: [
         {
-          role: 'togglefullscreen'
+          role: 'togglefullscreen',
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           role: 'resetZoom',
-          accelerator: 'CommandOrControl+nummult'
+          accelerator: 'CommandOrControl+nummult',
         },
         {
           role: 'zoomIn',
-          accelerator: 'CommandOrControl+numadd'
+          accelerator: 'CommandOrControl+numadd',
         },
         {
           role: 'zoomOut',
-          accelerator: 'CommandOrControl+numsub'
-        }
-      ]
+          accelerator: 'CommandOrControl+numsub',
+        },
+      ],
     };
 
     const menuTemplate = [];
@@ -308,10 +319,10 @@ export class MenuService {
             if (btnUpdate === 'update-available' && !this.updateInProgress) {
               updateCb && updateCb();
             }
-          }
+          },
         },
         {
-          type: 'separator'
+          type: 'separator',
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CHANNELS'),
@@ -324,7 +335,7 @@ export class MenuService {
                   this.setChannel('latest');
                 }
               },
-              checked: this.currentChannel === 'latest'
+              checked: this.currentChannel === 'latest',
             },
             {
               label: this.translate.instant('GLOBAL_MENU_BETA'),
@@ -343,11 +354,11 @@ export class MenuService {
                   });
                 }
               },
-              checked: this.currentChannel === 'beta'
-            }
-          ]
-        }
-      ]
+              checked: this.currentChannel === 'beta',
+            },
+          ],
+        },
+      ],
     };
 
     menuTemplate.push(menuUpdate);
@@ -357,20 +368,22 @@ export class MenuService {
 
   openFileDialog(cb: any = undefined) {
     this.fileSystemService.openFileDialog(() => {
-      cb();
       this.storageService.saveAll();
+      cb();
     });
   }
 
   async openFile(filename: string, callbackDone: Function | undefined) {
     await this.fileSystemService.openFile(filename, () => {
-      callbackDone && callbackDone();
       this.storageService.saveAll();
+      callbackDone && callbackDone();
     });
   }
 
-  closeFile() {
-    this.fileSystemService.closeFile();
+  closeFile(callbackDone?: Function) {
+    this.fileSystemService.closeFile(() => {
+      callbackDone && callbackDone();
+    });
   }
 
   setChannel(channel: string) {
@@ -381,7 +394,7 @@ export class MenuService {
       try {
         await this.electronService.ipcRenderer?.invoke(
           'launch-check-for-update',
-          this.currentChannel
+          this.currentChannel,
         );
       } catch (error) {
         console.log('error', error);

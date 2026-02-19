@@ -1,7 +1,7 @@
 {
   "name": "khiops-visualization-desktop",
-  "title": "khiops Visualization Desktop",
-  "version": "11.4.0",
+  "title": "Khiops Visualization Desktop",
+  "version": "11.7.0",
   "description": "Khiops Visualization Desktop",
   "license": "BSD-3-Clause-Clear",
   "repository": "https://github.com/KhiopsML/khiops-visualization-desktop",

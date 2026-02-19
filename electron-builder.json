@@ -1,6 +1,6 @@
 {
   "asar": true,
-  "productName": "khiops visualization desktop",
+  "productName": "Khiops Visualization Desktop",
   "appId": "com.khiops.visualization.desktop",
   "afterSign": "./scripts/notarize.js",
   "directories": {

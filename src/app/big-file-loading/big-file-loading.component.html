@@ -1,5 +1,5 @@
 <div id="big-file-loading" *ngIf="visible">
-  <span>{{ 'LONG_LOADING' | translate }}</span>
+  <span *ngIf="isTextVisible">{{ 'LONG_LOADING' | translate }}</span>
   <div class="loading-dots">
     <div class="dot"></div>
     <div class="dot"></div>
