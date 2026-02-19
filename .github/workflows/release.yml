@@ -3,7 +3,7 @@ name: Build/release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
 
 env:
@@ -74,7 +74,6 @@ jobs:
         continue-on-error: true
 
       # Configuration of SAAS signature for Windows only
-
       - name: Validate secrets (Windows only)
         if: runner.os == 'Windows'
         run: |
@@ -112,12 +111,10 @@ jobs:
         shell: bash
         continue-on-error: true
 
-
-
       - name: Build/release Electron
         uses: samuelmeuli/action-electron-builder@v1.6.0
         with:
-          build_script_name: "build:prod"
+          build_script_name: 'build:prod'
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
@@ -163,36 +160,36 @@ jobs:
           Write-Output "✅ Listed all .exe files."
         continue-on-error: true
 
-      # Delete old non signed exe from release
-      # it is named like : khiops-visualization-desktop-Setup-X.Y.Z.exe
-      - name: Delete old non signed exe from release
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Output "🗑️  Deleting old non-signed executables..."
-          $files = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe"
-          if ($files) {
-              Remove-Item $files.FullName -Force
-              Write-Output "✅ Old non-signed executables deleted."
-          } else {
-              Write-Output "No old non-signed executables found."
-          }
-        continue-on-error: true
+      # # Delete old non signed exe from release
+      # # it is named like : khiops-visualization-desktop-Setup-X.Y.Z.exe
+      # - name: Delete old non signed exe from release
+      #   if: runner.os == 'Windows'
+      #   shell: pwsh
+      #   run: |
+      #     Write-Output "🗑️  Deleting old non-signed executables..."
+      #     $files = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe"
+      #     if ($files) {
+      #         Remove-Item $files.FullName -Force
+      #         Write-Output "✅ Old non-signed executables deleted."
+      #     } else {
+      #         Write-Output "No old non-signed executables found."
+      #     }
+      #   continue-on-error: true
 
-      # Delete old khiops.visualization.Setup.X.Y.Z.exe.blockmap
-      - name: Delete old blockmap files
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Output "🗑️  Deleting old blockmap files..."
-          $blockmap_files = Get-ChildItem -Path release -Filter "khiops.visualization.Setup.*.exe.blockmap"
-          if ($blockmap_files) {
-              Remove-Item $blockmap_files.FullName -Force
-              Write-Output "✅ Old blockmap files deleted."
-          } else {
-              Write-Output "No old blockmap files found."
-          }
-        continue-on-error: true
+      # # Delete old khiops.visualization.Setup.X.Y.Z.exe.blockmap
+      # - name: Delete old blockmap files
+      #   if: runner.os == 'Windows'
+      #   shell: pwsh
+      #   run: |
+      #     Write-Output "🗑️  Deleting old blockmap files..."
+      #     $blockmap_files = Get-ChildItem -Path release -Filter "khiops.visualization.Setup.*.exe.blockmap"
+      #     if ($blockmap_files) {
+      #         Remove-Item $blockmap_files.FullName -Force
+      #         Write-Output "✅ Old blockmap files deleted."
+      #     } else {
+      #         Write-Output "No old blockmap files found."
+      #     }
+      #   continue-on-error: true
 
       # Rename signed exe from "khiops visualization Desktop Setup X.Y.Z.exe" to "khiops-visualization-desktop-Setup-X.Y.Z.exe"
       # and blockmap from "khiops visualization Desktop Setup X.Y.Z.exe.blockmap" to "khiops-visualization-desktop-Setup-X.Y.Z.exe.blockmap"
