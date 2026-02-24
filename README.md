@@ -8,6 +8,8 @@
 
 This Electron application integrates [Khiops visualization](https://github.com/KhiopsML/khiops-visualization) into a native desktop interface. It enables users to intuitively and efficiently analyze and visualize machine learning data.
 
+**🌐 [Khiops Visualization Online Demo](https://khiopsml.github.io/khiops-visualization/)**
+
 ## 📋 Table of Contents
 
 - [About](#-about)
