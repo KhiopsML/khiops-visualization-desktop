@@ -11,6 +11,8 @@ import * as url from 'url';
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
 let isQuitting = false;
+let isUpdateReadyToInstall = false;
+let updateAutoInstallPending = false;
 const args = process.argv.slice(1),
   serve = args.some((val) => val === '--serve');
 const { dialog } = require('electron');
@@ -172,6 +174,11 @@ try {
   // Handle before-quit event to allow window closing
   app.on('before-quit', () => {
     isQuitting = true;
+    // If update is ready and pending auto-install on quit, install it silently
+    if (isUpdateReadyToInstall && updateAutoInstallPending) {
+      log.info('Installing update silently on app quit');
+      autoUpdater.quitAndInstall(true, true);
+    }
   });
 
   // Quit when all windows are closed.
@@ -272,27 +279,30 @@ ipcMain.handle('app-relaunch', () => {
   app.exit(0);
 });
 
+ipcMain.handle('install-update-now', () => {
+  log.info('install-update-now requested');
+  // Install silently and restart - isSilent:true, isForceRunAfter:true
+  autoUpdater.quitAndInstall(true, true);
+});
+
+ipcMain.handle('set-update-auto-install-on-quit', () => {
+  log.info('set-update-auto-install-on-quit requested');
+  updateAutoInstallPending = true;
+});
+
 autoUpdater.on('checking-for-update', () => {
   log.info('checking-for-update');
 });
 autoUpdater.on('update-available', (info: any) => {
   log.info('update-available', info);
-  // const dialogOpts: any = {
-  //   type: 'info',
-  //   title: 'Found Updates',
-  //   message: 'Found updates, do you want update now ?',
-  //   buttons: ['Ok', 'Cancel']
-  // };
-
-  // dialog.showMessageBox(win, dialogOpts).then(function (res) {
-  //   log.info('showMessageBox', res);
-  //   if (res.response === 0) {
-  //     autoUpdater.downloadUpdate();
-  //   }
-  // });
   setTimeout(function () {
     win?.webContents?.send('update-available', info);
   }, 2000);
+  // Auto-download after 5 seconds
+  setTimeout(function () {
+    log.info('Auto-starting download of available update');
+    autoUpdater.downloadUpdate();
+  }, 5000);
 });
 
 autoUpdater.on('update-not-available', (info: any) => {
@@ -311,24 +321,10 @@ autoUpdater.on(
   'update-downloaded',
   (event: any, releaseNotes: any, releaseName: any) => {
     log.info('update-downloaded', event);
-
-    const dialogOpts = {
-      type: 'info',
-      buttons: ['Restart and install'],
-      title: 'Application Update',
-      message: process.platform === 'win32' ? releaseNotes : releaseName,
-      detail:
-        'A new version has been downloaded. Restart the application to apply the updates.',
-    };
-
-    //@ts-ignore
-    dialog.showMessageBox(win, dialogOpts).then(function (res) {
-      log.info('showMessageBox', res);
-      if (res.response === 0) {
-        // isSilent: true â†’ no confirmation message
-        // isForceRunAfter: true â†’ automatic restart
-        autoUpdater.quitAndInstall(true, true);
-      }
+    isUpdateReadyToInstall = true;
+    win?.webContents?.send('update-ready', {
+      releaseNotes,
+      releaseName,
     });
   },
 );

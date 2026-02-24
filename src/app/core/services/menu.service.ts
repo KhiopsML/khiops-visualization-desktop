@@ -49,6 +49,7 @@ export class MenuService {
     btnUpdateText: string = '',
     refreshCb: Function | undefined = undefined,
     updateCb: Function | undefined = undefined,
+    installCb: Function | undefined = undefined,
     activeComponent: 'visualization' | 'covisualization' = 'visualization',
   ) {
     const opendFiles = this.fileSystemService.getFileHistory();
@@ -314,10 +315,14 @@ export class MenuService {
           label:
             btnUpdate === 'update-available'
               ? this.translate.instant('GLOBAL_UPDATE_CLICK_TO_UPDATE')
-              : btnUpdateText,
+              : btnUpdate === 'update-ready'
+                ? this.translate.instant('GLOBAL_INSTALL_AND_RESTART')
+                : btnUpdateText,
           click: () => {
             if (btnUpdate === 'update-available' && !this.updateInProgress) {
               updateCb && updateCb();
+            } else if (btnUpdate === 'update-ready') {
+              installCb && installCb();
             }
           },
         },
@@ -344,11 +349,11 @@ export class MenuService {
                 if (this.currentChannel !== 'beta') {
                   this.configService.openChannelDialog((e: string) => {
                     if (e === 'confirm') {
-                      // User confirm
+                      // User confirmed channel change
                       this.setChannel('beta');
                     } else if (e === 'cancel') {
                       this.setChannel('latest');
-                      // re construct the menu to set channel to latest
+                      // reconstruct the menu to set channel to latest
                       refreshCb && refreshCb();
                     }
                   });

@@ -49,6 +49,9 @@ export class AppComponent implements AfterViewInit {
   currentFileType?: string;
   btnUpdateText: string = '';
   btnUpdate?: string;
+  updateState: 'idle' | 'available' | 'downloading' | 'ready' = 'idle';
+  updateAvailableTimer?: any;
+  isUpdateInstalled = false;
 
   constructor(
     public ngzone: NgZone,
@@ -213,10 +216,14 @@ export class AppComponent implements AfterViewInit {
   addIpcRendererEvents() {
     this.electronService.ipcRenderer?.on('update-available', (event, arg) => {
       console.info('update-available', event, arg);
+      this.updateState = 'available';
       this.btnUpdate = 'update-available';
       this.btnUpdateText =
         '🔁 ' + this.translate.instant('GLOBAL_UPDATE_UPDATE_AVAILABLE');
       this.constructMenu();
+
+      // Auto-download will be triggered by main.ts after 5 seconds
+      // Show the "Update available" menu for 5 seconds, then UI will update when download starts
     });
     this.electronService.ipcRenderer?.on(
       'update-not-available',
@@ -236,22 +243,25 @@ export class AppComponent implements AfterViewInit {
       'download-progress-info',
       (event, arg) => {
         console.info('download-progress-info', arg && arg.percent);
-        if (arg.percent === 100) {
-          this.btnUpdate = 'download-complete';
-          this.btnUpdateText =
-            '✅ ' + this.translate.instant('GLOBAL_UPDATE_DOWNLOAD_COMPLETE');
-        } else {
-          this.btnUpdate = 'downloading';
-          this.btnUpdateText =
-            '🔁 ' +
-            this.translate.instant('GLOBAL_UPDATE_DOWNLOADING') +
-            ' ' +
-            parseInt(arg && arg.percent, 10) +
-            '%';
-        }
+        // Download progress update
+        this.updateState = 'downloading';
+        this.btnUpdate = 'downloading';
+        this.btnUpdateText =
+          '🔁 ' +
+          this.translate.instant('GLOBAL_UPDATE_DOWNLOADING') +
+          ' ' +
+          parseInt(arg && arg.percent, 10) +
+          '%';
         this.constructMenu();
       },
     );
+    this.electronService.ipcRenderer?.on('update-ready', (event, arg) => {
+      console.info('update-ready', event, arg);
+      this.updateState = 'ready';
+      this.btnUpdate = 'update-ready';
+      this.btnUpdateText = '✅ Update ready';
+      this.constructMenu();
+    });
     this.electronService.ipcRenderer?.on('before-quit', (event, arg) => {
       this.beforeQuit();
     });
@@ -283,9 +293,21 @@ export class AppComponent implements AfterViewInit {
   }
 
   beforeQuit() {
-    this.fileSystemService.handleSaveBeforeAction(async () => {
-      await this.electronService.ipcRenderer?.invoke('app-quit');
-    });
+    // If update is ready but not installed, mark for auto-install on quit
+    if (this.updateState === 'ready' && !this.isUpdateInstalled) {
+      (async () => {
+        await this.electronService.ipcRenderer?.invoke(
+          'set-update-auto-install-on-quit',
+        );
+        this.fileSystemService.handleSaveBeforeAction(async () => {
+          await this.electronService.ipcRenderer?.invoke('app-quit');
+        });
+      })();
+    } else {
+      this.fileSystemService.handleSaveBeforeAction(async () => {
+        await this.electronService.ipcRenderer?.invoke('app-quit');
+      });
+    }
   }
 
   constructMenu() {
@@ -307,6 +329,14 @@ export class AppComponent implements AfterViewInit {
             'launch-update-available',
           );
           this.constructMenu();
+        })();
+      },
+      () => {
+        // Install update when user clicks on "Install and restart"
+        (async () => {
+          console.info('Installing update now');
+          this.isUpdateInstalled = true;
+          await this.electronService.ipcRenderer?.invoke('install-update-now');
         })();
       },
       this.activeComponent,
