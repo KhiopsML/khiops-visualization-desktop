@@ -9,7 +9,6 @@ import { ElectronService } from './electron.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from './config.service';
 import { BehaviorSubject, Observable } from 'rxjs';
-// @ts-ignore
 import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
 import { FileLoaderI } from '../../interfaces/file-system';

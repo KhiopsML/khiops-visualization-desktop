@@ -6,6 +6,7 @@
 
 /* SystemJS module definition */
 declare const nodeModule: NodeModule;
+declare module 'toastify-js';
 interface NodeModule {
   id: string;
 }

@@ -123,7 +123,6 @@ export class AppComponent implements AfterViewInit {
       return;
     }
 
-    //@ts-ignore
     this.config.setConfig({
       appSource: 'ELECTRON',
       storage: 'ELECTRON',

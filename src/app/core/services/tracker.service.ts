@@ -30,7 +30,6 @@ export class TrackerService {
             trackers: [
               {
                 trackerUrl: 'https://matomo.apps.tech.orange/',
-                // @ts-ignore
                 siteId: APP_CONFIG.TRACKER_ID,
               },
             ],

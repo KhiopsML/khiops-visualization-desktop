@@ -270,7 +270,6 @@ export class MenuService {
                 subject +
                 '&body=' +
                 encodeURIComponent(message),
-              // @ts-ignore
               '_self',
             );
           },
