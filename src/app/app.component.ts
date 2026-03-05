@@ -47,6 +47,8 @@ export class AppComponent implements AfterViewInit {
   config: any;
   activeComponent: 'visualization' | 'covisualization' = 'visualization';
   currentFileType?: string;
+  isDragOver: boolean = false;
+  private dragCounter: number = 0;
   btnUpdateText: string = '';
   btnUpdate?: string;
   updateState: 'idle' | 'available' | 'downloading' | 'ready' = 'idle';
@@ -90,6 +92,9 @@ export class AppComponent implements AfterViewInit {
 
   setActiveComponent(componentType: 'visualization' | 'covisualization') {
     this.activeComponent = componentType;
+    // Update synchronously so that fileSystemService.readFile can use the correct type
+    // immediately without waiting for the 50ms timeout in continueSetActiveComponent
+    this.configService.setActiveComponentType(componentType);
     this.cdr.detectChanges();
 
     setTimeout(() => {
@@ -288,6 +293,89 @@ export class AppComponent implements AfterViewInit {
           });
         }, 500); // 500ms delay to ensure component initialization
       }
+    });
+  }
+
+  /**
+   * Handles drag enter event for file drop
+   */
+  onDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragCounter++;
+    if (this.dragCounter === 1) {
+      this.isDragOver = true;
+    }
+  }
+
+  /**
+   * Handles drag over event for file drop
+   */
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /**
+   * Handles drag leave event for file drop
+   */
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragCounter--;
+    if (this.dragCounter === 0) {
+      this.isDragOver = false;
+    }
+  }
+
+  /**
+   * Handles file drop event
+   */
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragCounter = 0;
+    this.isDragOver = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0 && files[0]) {
+      this.processDroppedFile(files[0]);
+    }
+  }
+
+  /**
+   * Processes the dropped file if it has a valid extension.
+   * Web components (BaseDragDropComponent) are disabled in Electron mode,
+   * so all DnD drops are handled exclusively here.
+   */
+  private processDroppedFile(file: File): void {
+    const validExtensions = ['.json', '.khj', '.khcj'];
+    const fileExtension = file.name
+      .toLowerCase()
+      .substring(file.name.lastIndexOf('.'));
+
+    if (!validExtensions.includes(fileExtension)) {
+      console.warn(
+        `Invalid file extension: ${fileExtension}. Supported extensions: ${validExtensions.join(', ')}`,
+      );
+      return;
+    }
+
+    if (!this.electronService.isElectron) {
+      return;
+    }
+
+    // The file was dropped on a non-web-component area (welcome screen, etc.).
+    // Handle it directly through fileSystemService.openFile which manages
+    // component switching, welcome screen, and data loading.
+    const path = this.electronService.electron.webUtils.getPathForFile(file);
+    if (!path) {
+      return;
+    }
+
+    this.currentFileType = path;
+    this.fileSystemService.openFile(path, () => {
+      this.constructMenu();
     });
   }
 
