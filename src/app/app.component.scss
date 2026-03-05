@@ -57,6 +57,7 @@ app-welcome {
     }
 
     &::after {
+      font-family: Arial, Helvetica, sans-serif;
       content: 'Drop your JSON, KHJ or KHCJ file here';
       position: fixed;
       top: 50%;
