@@ -179,12 +179,12 @@
     "@angular-devkit/core" "21.1.5"
     rxjs "7.8.2"
 
-"@angular-devkit/architect@0.2102.0":
-  version "0.2102.0"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.0.tgz#f4041ec4341f05dadbe843fa964e2397f99b538d"
-  integrity sha512-kYFwTNzToG2SJMxj2f41w3QRtdqlrFuF+bpZrtIaHOP078Ktld8EPIp9KqB0Y46Vvs69ifby5Q1/wPD9wA3iaw==
+"@angular-devkit/architect@0.2102.1":
+  version "0.2102.1"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.1.tgz#580bba6767a58283fcb1a3fd0246677edc714839"
+  integrity sha512-x2Qqz6oLYvEh9UBUG0AP1A4zROO/VP+k+zM9+4c2uZw1uqoBQFmutqgzncjVU7cR9R0RApgx9JRZHDFtQru68w==
   dependencies:
-    "@angular-devkit/core" "21.2.0"
+    "@angular-devkit/core" "21.2.1"
     rxjs "7.8.2"
 
 "@angular-devkit/build-angular@^21.0.0":
@@ -281,10 +281,10 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/core@21.2.0":
-  version "21.2.0"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.0.tgz#c09ebb5f4919c56c43322039a72025c7bfdb4246"
-  integrity sha512-HZdTn46Ca6qbb9Zef8R/+TWsk6mNKRm4rJyL3PxHP6HnVCwSPNZ0LNN9BjVREBs+UlRdXqBGFBZh5D1nBgu5GQ==
+"@angular-devkit/core@21.2.1":
+  version "21.2.1"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.1.tgz#131b1b591c20ca04e6bf2cf7a4173d16b77cd82f"
+  integrity sha512-TpXGjERqVPN8EPt7LdmWAwh0oNQ/6uWFutzGZiXhJy81n1zb1O1XrqhRAmvP1cAo5O+na6IV2JkkCmxL6F8GUg==
   dependencies:
     ajv "8.18.0"
     ajv-formats "3.0.1"
@@ -293,12 +293,12 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/schematics@21.2.0":
-  version "21.2.0"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-21.2.0.tgz#16e741f34552200d91322261bf08e3966574d03e"
-  integrity sha512-3kn3FI5v7BQ7Zct6raek+WgvyDwOJ8wElbyC903GxMQCDBRGGcevhHvTAIHhknihEsrgplzPhTlWeMbk1JfdFg==
+"@angular-devkit/schematics@21.2.1":
+  version "21.2.1"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-21.2.1.tgz#da453125632113597540688fc8ef345d17d0b940"
+  integrity sha512-CWoamHaasAHMjHcYqxbj0tMnoXxdGotcAz2SpiuWtH28Lnf5xfbTaJn/lwdMP8Wdh4tgA+uYh2l45A5auCwmkw==
   dependencies:
-    "@angular-devkit/core" "21.2.0"
+    "@angular-devkit/core" "21.2.1"
     jsonc-parser "3.3.1"
     magic-string "0.30.21"
     ora "9.3.0"
@@ -410,13 +410,13 @@
   optionalDependencies:
     lmdb "3.4.4"
 
-"@angular/build@21.2.0":
-  version "21.2.0"
-  resolved "https://registry.yarnpkg.com/@angular/build/-/build-21.2.0.tgz#26193fa9ac6b4a2d296c7f1c2163aecc51896856"
-  integrity sha512-K0EqiHz2y7TSyD4adWD0+C/P9khKlrsSWavXWxGRvoSJC/H3I3SK5Z6BWwftBibXR1Fis7njwvl5IGAlQrDchA==
+"@angular/build@21.2.1":
+  version "21.2.1"
+  resolved "https://registry.yarnpkg.com/@angular/build/-/build-21.2.1.tgz#4613224c4635a6a4460a10b01748987e6600a9d5"
+  integrity sha512-cUpLNHJp9taII/FOcJHHfQYlMcZSRaf6eIxgSNS6Xfx1CeGoJNDN+J8+GFk+H1CPJt1EvbfyZ+dE5DbsgTD/QQ==
   dependencies:
     "@ampproject/remapping" "2.3.0"
-    "@angular-devkit/architect" "0.2102.0"
+    "@angular-devkit/architect" "0.2102.1"
     "@babel/core" "7.29.0"
     "@babel/helper-annotate-as-pure" "7.27.3"
     "@babel/helper-split-export-declaration" "7.24.7"
@@ -480,18 +480,18 @@
   optionalDependencies:
     lmdb "3.4.4"
 
-"@angular/cli@21.2.0":
-  version "21.2.0"
-  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-21.2.0.tgz#011109ca48fa462e38e4e5021c5cc52b1733c2af"
-  integrity sha512-yaGEpckqgOemcHkoWeH92i9eNrcbr9iE/dnxL+Du6s9spTAXJ2jjtYfszhmowuQZkCK5rjecMb8ctNtHlaGCjg==
+"@angular/cli@21.2.1":
+  version "21.2.1"
+  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-21.2.1.tgz#e68ca6ec2f83fb28d5d0ed907e3021945c600037"
+  integrity sha512-5SRfMTgwFj1zXOpfeZWHsxZBni0J4Xz7/CbewG47D6DmbstOrSdgt6eNzJ62R650t0G9dpri2YvToZgImtbjOQ==
   dependencies:
-    "@angular-devkit/architect" "0.2102.0"
-    "@angular-devkit/core" "21.2.0"
-    "@angular-devkit/schematics" "21.2.0"
+    "@angular-devkit/architect" "0.2102.1"
+    "@angular-devkit/core" "21.2.1"
+    "@angular-devkit/schematics" "21.2.1"
     "@inquirer/prompts" "7.10.1"
     "@listr2/prompt-adapter-inquirer" "3.0.5"
     "@modelcontextprotocol/sdk" "1.26.0"
-    "@schematics/angular" "21.2.0"
+    "@schematics/angular" "21.2.1"
     "@yarnpkg/lockfile" "1.1.0"
     algoliasearch "5.48.1"
     ini "6.0.0"
@@ -3163,13 +3163,13 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@schematics/angular@21.2.0":
-  version "21.2.0"
-  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-21.2.0.tgz#b0c92b07eeb3e7479e9cd623d2a3ccc446257c25"
-  integrity sha512-GQUIeGzZwCT9/W5MAkKnkwETROPbA1eRmy3JF56jLmvr95tJnypGOG8jGYy0d+tcEVujIouh48r4J3bJQg5mrw==
+"@schematics/angular@21.2.1":
+  version "21.2.1"
+  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-21.2.1.tgz#45269b8d7d722a2bbfee0d839d85852ac0819b93"
+  integrity sha512-DjrHRMoILhbZ6tc7aNZWuHA1wCm1iU/JN1TxAwNEyIBgyU3Fx8Z5baK4w0TCpOIPt0RLWVgP2L7kka9aXWCUFA==
   dependencies:
-    "@angular-devkit/core" "21.2.0"
-    "@angular-devkit/schematics" "21.2.0"
+    "@angular-devkit/core" "21.2.1"
+    "@angular-devkit/schematics" "21.2.1"
     jsonc-parser "3.3.1"
 
 "@sigstore/bundle@^4.0.0":
@@ -8238,10 +8238,10 @@ keyv@^4.0.0, keyv@^4.5.4:
   dependencies:
     json-buffer "3.0.1"
 
-khiops-visualization@11.13.0:
-  version "11.13.0"
-  resolved "https://registry.yarnpkg.com/khiops-visualization/-/khiops-visualization-11.13.0.tgz#e9590002eee177115be2cb7f3f181e87572578e0"
-  integrity sha512-znvFF5ODPJjfT4KDaScCHZiIwQBP5gFKSDaxLPakolwD4lSbjFX/jkdUI4vNvmz7BXMNm95FPpDDcydoAvG7lA==
+khiops-visualization@11.13.1:
+  version "11.13.1"
+  resolved "https://registry.yarnpkg.com/khiops-visualization/-/khiops-visualization-11.13.1.tgz#90533a8064996b790e40327ff52a0c48aea28f40"
+  integrity sha512-76nkMKjgQHfI9XM/b5tp3UE81Mdy2OVQ0wkoEXjH1tOhd50HSLEZZHy2WEEdpxAieY+Nr0B1kdFKcILO3jBZAw==
 
 kind-of@^6.0.2:
   version "6.0.3"
