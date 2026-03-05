@@ -16,7 +16,7 @@ export class TrackerService {
   constructor(
     private electronService: ElectronService,
     private matomoTracker: MatomoTracker,
-    private matomoInitializer: MatomoInitializerService
+    private matomoInitializer: MatomoInitializerService,
   ) {}
 
   initialize() {
@@ -30,6 +30,7 @@ export class TrackerService {
             trackers: [
               {
                 trackerUrl: 'https://matomo.apps.tech.orange/',
+                // @ts-ignore
                 siteId: APP_CONFIG.TRACKER_ID,
               },
             ],
@@ -74,7 +75,7 @@ export class TrackerService {
       data?.category,
       data?.action,
       data?.name,
-      data?.value
+      data?.value,
     );
   }
 }
