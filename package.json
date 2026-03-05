@@ -2,7 +2,7 @@
   "name": "khiops-visualization-desktop",
   "title": "Khiops Visualization Desktop",
   "main": "app/main.js",
-  "version": "11.7.0",
+  "version": "11.7.1",
   "license": "BSD-3-Clause-Clear",
   "author": {
     "name": "Orange",
