@@ -10,12 +10,6 @@ import { Injectable } from '@angular/core';
 // the resulting javascript file will look as if you never imported the module at all.
 import { ipcRenderer, webFrame } from 'electron';
 import * as childProcess from 'child_process';
-let fs: any;
-try {
-  fs = require('fs');
-} catch (e) {
-  console.warn(e);
-}
 
 @Injectable({
   providedIn: 'root',
@@ -24,7 +18,7 @@ export class ElectronService {
   ipcRenderer?: typeof ipcRenderer;
   webFrame?: typeof webFrame;
   childProcess?: typeof childProcess;
-  fs: typeof fs;
+  fs: any;
   dialog: any;
   electron: any;
   remote: any;
