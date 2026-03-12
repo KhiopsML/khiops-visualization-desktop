@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, clipboard, screen } from 'electron';
 import * as electron from 'electron';
 import * as remoteMain from '@electron/remote/main';
 remoteMain.initialize();
@@ -15,7 +15,7 @@ let isUpdateReadyToInstall = false;
 let updateAutoInstallPending = false;
 const args = process.argv.slice(1),
   serve = args.some((val) => val === '--serve');
-const { dialog } = require('electron');
+const { Menu } = require('electron');
 const { ipcMain } = require('electron');
 if (serve) require('electron-debug');
 
@@ -108,8 +108,41 @@ function createWindow(): BrowserWindow {
   // Enable remote for renderer process
   require('@electron/remote/main').enable(win.webContents);
 
-  // Disable default menu
-  win.setMenu(null);
+  // Custom context menu
+  win.webContents.on('context-menu', (_event, params) => {
+    // Check if there is selected text or if clipboard has content to enable/disable menu items
+    const hasSelection =
+      params.selectionText && params.selectionText.trim().length > 0;
+    const hasClipboard = clipboard.readText().trim().length > 0;
+
+    // process right-click event and send to renderer process
+    win?.webContents?.send('right-click', params);
+    Menu.buildFromTemplate([
+      { label: 'Copy', role: 'copy', enabled: hasSelection },
+      { label: 'Paste', role: 'paste', enabled: hasClipboard },
+      { type: 'separator' },
+      {
+        label: 'Copy image',
+        click: () => {
+          win?.webContents?.send('copy-image', params);
+        },
+        accelerator: 'CommandOrControl+Shift+c',
+      },
+      {
+        label: 'Copy datas',
+        click: () => {
+          win?.webContents?.send('copy-datas', params);
+        },
+        accelerator: 'CommandOrControl+Shift+d',
+      },
+      { type: 'separator' },
+      {
+        label: 'Toggle dev tools',
+        role: 'toggleDevTools',
+        accelerator: 'CommandOrControl+Shift+I',
+      },
+    ]).popup();
+  });
 
   // win.webContents.openDevTools();
 

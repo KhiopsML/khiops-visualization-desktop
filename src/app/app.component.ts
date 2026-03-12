@@ -266,8 +266,17 @@ export class AppComponent implements AfterViewInit {
       this.btnUpdateText = '✅ Update ready';
       this.constructMenu();
     });
-    this.electronService.ipcRenderer?.on('before-quit', (event, arg) => {
+    this.electronService.ipcRenderer?.on('before-quit', () => {
       this.beforeQuit();
+    });
+    this.electronService.ipcRenderer?.on('copy-image', () => {
+      this.configService.copyImage();
+    });
+    this.electronService.ipcRenderer?.on('right-click', (_event, arg) => {
+      this.configService.rightClick(arg);
+    });
+    this.electronService.ipcRenderer?.on('copy-datas', () => {
+      this.configService.copyDatas();
     });
 
     this.constructMenu();

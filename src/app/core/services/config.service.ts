@@ -12,7 +12,8 @@ import { ElectronService } from './electron.service';
 })
 export class ConfigService {
   private config: any;
-  private activeComponentType: 'visualization' | 'covisualization' = 'visualization';
+  private activeComponentType: 'visualization' | 'covisualization' =
+    'visualization';
 
   constructor(private electronService: ElectronService) {}
 
@@ -32,9 +33,13 @@ export class ConfigService {
     return this.activeComponentType;
   }
 
-  private componentChangeCallback?: (componentType: 'visualization' | 'covisualization') => void;
+  private componentChangeCallback?: (
+    componentType: 'visualization' | 'covisualization',
+  ) => void;
 
-  setComponentChangeCallback(callback: (componentType: 'visualization' | 'covisualization') => void) {
+  setComponentChangeCallback(
+    callback: (componentType: 'visualization' | 'covisualization') => void,
+  ) {
     this.componentChangeCallback = callback;
   }
 
@@ -44,8 +49,9 @@ export class ConfigService {
     }
 
     const extension = filePath.toLowerCase().split('.').pop();
-    let requiredComponent: 'visualization' | 'covisualization' = 'visualization';
-    
+    let requiredComponent: 'visualization' | 'covisualization' =
+      'visualization';
+
     switch (extension) {
       case 'khj':
         requiredComponent = 'visualization';
@@ -72,27 +78,30 @@ export class ConfigService {
   private analyzeJsonData(jsonData: any): 'visualization' | 'covisualization' {
     try {
       const tool = jsonData?.tool;
-      
+
       // Check for Khiops Coclustering format
       if (tool === 'Khiops Coclustering' && jsonData.coclusteringReport) {
         return 'covisualization';
       }
-      
+
       // Check for Khiops Modeling format
-      if (tool === 'Khiops' && jsonData.modelingReport && 
-          jsonData.modelingReport.reportType === 'Modeling') {
+      if (
+        tool === 'Khiops' &&
+        jsonData.modelingReport &&
+        jsonData.modelingReport.reportType === 'Modeling'
+      ) {
         return 'visualization';
       }
-      
+
       // For backwards compatibility, check tool field only
       if (tool === 'Khiops Coclustering') {
         return 'covisualization';
       }
-      
+
       if (tool === 'Khiops') {
         return 'visualization';
       }
-      
+
       // Default to visualization for unknown formats
       return 'visualization';
     } catch (error) {
@@ -101,16 +110,22 @@ export class ConfigService {
     }
   }
 
-  private async analyzeJsonContent(filePath: string): Promise<'visualization' | 'covisualization'> {
+  private async analyzeJsonContent(
+    filePath: string,
+  ): Promise<'visualization' | 'covisualization'> {
     try {
       const content = await new Promise<string>((resolve, reject) => {
-        this.electronService.fs.readFile(filePath, 'utf-8', (err: any, data: string) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(data);
-          }
-        });
+        this.electronService.fs.readFile(
+          filePath,
+          'utf-8',
+          (err: any, data: string) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(data);
+            }
+          },
+        );
       });
 
       const jsonData = JSON.parse(content);
@@ -141,6 +156,24 @@ export class ConfigService {
   openChannelDialog(cb: Function) {
     if (this.config && this.config.openChannelDialog) {
       this.config.openChannelDialog(cb);
+    }
+  }
+
+  rightClick(arg: any, cb?: Function) {
+    if (this.config && this.config.rightClick) {
+      this.config.rightClick(arg, cb);
+    }
+  }
+
+  copyImage(arg?: any, cb?: Function) {
+    if (this.config && this.config.copyImage) {
+      this.config.copyImage(arg, cb);
+    }
+  }
+
+  copyDatas(arg?: any, cb?: Function) {
+    if (this.config && this.config.copyDatas) {
+      this.config.copyDatas(arg, cb);
     }
   }
 
