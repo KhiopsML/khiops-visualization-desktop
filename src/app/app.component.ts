@@ -291,7 +291,7 @@ export class AppComponent implements AfterViewInit {
           this.fileSystemService.openFile(arg, () => {
             this.constructMenu();
           });
-        }, 500); // 500ms delay to ensure component initialization
+        }, 750); // 500ms delay to ensure component initialization
       }
     });
   }

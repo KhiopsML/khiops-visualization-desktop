@@ -164,7 +164,7 @@ export class FileSystemService {
           if (callbackDone) {
             callbackDone();
           }
-        }, 250);
+        }, 500);
       })
       .catch((error: any) => {
         console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
