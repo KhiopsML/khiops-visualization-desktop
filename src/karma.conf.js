@@ -16,36 +16,43 @@ module.exports = function (config) {
       require('karma-electron'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage-istanbul-reporter'),
-      require('@angular-devkit/build-angular/plugins/karma')
+      require('@angular-devkit/build-angular/plugins/karma'),
     ],
-    client:{
-      clearContext: false // leave Jasmine Spec Runner output visible in browser
+    client: {
+      clearContext: false, // leave Jasmine Spec Runner output visible in browser
     },
     coverageIstanbulReporter: {
       dir: require('path').join(__dirname, '../coverage'),
-      reports: [ 'html', 'lcovonly' ],
-      fixWebpackSourcePaths: true
+      reports: ['html', 'lcovonly'],
+      fixWebpackSourcePaths: true,
     },
     reporters: ['progress', 'kjhtml'],
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    browsers: ['AngularElectron'],
+    browsers: process.env.CI
+      ? ['ChromeHeadlessNoSandbox']
+      : ['AngularElectron'],
     customLaunchers: {
       AngularElectron: {
         base: 'Electron',
-        flags: [
-          '--remote-debugging-port=9222'
-        ],
+        flags: ['--remote-debugging-port=9222', '--no-sandbox'],
         browserWindowOptions: {
           webPreferences: {
             nodeIntegration: true,
             nodeIntegrationInSubFrames: true,
             allowRunningInsecureContent: true,
-            contextIsolation: false
-          }
-        }
-      }
-    }
+            contextIsolation: false,
+          },
+        },
+      },
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+      },
+    },
+    browsers: process.env.CI
+      ? ['ChromeHeadlessNoSandbox']
+      : ['AngularElectron'],
   });
 };

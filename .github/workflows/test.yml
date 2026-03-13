@@ -29,8 +29,15 @@ jobs:
         run: |
           CYPRESS_INSTALL_BINARY=0 yarn install
 
+      - name: Install xvfb (for headless testing on Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
       - name: Run unit tests
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_NO_SANDBOX: 1
+          ELECTRON_RUN_AS_NODE: 1
         run: |
-          yarn test
+          xvfb-run -a yarn test --no-sandbox
