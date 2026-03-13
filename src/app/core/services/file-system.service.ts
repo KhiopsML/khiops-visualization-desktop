@@ -12,6 +12,10 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
 import { FileLoaderI } from '../../interfaces/file-system';
+import {
+  JsonFormatterService,
+  JsonFormatState,
+} from './json-formatter.service';
 
 let es: any;
 try {
@@ -33,6 +37,9 @@ export class FileSystemService {
   fileLoaderDatas?: FileLoaderI;
   currentFilePath = '';
 
+  /** Format state captured when the file was opened – reused on save. */
+  private jsonFormatState: JsonFormatState | null = null;
+
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
   public fileLoader$: Observable<any> = this._fileLoaderSub.asObservable();
 
@@ -42,6 +49,7 @@ export class FileSystemService {
     private electronService: ElectronService,
     private translate: TranslateService,
     private storageService: StorageService,
+    private jsonFormatterService: JsonFormatterService,
   ) {
     this.initialize();
   }
@@ -66,7 +74,6 @@ export class FileSystemService {
    */
   openFileDialog(callbackDone: Function) {
     // this.trackerService.trackEvent('click', 'open_file');
-
     const associationFiles = ['json'];
     associationFiles.push('khj');
     associationFiles.push('khcj');
@@ -74,21 +81,14 @@ export class FileSystemService {
     this.electronService.dialog
       .showOpenDialog(null, {
         properties: ['openFile'],
-        filters: [
-          {
-            extensions: associationFiles,
-          },
-        ],
+        filters: [{ extensions: associationFiles }],
       })
       .then((result: Electron.OpenDialogReturnValue) => {
         if (result && !result.canceled && result.filePaths) {
           this.openFile(result.filePaths[0], callbackDone);
-          return;
         }
       })
-      .catch((err: any) => {
-        console.log(err);
-      });
+      .catch((err: any) => console.log(err));
   }
 
   /**
@@ -105,9 +105,8 @@ export class FileSystemService {
       try {
         const appType = 'Khiops Visualization Desktop';
         const title = filepath ? appType + ' ' + filepath : appType;
-
         await this.electronService.ipcRenderer?.invoke('set-title-bar-name', {
-          title: title,
+          title,
         });
       } catch (error) {
         console.log('error', error);
@@ -116,19 +115,18 @@ export class FileSystemService {
   }
 
   async openFile(filename: string, callbackDone?: Function) {
-    if (filename) {
-      // Check if we need to save current work before opening new file
-      const currentActiveType = this.configService.getActiveComponentType();
-      const hasCurrentFile =
-        this.currentFilePath && this.currentFilePath !== '';
+    if (!filename) return;
 
-      if (hasCurrentFile && currentActiveType === 'covisualization') {
-        this.handleSaveBeforeAction(async () => {
-          await this.performOpenFile(filename, callbackDone);
-        });
-      } else {
+    // Check if we need to save current work before opening new file
+    const currentActiveType = this.configService.getActiveComponentType();
+    const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
+
+    if (hasCurrentFile && currentActiveType === 'covisualization') {
+      this.handleSaveBeforeAction(async () => {
         await this.performOpenFile(filename, callbackDone);
-      }
+      });
+    } else {
+      await this.performOpenFile(filename, callbackDone);
     }
   }
 
@@ -136,19 +134,30 @@ export class FileSystemService {
     // For JSON files, read and analyze content first to determine component type
     const extension = filename.toLowerCase().split('.').pop();
     let jsonData: any = null;
+    let rawContent: string | null = null;
     let componentType: 'visualization' | 'covisualization' = 'visualization';
 
-    if (extension === 'json') {
+    if (extension === 'json' || extension === 'khj' || extension === 'khcj') {
       try {
-        const content = await this.readFileContent(filename);
-        jsonData = JSON.parse(content);
+        rawContent = await this.readFileContent(filename);
+        jsonData = JSON.parse(rawContent);
       } catch (error) {
         console.warn('Error pre-reading JSON file for analysis:', error);
       }
-    } else if (extension === 'khcj') {
+    }
+
+    if (extension === 'khcj') {
       componentType = 'covisualization';
     } else if (extension === 'khj') {
       componentType = 'visualization';
+    }
+
+    // Capture format state from the raw source
+    if (rawContent) {
+      this.jsonFormatState =
+        this.jsonFormatterService.analyzeJsonFormat(rawContent);
+    } else {
+      this.jsonFormatState = null;
     }
 
     await this.configService.requestComponentChange(filename, jsonData);
@@ -161,9 +170,7 @@ export class FileSystemService {
         // Add small delay to ensure component is fully rendered before setting data
         setTimeout(() => {
           this.configService.setDatas(datas);
-          if (callbackDone) {
-            callbackDone();
-          }
+          if (callbackDone) callbackDone();
         }, 500);
       })
       .catch((error: any) => {
@@ -178,17 +185,15 @@ export class FileSystemService {
         this._fileLoaderSub.next(this.fileLoaderDatas);
       });
   }
+
   private readFileContent(filename: string): Promise<string> {
     return new Promise((resolve, reject) => {
       this.electronService.fs.readFile(
         filename,
         'utf-8',
         (err: any, data: string) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(data);
-          }
+          if (err) reject(err);
+          else resolve(data);
         },
       );
     });
@@ -205,6 +210,7 @@ export class FileSystemService {
     if (activeComponentType === 'covisualization') {
       return this.readFileSimple(filename);
     }
+
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
@@ -214,113 +220,106 @@ export class FileSystemService {
       this.electronService.fs.stat(filename, (err: any) => {
         if (err) {
           reject();
-        } else {
-          this.electronService.fs.readFile(
-            filename,
-            'utf-8',
-            (errReadFile: NodeJS.ErrnoException, datas: string) => {
-              if (errReadFile) {
-                if (
-                  errReadFile
-                    .toString()
-                    .startsWith('Error: Cannot create a string longer')
-                ) {
-                  this.fileLoaderDatas!.isBigJsonFile = true;
-                  this.fileLoaderDatas!.loadingInfo = '';
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
+          return;
+        }
 
-                  const currentDatas: any = {};
-                  const stream = this.electronService.fs.createReadStream(
-                    filename,
-                    {
-                      encoding: 'utf8',
-                    },
-                  );
-                  const getStream = stream.pipe(
-                    jsonStream.parse([
-                      {
-                        emitKey: true,
-                      },
-                    ]),
-                  );
-                  getStream.pipe(
-                    es.map((pipeDatas: any) => {
-                      this.fileLoaderDatas!.loadingInfo = pipeDatas.key;
-                      currentDatas[pipeDatas.key] = pipeDatas.value;
-                      this._fileLoaderSub.next(this.fileLoaderDatas);
-                    }),
-                  );
+        this.electronService.fs.readFile(
+          filename,
+          'utf-8',
+          (errReadFile: NodeJS.ErrnoException, datas: string) => {
+            if (errReadFile) {
+              if (
+                errReadFile
+                  .toString()
+                  .startsWith('Error: Cannot create a string longer')
+              ) {
+                // Streaming for very large files
+                this.fileLoaderDatas!.isBigJsonFile = true;
+                this.fileLoaderDatas!.loadingInfo = '';
+                this._fileLoaderSub.next(this.fileLoaderDatas);
 
-                  getStream
-                    .on('end', () => {
-                      this.fileLoaderDatas!.datas = currentDatas;
-                      this.fileLoaderDatas!.datas.filename = filename;
-                      this.fileLoaderDatas!.isLoadingDatas = false;
-                      this._fileLoaderSub.next(this.fileLoaderDatas);
+                const currentDatas: any = {};
+                const stream = this.electronService.fs.createReadStream(
+                  filename,
+                  { encoding: 'utf8' },
+                );
+                const getStream = stream.pipe(
+                  jsonStream.parse([{ emitKey: true }]),
+                );
 
-                      resolve(this.fileLoaderDatas?.datas);
-                    })
-                    .on('error', () => {
-                      reject();
-                    });
-                } else {
-                  this.fileLoaderDatas!.isLoadingDatas = false;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
+                getStream.pipe(
+                  es.map((pipeDatas: any) => {
+                    this.fileLoaderDatas!.loadingInfo = pipeDatas.key;
+                    currentDatas[pipeDatas.key] = pipeDatas.value;
+                    this._fileLoaderSub.next(this.fileLoaderDatas);
+                  }),
+                );
 
-                  reject(errReadFile);
-                }
+                getStream
+                  .on('end', () => {
+                    this.fileLoaderDatas!.datas = currentDatas;
+                    this.fileLoaderDatas!.datas.filename = filename;
+                    this.fileLoaderDatas!.isLoadingDatas = false;
+                    this._fileLoaderSub.next(this.fileLoaderDatas);
+                    resolve(this.fileLoaderDatas?.datas);
+                  })
+                  .on('error', () => reject());
               } else {
                 this.fileLoaderDatas!.isLoadingDatas = false;
-                try {
-                  this.fileLoaderDatas!.datas = JSON.parse(datas);
-
-                  // Validate JSON structure based on file extension and content
-                  const extension = filename.toLowerCase().split('.').pop();
-                  const jsonData = this.fileLoaderDatas!.datas;
-
-                  if (extension === 'json') {
-                    // Additional validation for generic JSON files
-                    if (!jsonData.tool) {
-                      console.warn('JSON file missing required "tool" field');
-                    } else if (
-                      jsonData.tool === 'Khiops Coclustering' &&
-                      !jsonData.coclusteringReport
-                    ) {
-                      console.warn(
-                        'Khiops Coclustering JSON file missing coclusteringReport structure',
-                      );
-                    } else if (
-                      jsonData.tool === 'Khiops' &&
-                      (!jsonData.modelingReport ||
-                        jsonData.modelingReport.reportType !== 'Modeling')
-                    ) {
-                      console.warn(
-                        'Khiops JSON file missing proper modelingReport structure',
-                      );
-                    }
-                  }
-
-                  this.fileLoaderDatas!.datas.filename = filename;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-                  resolve(this.fileLoaderDatas?.datas);
-                } catch (e) {
-                  console.error('JSON parsing error:', e);
-                  Toastify({
-                    text:
-                      this.translate.instant('OPEN_FILE_ERROR') +
-                      ' - Invalid JSON format',
-                    gravity: 'bottom',
-                    position: 'center',
-                    duration: 3000,
-                  }).showToast();
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-                  this.closeFile();
-                  reject(e);
-                }
+                this._fileLoaderSub.next(this.fileLoaderDatas);
+                reject(errReadFile);
               }
-            },
-          );
-        }
+            } else {
+              this.fileLoaderDatas!.isLoadingDatas = false;
+              try {
+                this.fileLoaderDatas!.datas = JSON.parse(datas);
+
+                // Validate JSON structure based on file extension and content
+                const extension = filename.toLowerCase().split('.').pop();
+                const jsonData = this.fileLoaderDatas!.datas;
+
+                if (extension === 'json') {
+                  // Additional validation for generic JSON files
+                  if (!jsonData.tool) {
+                    console.warn('JSON file missing required "tool" field');
+                  } else if (
+                    jsonData.tool === 'Khiops Coclustering' &&
+                    !jsonData.coclusteringReport
+                  ) {
+                    console.warn(
+                      'Khiops Coclustering JSON file missing coclusteringReport structure',
+                    );
+                  } else if (
+                    jsonData.tool === 'Khiops' &&
+                    (!jsonData.modelingReport ||
+                      jsonData.modelingReport.reportType !== 'Modeling')
+                  ) {
+                    console.warn(
+                      'Khiops JSON file missing proper modelingReport structure',
+                    );
+                  }
+                }
+
+                this.fileLoaderDatas!.datas.filename = filename;
+                this._fileLoaderSub.next(this.fileLoaderDatas);
+                resolve(this.fileLoaderDatas?.datas);
+              } catch (e) {
+                console.error('JSON parsing error:', e);
+                Toastify({
+                  text:
+                    this.translate.instant('OPEN_FILE_ERROR') +
+                    ' - Invalid JSON format',
+                  gravity: 'bottom',
+                  position: 'center',
+                  duration: 3000,
+                }).showToast();
+                this._fileLoaderSub.next(this.fileLoaderDatas);
+                this.closeFile();
+                reject(e);
+              }
+            }
+          },
+        );
       });
     });
   }
@@ -338,59 +337,53 @@ export class FileSystemService {
           this.fileLoaderDatas!.isLoadingDatas = false;
           this._fileLoaderSub.next(this.fileLoaderDatas);
           reject(err);
-        } else {
-          this.electronService.fs.readFile(
-            filename,
-            'utf-8',
-            (errReadFile: NodeJS.ErrnoException, datas: string) => {
-              if (errReadFile) {
+          return;
+        }
+
+        this.electronService.fs.readFile(
+          filename,
+          'utf-8',
+          (errReadFile: NodeJS.ErrnoException, datas: string) => {
+            if (errReadFile) {
+              this.fileLoaderDatas!.isLoadingDatas = false;
+              this._fileLoaderSub.next(this.fileLoaderDatas);
+              reject(errReadFile);
+            } else {
+              try {
+                const parsedDatas = JSON.parse(datas);
+
+                // Validate covisualization JSON structure
+                if (
+                  parsedDatas.tool === 'Khiops Coclustering' &&
+                  !parsedDatas.coclusteringReport
+                ) {
+                  console.warn(
+                    'Covisualization file missing expected coclusteringReport structure',
+                  );
+                }
+
+                parsedDatas.filename = filename;
+                this.fileLoaderDatas!.datas = parsedDatas;
                 this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
-                reject(errReadFile);
-              } else {
-                try {
-                  const parsedDatas = JSON.parse(datas);
-
-                  // Validate covisualization JSON structure
-                  if (
-                    parsedDatas.tool === 'Khiops Coclustering' &&
-                    !parsedDatas.coclusteringReport
-                  ) {
-                    console.warn(
-                      'Covisualization file missing expected coclusteringReport structure',
-                    );
-                  }
-
-                  parsedDatas.filename = filename;
-
-                  this.fileLoaderDatas!.datas = parsedDatas;
-                  this.fileLoaderDatas!.isLoadingDatas = false;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-
-                  resolve(parsedDatas);
-                } catch (e) {
-                  console.error(
-                    'JSON parsing error in covisualization file:',
-                    e,
-                  );
-                  this.fileLoaderDatas!.isLoadingDatas = false;
-                  this._fileLoaderSub.next(this.fileLoaderDatas);
-
-                  Toastify({
-                    text:
-                      this.translate.instant('OPEN_FILE_ERROR') +
-                      ' - Invalid JSON format',
-                    gravity: 'bottom',
-                    position: 'center',
-                    duration: 3000,
-                  }).showToast();
-
-                  reject(e);
-                }
+                resolve(parsedDatas);
+              } catch (e) {
+                console.error('JSON parsing error in covisualization file:', e);
+                this.fileLoaderDatas!.isLoadingDatas = false;
+                this._fileLoaderSub.next(this.fileLoaderDatas);
+                Toastify({
+                  text:
+                    this.translate.instant('OPEN_FILE_ERROR') +
+                    ' - Invalid JSON format',
+                  gravity: 'bottom',
+                  position: 'center',
+                  duration: 3000,
+                }).showToast();
+                reject(e);
               }
-            },
-          );
-        }
+            }
+          },
+        );
       });
     });
   }
@@ -410,21 +403,15 @@ export class FileSystemService {
             .getConfig()
             .constructDatasToSave();
           this.saveFile(this.currentFilePath, datasToSave);
-          this.storageService.saveAll(() => {
-            finalAction();
-          });
+          this.storageService.saveAll(() => finalAction());
         } else if (e === 'cancel') {
           return;
         } else if (e === 'reject') {
-          this.storageService.saveAll(() => {
-            finalAction();
-          });
+          this.storageService.saveAll(() => finalAction());
         }
       });
     } else {
-      this.storageService.saveAll(() => {
-        finalAction();
-      });
+      this.storageService.saveAll(() => finalAction());
     }
   }
 
@@ -448,7 +435,6 @@ export class FileSystemService {
     let filesHistory = this.storageService.getOne('OPEN_FILE');
     if (filesHistory) {
       const isExistingHistoryIndex = filesHistory.files.indexOf(filename);
-
       if (isExistingHistoryIndex !== -1) {
         // remove at index
         filesHistory.files.splice(isExistingHistoryIndex, 1);
@@ -459,9 +445,7 @@ export class FileSystemService {
         }
       }
     } else {
-      filesHistory = {
-        files: [],
-      };
+      filesHistory = { files: [] };
     }
     // add to the top of the list
     filesHistory.files.unshift(filename);
@@ -469,12 +453,7 @@ export class FileSystemService {
   }
 
   getFileHistory() {
-    const filesHistory = this.storageService.getOne('OPEN_FILE');
-    return (
-      filesHistory || {
-        files: [],
-      }
-    );
+    return this.storageService.getOne('OPEN_FILE') || { files: [] };
   }
 
   save(datas: any) {
@@ -484,29 +463,25 @@ export class FileSystemService {
   saveAs(datas: any) {
     const dialogOpts: any = {
       defaultPath: '',
-      filters: [
-        {
-          name: 'json',
-          extensions: ['khcj', 'json'],
-        },
-      ],
+      filters: [{ name: 'json', extensions: ['khcj', 'json'] }],
     };
     this.electronService.dialog
       .showSaveDialog(dialogOpts)
       .then((result: any) => {
         const filename = result.filePath;
-        if (filename) {
-          this.saveFile(filename, datas);
-        }
+        if (filename) this.saveFile(filename, datas);
       });
   }
 
   saveFile(filename: string, datas: any) {
-    this.electronService.fs.writeFileSync(
-      filename,
-      JSON.stringify(datas, null, 2), // spacing level = 2
-      'utf-8',
-    );
+    const serialized = this.jsonFormatState
+      ? this.jsonFormatterService.serializeWithFormatState(
+          datas,
+          this.jsonFormatState,
+        )
+      : JSON.stringify(datas, null, 2);
+
+    this.electronService.fs.writeFileSync(filename, serialized, 'utf-8');
     this.configService.snack(
       this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS'),
       4000,
