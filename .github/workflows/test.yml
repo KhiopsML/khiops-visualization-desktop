@@ -29,10 +29,8 @@ jobs:
         run: |
           CYPRESS_INSTALL_BINARY=0 yarn install
 
-      - name: Install system dependencies for testing
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
 
       - name: Run unit tests
         env:
