@@ -114,7 +114,7 @@
     "@types/jasmine": "6.0.0",
     "@types/jasminewd2": "2.0.13",
     "@typescript-eslint/eslint-plugin": "8.56.1",
-    "@typescript-eslint/parser": "8.56.1",
+    "@typescript-eslint/parser": "8.57.0",
     "karma-chrome-launcher": "3.2.0",
     "cypress": "15.11.0",
     "cypress-shadow-dom": "1.4.1",
