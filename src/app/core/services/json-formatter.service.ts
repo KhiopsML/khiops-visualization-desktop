@@ -112,6 +112,7 @@ export class JsonFormatterService {
     const cleaned = this.stripRuntimeKeys(data, ['filename']);
 
     const serialize = (value: any, path: string, depth: number): string => {
+      if (value === undefined) return 'null'; // undefined → omitted at object level, null elsewhere
       if (value === null) return 'null';
       if (typeof value === 'boolean') return String(value);
       if (typeof value === 'number') return String(value);
@@ -149,18 +150,20 @@ export class JsonFormatterService {
         ...keys.filter((k) => !originalOrder.includes(k)),
       ];
 
-      const entries = orderedKeys.map((key) => {
-        const childPath = path ? `${path}.${key}` : key;
-        const childValue = obj[key];
+      const entries = orderedKeys
+        .filter((key) => obj[key] !== undefined)
+        .map((key) => {
+          const childPath = path ? `${path}.${key}` : key;
+          const childValue = obj[key];
 
-        if (isMinified(childPath)) {
-          // Inline / minified: serialize value without extra whitespace
-          const inlineValue = serializeInline(childValue);
-          return `${pad(depth + 1)}${JSON.stringify(key)}: ${inlineValue}`;
-        } else {
-          return `${pad(depth + 1)}${JSON.stringify(key)}: ${serialize(childValue, childPath, depth + 1)}`;
-        }
-      });
+          if (isMinified(childPath)) {
+            // Inline / minified: serialize value without extra whitespace
+            const inlineValue = serializeInline(childValue);
+            return `${pad(depth + 1)}${JSON.stringify(key)}: ${inlineValue}`;
+          } else {
+            return `${pad(depth + 1)}${JSON.stringify(key)}: ${serialize(childValue, childPath, depth + 1)}`;
+          }
+        });
 
       return (
         '{' +
@@ -190,13 +193,15 @@ export class JsonFormatterService {
 
       const items = arr.map((item, idx) => {
         const childPath = `${path}.${idx}`;
+        // JSON spec: undefined in arrays becomes null (matches JSON.stringify behavior)
+        const safeItem = item === undefined ? null : item;
 
         // Priority 1: this specific index was explicitly minified in the original
         // Priority 2: the parent array is known to have inlined items
         if (isMinified(childPath) || itemsAreInlined) {
-          return `${pad(depth + 1)}${serializeInline(item)}`;
+          return `${pad(depth + 1)}${serializeInline(safeItem)}`;
         }
-        return `${pad(depth + 1)}${serialize(item, childPath, depth + 1)}`;
+        return `${pad(depth + 1)}${serialize(safeItem, childPath, depth + 1)}`;
       });
 
       return (
