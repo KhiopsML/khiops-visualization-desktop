@@ -13,6 +13,7 @@ module.exports = function (config) {
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
     plugins: [
       require('karma-jasmine'),
+      require('karma-chrome-launcher'),
       require('karma-electron'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage-istanbul-reporter'),
@@ -30,9 +31,6 @@ module.exports = function (config) {
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    browsers: process.env.CI
-      ? ['ChromeHeadlessNoSandbox']
-      : ['AngularElectron'],
     customLaunchers: {
       AngularElectron: {
         base: 'Electron',
@@ -51,8 +49,9 @@ module.exports = function (config) {
         flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
       },
     },
-    browsers: process.env.CI
-      ? ['ChromeHeadlessNoSandbox']
-      : ['AngularElectron'],
+    browsers:
+      process.env.GITHUB_ACTIONS || process.env.CI
+        ? ['ChromeHeadlessNoSandbox']
+        : ['AngularElectron'],
   });
 };

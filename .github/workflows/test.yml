@@ -29,15 +29,17 @@ jobs:
         run: |
           CYPRESS_INSTALL_BINARY=0 yarn install
 
-      - name: Install xvfb (for headless testing on Linux)
+      - name: Install system dependencies for testing
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y xvfb chromium-browser
 
       - name: Run unit tests
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: 'true'
+          GITHUB_ACTIONS: 'true'
           ELECTRON_NO_SANDBOX: 1
           ELECTRON_RUN_AS_NODE: 1
         run: |
-          xvfb-run -a yarn test --no-sandbox
+          xvfb-run -a yarn test
