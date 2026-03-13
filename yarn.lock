@@ -547,10 +547,10 @@
     "@standard-schema/spec" "^1.0.0"
     tslib "^2.3.0"
 
-"@angular/language-service@21.2.1":
-  version "21.2.1"
-  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-21.2.1.tgz#7807405626ae31162462248ed64a3848cb9786f1"
-  integrity sha512-L8EaNhWDKMny18RURg/Ju2Dix2e7qLL/s2yDQrawgjQRmXAMnjimz10w/EiiG7FMK/Hj5fLycS5X8VITq1f2rg==
+"@angular/language-service@21.2.2":
+  version "21.2.2"
+  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-21.2.2.tgz#dd2821f7c64d2b47438551c0d13b92a80344c777"
+  integrity sha512-86KVMs0rYsALTGOA5qNS73hJFKAoXNCPZuGw2Nk4ikZHlgn3fMLbKBp9nX0O4ZENYn6bWzbKfpBy5JH+2VKxqA==
 
 "@angular/platform-browser-dynamic@21.2.1":
   version "21.2.1"
