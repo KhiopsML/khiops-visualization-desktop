@@ -67,7 +67,9 @@
     "updateElectron": "npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxypac.si.francetelecom.fr:8080/ yarn add electron@latest --force --legacy-peer-deps",
     "updateVersions": "ncu -u --target minor",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "test": "ng test --watch=false",
+    "test:watch": "ng test --watch=true"
   },
   "dependencies": {
     "@angular/common": "21.2.1",
