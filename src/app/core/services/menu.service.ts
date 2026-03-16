@@ -122,10 +122,11 @@ export class MenuService {
             if (activeComponent === 'covisualization') {
               this.configService.openSaveBeforeQuitDialog((e: string) => {
                 if (e === 'confirm') {
-                  const datasToSave = this.configService
-                    .getConfig()
-                    .constructDatasToSave();
-                  this.fileSystemService.save(datasToSave);
+                  const config = this.configService.getConfig();
+                  if (config && config.constructDatasToSave) {
+                    const datasToSave = config.constructDatasToSave();
+                    this.fileSystemService.save(datasToSave);
+                  }
                   this.storageService.saveAll(async () => {
                     await this.electronService.ipcRenderer?.invoke(
                       'app-relaunch',
@@ -155,10 +156,11 @@ export class MenuService {
             if (activeComponent === 'covisualization') {
               this.configService.openSaveBeforeQuitDialog((e: string) => {
                 if (e === 'confirm') {
-                  const datasToSave = this.configService
-                    .getConfig()
-                    .constructDatasToSave();
-                  this.fileSystemService.save(datasToSave);
+                  const config = this.configService.getConfig();
+                  if (config && config.constructDatasToSave) {
+                    const datasToSave = config.constructDatasToSave();
+                    this.fileSystemService.save(datasToSave);
+                  }
                   this.storageService.saveAll(async () => {
                     await this.electronService.ipcRenderer?.invoke('app-quit');
                   });
@@ -336,7 +338,7 @@ export class MenuService {
               type: 'radio',
               click: () => {
                 if (this.currentChannel !== 'latest') {
-                  this.setChannel('latest');
+                  this.setChannel('latest', refreshCb);
                 }
               },
               checked: this.currentChannel === 'latest',
@@ -349,9 +351,9 @@ export class MenuService {
                   this.configService.openChannelDialog((e: string) => {
                     if (e === 'confirm') {
                       // User confirmed channel change
-                      this.setChannel('beta');
+                      this.setChannel('beta', refreshCb);
                     } else if (e === 'cancel') {
-                      this.setChannel('latest');
+                      this.setChannel('latest', refreshCb);
                       // reconstruct the menu to set channel to latest
                       refreshCb && refreshCb();
                     }
@@ -390,9 +392,12 @@ export class MenuService {
     });
   }
 
-  setChannel(channel: string) {
+  setChannel(channel: string, refreshCb?: Function) {
     this.storageService.setOne('CHANNEL', channel);
     this.currentChannel = channel;
+
+    // Reset update state when changing channels
+    this.setUpdateInProgress(false);
 
     (async () => {
       try {
@@ -400,6 +405,8 @@ export class MenuService {
           'launch-check-for-update',
           this.currentChannel,
         );
+        // Refresh menu after update check to reflect new state
+        refreshCb && refreshCb();
       } catch (error) {
         console.log('error', error);
       }
@@ -407,22 +414,29 @@ export class MenuService {
   }
 
   save() {
-    const datasToSave = this.configService.getConfig().constructDatasToSave();
-    this.fileSystemService.save(datasToSave);
+    const config = this.configService.getConfig();
+    if (config && config.constructDatasToSave) {
+      const datasToSave = config.constructDatasToSave();
+      this.fileSystemService.save(datasToSave);
+    }
   }
 
   saveAs() {
-    const datasToSave = this.configService.getConfig().constructDatasToSave();
-    this.fileSystemService.saveAs(datasToSave);
+    const config = this.configService.getConfig();
+    if (config && config.constructDatasToSave) {
+      const datasToSave = config.constructDatasToSave();
+      this.fileSystemService.saveAs(datasToSave);
+    }
   }
 
   saveCurrentHierarchyAs() {
     document.body.style.cursor = 'wait';
     setTimeout(() => {
-      const datasToSave = this.configService
-        .getConfig()
-        .constructPrunedDatasToSave();
-      this.fileSystemService.saveAs(datasToSave);
+      const config = this.configService.getConfig();
+      if (config && config.constructPrunedDatasToSave) {
+        const datasToSave = config.constructPrunedDatasToSave();
+        this.fileSystemService.saveAs(datasToSave);
+      }
       document.body.style.cursor = 'default';
     }, 1000);
   }
