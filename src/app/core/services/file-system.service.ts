@@ -399,11 +399,12 @@ export class FileSystemService {
     if (activeComponentType === 'covisualization' && hasCurrentFile) {
       this.configService.openSaveBeforeQuitDialog((e: string) => {
         if (e === 'confirm') {
-          const datasToSave = this.configService
-            .getConfig()
-            .constructDatasToSave();
-          this.saveFile(this.currentFilePath, datasToSave);
-          this.storageService.saveAll(() => finalAction());
+          const config = this.configService.getConfig();
+          if (config && config.constructDatasToSave) {
+            const datasToSave = config.constructDatasToSave();
+            this.saveFile(this.currentFilePath, datasToSave);
+            this.storageService.saveAll(() => finalAction());
+          }
         } else if (e === 'cancel') {
           return;
         } else if (e === 'reject') {
