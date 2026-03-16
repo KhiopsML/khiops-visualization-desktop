@@ -257,23 +257,23 @@ ipcMain.handle('launch-update-available', async () => {
 
 ipcMain.handle(
   'launch-check-for-update',
-  async (_event: any, channel: string) => {
+  async (_event: any, channel: string, delay: number = 10000) => {
     try {
       log.info('launch-check-for-update', channel);
-      checkForUpdates(channel);
+      checkForUpdates(channel, delay);
     } catch (error) {
       console.log('error', error);
     }
   },
 );
 
-function checkForUpdates(channel: string) {
+function checkForUpdates(channel: string, delay: number = 10000) {
   autoUpdater.allowPrerelease = channel === 'beta';
   log.info('checkForUpdates');
   // autoUpdater.forceDevUpdateConfig = true;
   setTimeout(() => {
     autoUpdater.checkForUpdates();
-  }, 10000);
+  }, delay);
 }
 
 ipcMain.handle('set-title-bar-name', async (_event: any, arg: any) => {

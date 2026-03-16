@@ -396,14 +396,12 @@ export class MenuService {
     this.storageService.setOne('CHANNEL', channel);
     this.currentChannel = channel;
 
-    // Reset update state when changing channels
-    this.setUpdateInProgress(false);
-
     (async () => {
       try {
         await this.electronService.ipcRenderer?.invoke(
           'launch-check-for-update',
           this.currentChannel,
+          1000, // delay to let the menu update before launching the check for update
         );
         // Refresh menu after update check to reflect new state
         refreshCb && refreshCb();
