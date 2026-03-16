@@ -6,22 +6,23 @@
 
 import { Injectable } from '@angular/core';
 import { ElectronService } from './electron.service';
+import { ConfigI } from '../../interfaces/config.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfigService {
-  private config: any;
+  private config: ConfigI | null = null;
   private activeComponentType: 'visualization' | 'covisualization' =
     'visualization';
 
   constructor(private electronService: ElectronService) {}
 
-  setConfig(config: any) {
+  setConfig(config: ConfigI) {
     this.config = config;
   }
 
-  getConfig(): any {
+  getConfig(): ConfigI | null {
     return this.config;
   }
 

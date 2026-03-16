@@ -11,7 +11,7 @@ import { ConfigService } from './config.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
-import { FileLoaderI } from '../../interfaces/file-system';
+import { FileLoaderI } from '../../interfaces/file-system.interface';
 import {
   JsonFormatterService,
   JsonFormatState,

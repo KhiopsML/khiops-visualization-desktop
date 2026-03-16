@@ -9,7 +9,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   JsonFormatterService,
   JsonFormatState,
-} from './json-formatter.service';
+} from '../app/core/services/json-formatter.service';
 
 describe('JsonFormatterService', () => {
   let service: JsonFormatterService;

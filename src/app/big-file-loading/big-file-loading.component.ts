@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { Subscription } from 'rxjs';
-import { FileLoaderI } from '../interfaces/file-system';
+import { FileLoaderI } from '../interfaces/file-system.interface';
 
 @Component({
   selector: 'app-big-file-loading',
