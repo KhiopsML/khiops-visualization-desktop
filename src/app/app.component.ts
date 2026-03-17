@@ -108,6 +108,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           // If active tab changed, switch active config immediately
           if (activeTabChanged && this.activeTab) {
             this.setActiveConfig(this.activeTab);
+            // Propagate resize event when tab changes
+            this.propagateResizeEvent();
           }
         }, 100);
       });
@@ -302,6 +304,47 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       tabConfig.setDatas(data);
     } else {
       console.warn('Cannot set data to tab:', tabId, 'component not ready');
+    }
+  }
+
+  /**
+   * Get the active component element from the DOM
+   */
+  private getActiveComponentElement(): HTMLElement | undefined {
+    if (!this.activeTab) {
+      return undefined;
+    }
+
+    const element = this.getComponentElementForTab(this.activeTab);
+    return element || undefined;
+  }
+
+  /**
+   * Propagate resize event to the active visualization component
+   */
+  private propagateResizeEvent(): void {
+    const component = this.getActiveComponentElement();
+    if (!component) {
+      return;
+    }
+
+    try {
+      // Try calling onResize method if available
+      if (typeof (component as any).onResize === 'function') {
+        (component as any).onResize();
+      }
+
+      // Dispatch a native resize event
+      const resizeEvent = new Event('resize', {
+        bubbles: true,
+        cancelable: true,
+      });
+      component.dispatchEvent(resizeEvent);
+
+      // Dispatch a window resize event
+      window.dispatchEvent(new Event('resize'));
+    } catch (error) {
+      console.error('Error propagating resize event:', error);
     }
   }
 
