@@ -11,6 +11,14 @@
   border-bottom: 1px solid #dadce0;
   user-select: none;
   position: relative;
+
+  &.is-dragging {
+    cursor: grabbing;
+
+    .tab:not(.tab--ghost) {
+      cursor: grabbing;
+    }
+  }
 }
 
 .tabs-container {
@@ -22,13 +30,14 @@
 .tab-list {
   display: flex;
   overflow: hidden;
+  position: relative; // required for ghost absolute positioning
 }
 
 .tab {
   display: flex;
   align-items: center;
-  min-width: 180px;
-  max-width: 240px;
+  min-width: 200px;
+  max-width: 200px;
   flex: 1;
   height: 100%;
   padding: 0 16px;
@@ -36,9 +45,12 @@
   border-right: 1px solid #dadce0;
   cursor: pointer;
   position: relative;
-  transition: background-color 0.2s ease;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  // Smooth slide for neighbours during drag
+  transition:
+    transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background-color 0.2s ease;
 
   &:hover {
     background: #e8eaed;
@@ -62,6 +74,28 @@
   &.dirty {
     .tab-title {
       font-style: italic;
+    }
+  }
+
+  // Ghost: floating clone following the pointer
+  &.tab--ghost {
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+    transition: none; // JS drives position — no CSS transition
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    opacity: 1 !important;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #1a73e8;
     }
   }
 }
@@ -110,12 +144,8 @@
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .tab-dirty {
@@ -208,7 +238,7 @@
   }
 }
 
-// Dark theme support
+// Dark theme
 @media (prefers-color-scheme: dark) {
   .tab-header {
     background: #2d2e30;
@@ -220,31 +250,29 @@
     border-color: #3c4043;
     color: #e8eaed;
 
-    &:hover {
-      background: #3c4043;
-    }
+    &:hover { background: #3c4043; }
 
     &.active {
       background: #202124;
       border-color: #202124;
 
-      &::after {
-        background: #8ab4f8;
-      }
+      &::after { background: #8ab4f8; }
+    }
+
+    &.tab--ghost {
+      background: #202124;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+
+      &::after { background: #8ab4f8; }
     }
   }
 
   .tab-icon {
     color: #9aa0a6;
-
-    .active & {
-      color: #8ab4f8;
-    }
+    .active & { color: #8ab4f8; }
   }
 
-  .tab-title {
-    color: #e8eaed;
-  }
+  .tab-title { color: #e8eaed; }
 
   .spinner {
     border-color: #3c4043;
@@ -253,24 +281,14 @@
 
   .tab-close {
     color: #9aa0a6;
-
-    &:hover {
-      background: #3c4043;
-      color: #e8eaed;
-    }
+    &:hover { background: #3c4043; color: #e8eaed; }
   }
 
   .new-tab-btn,
   .control-btn {
     color: #9aa0a6;
-
-    &:hover {
-      background: #3c4043;
-      color: #e8eaed;
-    }
+    &:hover { background: #3c4043; color: #e8eaed; }
   }
 
-  .window-controls {
-    border-color: #3c4043;
-  }
+  .window-controls { border-color: #3c4043; }
 }

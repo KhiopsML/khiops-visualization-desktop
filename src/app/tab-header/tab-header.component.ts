@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { TabManagerService } from '../core/services/tab-manager.service';
 import { MenuService } from '../core/services/menu.service';
 import { FileSystemService } from '../core/services/file-system.service';
+import { TabDragService } from '../core/services/tab-drag.service';
 import { Tab } from '../core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -30,6 +31,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
     private tabManager: TabManagerService,
     private menuService: MenuService,
     private fileSystemService: FileSystemService,
+    private tabDrag: TabDragService,
   ) {}
 
   ngOnInit(): void {
@@ -47,6 +49,13 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Handle tab pointer down to start drag
+   */
+  onTabPointerDown(event: PointerEvent, tab: Tab, tabEl: HTMLElement): void {
+    this.tabDrag.startDrag(event, tab.id, tabEl);
+  }
+
+  /**
    * Handle tab click to activate
    */
   onTabClick(tab: Tab): void {
@@ -57,7 +66,6 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * Handle middle click on tab to close it
    */
   onTabMouseUp(event: MouseEvent, tab: Tab): void {
-    // button === 1 is middle mouse button
     if (event.button === 1) {
       event.preventDefault();
       this.closeTabWithCleanup(tab);
@@ -68,7 +76,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * Handle tab close button click
    */
   onTabClose(event: Event, tab: Tab): void {
-    event.stopPropagation(); // Prevent tab activation
+    event.stopPropagation();
     this.closeTabWithCleanup(tab);
   }
 
@@ -76,10 +84,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * Close tab and clean up file system state if needed
    */
   private closeTabWithCleanup(tab: Tab): void {
-    // If tab has a file, reset file system state
-    if (tab.filePath) {
-      this.fileSystemService.closeFile();
-    }
+    if (tab.filePath) this.fileSystemService.closeFile();
     this.tabManager.closeTab(tab.id);
   }
 
@@ -95,9 +100,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * Delegates to existing menu service
    */
   onOpenFileClick(): void {
-    this.menuService.openFileDialog(() => {
-      // File opened, menu will be reconstructed by app component
-    });
+    this.menuService.openFileDialog(() => {});
   }
 
   /**
@@ -105,16 +108,15 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    */
   getDisplayTitle(tab: Tab): string {
     const maxLength = 25;
-    if (tab.title.length <= maxLength) {
-      return tab.title;
-    }
-    return tab.title.substring(0, maxLength - 3) + '...';
+    return tab.title.length <= maxLength
+      ? tab.title
+      : tab.title.substring(0, maxLength - 3) + '...';
   }
 
   /**
    * Track by function for performance
    */
-  trackByTabId(index: number, tab: Tab): string {
+  trackByTabId(_index: number, tab: Tab): string {
     return tab.id;
   }
 }
