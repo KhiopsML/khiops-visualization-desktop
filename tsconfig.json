@@ -3,7 +3,6 @@
   "compilerOptions": {
     "skipLibCheck": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "outDir": "./dist/out-tsc",

@@ -11,8 +11,10 @@ import {
   Component,
   ElementRef,
   NgZone,
-  ViewChild,
   CUSTOM_ELEMENTS_SCHEMA,
+  QueryList,
+  ViewChildren,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
@@ -21,39 +23,49 @@ import { ConfigService } from './core/services/config.service';
 import { MenuService } from './core/services/menu.service';
 import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
+import { TabManagerService } from './core/services/tab-manager.service';
 import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
 import { WelcomeComponent } from './welcome/welcome.component';
 import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
+import { TabHeaderComponent } from './tab-header/tab-header.component';
+import { Tab } from './core/interfaces/tab.interface';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [CommonModule, WelcomeComponent, BigFileLoadingComponent],
+  imports: [
+    CommonModule,
+    WelcomeComponent,
+    BigFileLoadingComponent,
+    TabHeaderComponent,
+  ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class AppComponent implements AfterViewInit {
-  @ViewChild('visualizationComponent', {
-    static: false,
-  })
-  visualizationComponent?: ElementRef<HTMLElement>;
-  @ViewChild('covisualizationComponent', {
-    static: false,
-  })
-  covisualizationComponent?: ElementRef<HTMLElement>;
+export class AppComponent implements AfterViewInit, OnDestroy {
+  @ViewChildren('khiopsComponent')
+  khiopsComponents!: QueryList<ElementRef<HTMLElement>>;
 
   config: any;
-  activeComponent: 'visualization' | 'covisualization' = 'visualization';
+  tabs: Tab[] = [];
+  activeTab: Tab | null = null;
   currentFileType?: string;
   isDragOver: boolean = false;
+  private destroy$ = new Subject<void>();
   private dragCounter: number = 0;
   btnUpdateText: string = '';
   btnUpdate?: string;
   updateState: 'idle' | 'available' | 'downloading' | 'ready' = 'idle';
   updateAvailableTimer?: any;
   isUpdateInstalled = false;
+
+  // Map to store each tab's component configuration and instance data
+  private tabConfigs = new Map<string, any>();
+  private tabInstances = new Map<string, string>(); // Map tab ID to instance ID
 
   constructor(
     public ngzone: NgZone,
@@ -65,6 +77,7 @@ export class AppComponent implements AfterViewInit {
     private translate: TranslateService,
     private menuService: MenuService,
     private trackerService: TrackerService,
+    private tabManager: TabManagerService,
   ) {
     this.translate.setFallbackLang('en');
 
@@ -75,8 +88,37 @@ export class AppComponent implements AfterViewInit {
     this.btnUpdateText =
       '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
 
-    this.configService.setComponentChangeCallback((componentType) => {
-      this.setActiveComponent(componentType);
+    // Subscribe to tab changes
+    this.tabManager.tabState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((state) => {
+        const previousActiveTab = this.activeTab;
+        this.tabs = state.tabs;
+        this.activeTab = state.tabs.find((tab) => tab.isActive) || null;
+
+        // Check if active tab has changed
+        const activeTabChanged = previousActiveTab?.id !== this.activeTab?.id;
+
+        this.cdr.detectChanges();
+
+        // Configure all tab components
+        setTimeout(() => {
+          this.configureAllTabComponents();
+
+          // If active tab changed, switch active config immediately
+          if (activeTabChanged && this.activeTab) {
+            this.setActiveConfig(this.activeTab);
+          }
+        }, 100);
+      });
+
+    this.configService.setComponentChangeCallback((componentType, filePath) => {
+      this.handleComponentChange(componentType, filePath);
+    });
+
+    // Set up tab-specific data callback
+    this.configService.setTabDataCallback((tabId, data) => {
+      this.setDataForTab(tabId, data);
     });
 
     this.setAppConfig();
@@ -86,86 +128,196 @@ export class AppComponent implements AfterViewInit {
   }
 
   setAppConfig() {
-    // Initialiser avec le composant visualization par défaut
-    this.setActiveComponent('visualization');
+    // Initialize with empty tab - TabManagerService already creates one
   }
 
-  setActiveComponent(componentType: 'visualization' | 'covisualization') {
-    this.activeComponent = componentType;
-    // Update synchronously so that fileSystemService.readFile can use the correct type
-    // immediately without waiting for the 50ms timeout in continueSetActiveComponent
-    this.configService.setActiveComponentType(componentType);
-    this.cdr.detectChanges();
-
-    setTimeout(() => {
-      if (componentType === 'visualization') {
-        this.config = this.visualizationComponent?.nativeElement;
-      } else {
-        this.config = this.covisualizationComponent?.nativeElement;
-      }
-
-      if (!this.config) {
-        setTimeout(() => {
-          this.continueSetActiveComponent(componentType);
-        }, 100);
-        return;
-      }
-
-      this.continueSetActiveComponent(componentType);
-    }, 50);
-  }
-
-  continueSetActiveComponent(
+  handleComponentChange(
     componentType: 'visualization' | 'covisualization',
+    filePath?: string,
   ) {
-    if (componentType === 'visualization') {
-      this.config = this.visualizationComponent?.nativeElement;
-    } else {
-      this.config = this.covisualizationComponent?.nativeElement;
-    }
+    const activeTab = this.tabManager.getActiveTab();
+    if (activeTab && filePath) {
+      // Create a new tab for this file
+      const tabId = this.tabManager.openFileInTab(filePath, componentType);
+      const tab = this.tabManager.getTab(tabId)!;
 
-    if (!this.config) {
+      // Configure component and set as active
+      this.configureTabComponent(tab);
+      this.setActiveConfig(tab);
+    } else if (activeTab) {
+      // Just change component type for active tab
+      this.tabManager.updateTab(activeTab.id, { componentType });
+      this.configureTabComponent(activeTab);
+      this.setActiveConfig(activeTab);
+    }
+  }
+
+  /**
+   * Configure all tab components
+   */
+  private configureAllTabComponents() {
+    this.tabs.forEach((tab) => {
+      if (!this.tabConfigs.has(tab.id)) {
+        this.configureTabComponent(tab);
+      }
+    });
+
+    // Set active tab config
+    if (this.activeTab) {
+      this.setActiveConfig(this.activeTab);
+    }
+  }
+
+  /**
+   * Set the active configuration for the config service
+   */
+  private setActiveConfig(tab: Tab) {
+    const tabConfig = this.tabConfigs.get(tab.id) as any; // Cast to any for khiops methods
+    if (tabConfig) {
+      this.config = tabConfig;
+      this.configService.setActiveComponentType(tab.componentType);
+      this.configService.setConfig(this.config);
+    }
+  }
+
+  /**
+   * Send data directly to a specific tab's component
+   */
+  setDataForTab(tabId: string, data: any) {
+    const tabConfig = this.tabConfigs.get(tabId) as any; // Cast to any for khiops methods
+    if (
+      tabConfig &&
+      tabConfig.setDatas &&
+      typeof tabConfig.setDatas === 'function'
+    ) {
+      tabConfig.setDatas(data);
+    } else {
+      // Fallback to global setDatas
+      if (this.config && this.config.setDatas) {
+        this.config.setDatas(data);
+      }
+    }
+  }
+
+  private configureTabComponent(tab: Tab, retryCount = 0) {
+    const maxRetries = 10;
+    const componentElement = this.getComponentElementForTab(tab);
+
+    if (!componentElement && retryCount < maxRetries) {
+      // Component not ready yet, retry
+      setTimeout(() => {
+        this.configureTabComponent(tab, retryCount + 1);
+      }, 100);
       return;
     }
 
-    this.config.setConfig({
-      appSource: 'ELECTRON',
-      storage: 'ELECTRON',
-      lsId: this.storageService.getStorageKey(),
-      onFileOpen: () => {
-        console.log('fileOpen');
-        this.menuService.openFileDialog(() => {
-          this.constructMenu();
-        });
-      },
-      onCopyImage: (base64data: any) => {
-        const natImage =
-          this.electronService.nativeImage.createFromDataURL(base64data);
-        this.electronService.clipboard.writeImage(natImage);
-      },
-      readLocalFile: (file: File | any, cb: Function) => {
-        return this.readLocalFile(file, cb);
-      },
-      onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
-        if (event.message === 'forgetConsentGiven') {
-          this.trackerService.forgetConsentGiven();
-        } else if (event.message === 'setConsentGiven') {
-          this.trackerService.setConsentGiven();
-        } else if (event.message === 'trackEvent') {
-          this.trackerService.trackEvent(event.data);
-        } else if (event.message === 'ls.getAll') {
-          cb && cb(this.storageService.getAll());
-        } else if (event.message === 'ls.saveAll') {
-          this.storageService.saveAll();
-        } else if (event.message === 'ls.delAll') {
-          this.storageService.delAll();
-        }
-      },
-    });
+    if (!componentElement) {
+      console.warn('Could not find component element for tab:', tab);
+      return;
+    }
 
-    // Mettre à jour le service de configuration
-    this.configService.setConfig(this.config);
-    this.configService.setActiveComponentType(componentType);
+    // Generate unique instance ID for this tab to prevent localStorage and state collision
+    // Use timestamp format compatible with visualization-component Shadow DOM isolation
+    if (!this.tabInstances.has(tab.id)) {
+      // Don't pre-generate instanceId, let setConfig handle it
+      this.tabInstances.set(tab.id, '');
+    }
+
+    // Store this tab's configuration
+    const tabConfig = componentElement as any;
+    this.tabConfigs.set(tab.id, tabConfig);
+
+    // Configure component with unique instance configuration compatible with Shadow DOM
+    if (tabConfig.setConfig && typeof tabConfig.setConfig === 'function') {
+      // Generate timestamp-based instance ID like visualization-component expects
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 9);
+      const compatibleInstanceId = `${timestamp}_${random}_tab_${tab.id}`;
+
+      tabConfig.setConfig({
+        appSource: 'ELECTRON',
+        storage: 'ELECTRON',
+        // Compatible instanceId format for Shadow DOM isolation
+        instanceId: compatibleInstanceId,
+        lsId: `${this.storageService.getStorageKey()}_${compatibleInstanceId}`,
+        onFileOpen: () => {
+          console.log('fileOpen from tab:', tab.id);
+          this.menuService.openFileDialog(() => {
+            this.constructMenu();
+          });
+        },
+        onCopyImage: (base64data: any) => {
+          const natImage =
+            this.electronService.nativeImage.createFromDataURL(base64data);
+          this.electronService.clipboard.writeImage(natImage);
+        },
+        readLocalFile: (file: File | any, cb: Function) => {
+          return this.readLocalFile(file, cb, tab);
+        },
+        onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
+          if (event.message === 'forgetConsentGiven') {
+            this.trackerService.forgetConsentGiven();
+          } else if (event.message === 'setConsentGiven') {
+            this.trackerService.setConsentGiven();
+          } else if (event.message === 'trackEvent') {
+            this.trackerService.trackEvent(event.data);
+          } else if (event.message === 'ls.getAll') {
+            // Return isolated storage for this specific tab instance
+            cb && cb(this.storageService.getTabStorage(compatibleInstanceId));
+          } else if (event.message === 'ls.saveAll') {
+            this.storageService.saveTabStorage(compatibleInstanceId);
+          } else if (event.message === 'ls.delAll') {
+            this.storageService.delTabStorage(compatibleInstanceId);
+          }
+        },
+      });
+
+      // Store the compatible instance ID
+      this.tabInstances.set(tab.id, compatibleInstanceId);
+    } else {
+      console.warn(
+        'setConfig method not available on component for tab:',
+        tab.id,
+      );
+    }
+
+    // Update global config only for active tab
+    if (tab.isActive) {
+      this.config = componentElement;
+      this.configService.setActiveComponentType(tab.componentType);
+      this.configService.setConfig(this.config);
+    }
+  }
+
+  /**
+   * Set data to a specific tab's component
+   */
+  private setDataToTab(tabId: string, data: any) {
+    const tabConfig = this.tabConfigs.get(tabId);
+    if (
+      tabConfig &&
+      tabConfig.setDatas &&
+      typeof tabConfig.setDatas === 'function'
+    ) {
+      tabConfig.setDatas(data);
+    } else {
+      console.warn('Cannot set data to tab:', tabId, 'component not ready');
+    }
+  }
+
+  private getComponentElementForTab(tab: Tab): HTMLElement | null {
+    if (!this.khiopsComponents) return null;
+
+    // Find component by data-tab-id attribute
+    const components = this.khiopsComponents.toArray();
+    for (const component of components) {
+      const element = component.nativeElement;
+      if (element.getAttribute('data-tab-id') === tab.id) {
+        return element;
+      }
+    }
+
+    return null;
   }
 
   determineComponentFromFile(
@@ -189,7 +341,7 @@ export class AppComponent implements AfterViewInit {
     }
   }
 
-  readLocalFile(input: File | any, cb: Function) {
+  readLocalFile(input: File | any, cb: Function, tab?: Tab) {
     (async () => {
       try {
         if (this.electronService.isElectron) {
@@ -209,7 +361,13 @@ export class AppComponent implements AfterViewInit {
             'read-local-file',
             path,
           );
-          cb(content, path);
+
+          // Pass tab info to callback if available
+          if (tab) {
+            cb(content, path, tab);
+          } else {
+            cb(content, path);
+          }
         }
       } catch (error) {
         console.log('error', error);
@@ -286,7 +444,6 @@ export class AppComponent implements AfterViewInit {
       this.electronService.ipcRenderer?.sendSync('get-input-file');
     if (inputFile && inputFile !== '.') {
       setTimeout(() => {
-        this.currentFileType = inputFile;
         this.fileSystemService.openFile(inputFile, () => {
           this.constructMenu();
         });
@@ -296,11 +453,10 @@ export class AppComponent implements AfterViewInit {
       if (arg) {
         // Add delay to ensure component is fully loaded before opening file
         setTimeout(() => {
-          this.currentFileType = arg;
           this.fileSystemService.openFile(arg, () => {
             this.constructMenu();
           });
-        }, 750); // 500ms delay to ensure component initialization
+        }, 100);
       }
     });
   }
@@ -354,8 +510,7 @@ export class AppComponent implements AfterViewInit {
 
   /**
    * Processes the dropped file if it has a valid extension.
-   * Web components (BaseDragDropComponent) are disabled in Electron mode,
-   * so all DnD drops are handled exclusively here.
+   * Opens file in the active tab or creates a new tab if needed.
    */
   private processDroppedFile(file: File): void {
     const validExtensions = ['.json', '.khj', '.khcj'];
@@ -374,15 +529,12 @@ export class AppComponent implements AfterViewInit {
       return;
     }
 
-    // The file was dropped on a non-web-component area (welcome screen, etc.).
-    // Handle it directly through fileSystemService.openFile which manages
-    // component switching, welcome screen, and data loading.
     const path = this.electronService.electron.webUtils.getPathForFile(file);
     if (!path) {
       return;
     }
 
-    this.currentFileType = path;
+    // Open the file - openFile will create the tab
     this.fileSystemService.openFile(path, () => {
       this.constructMenu();
     });
@@ -407,6 +559,9 @@ export class AppComponent implements AfterViewInit {
   }
 
   constructMenu() {
+    const activeComponentType =
+      this.activeTab?.componentType || 'visualization';
+
     const menuTemplate = this.menuService.setMenu(
       this.btnUpdate,
       this.btnUpdateText,
@@ -435,10 +590,22 @@ export class AppComponent implements AfterViewInit {
           await this.electronService.ipcRenderer?.invoke('install-update-now');
         })();
       },
-      this.activeComponent,
+      activeComponentType,
     );
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);
     this.electronService.remote.Menu.setApplicationMenu(menu);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Track by function for tab performance
+   */
+  trackByTabId(index: number, tab: Tab): string {
+    return tab.id;
   }
 }

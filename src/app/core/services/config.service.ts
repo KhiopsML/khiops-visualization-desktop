@@ -36,12 +36,31 @@ export class ConfigService {
 
   private componentChangeCallback?: (
     componentType: 'visualization' | 'covisualization',
+    filePath?: string
   ) => void;
 
+  private tabDataCallback?: (tabId: string, data: any) => void;
+
   setComponentChangeCallback(
-    callback: (componentType: 'visualization' | 'covisualization') => void,
+    callback: (
+      componentType: 'visualization' | 'covisualization',
+      filePath?: string
+    ) => void,
   ) {
     this.componentChangeCallback = callback;
+  }
+
+  setTabDataCallback(callback: (tabId: string, data: any) => void) {
+    this.tabDataCallback = callback;
+  }
+
+  notifyTabData(tabId: string, data: any) {
+    if (this.tabDataCallback) {
+      this.tabDataCallback(tabId, data);
+    } else {
+      // Fallback to global setDatas if no tab callback
+      this.setDatas(data);
+    }
   }
 
   async requestComponentChange(filePath: string, jsonData?: any) {
@@ -73,7 +92,7 @@ export class ConfigService {
         requiredComponent = 'visualization';
     }
 
-    this.componentChangeCallback(requiredComponent);
+    this.componentChangeCallback(requiredComponent, undefined);
   }
 
   private analyzeJsonData(jsonData: any): 'visualization' | 'covisualization' {

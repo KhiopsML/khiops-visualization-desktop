@@ -70,6 +70,7 @@
     "test:watch": "ng test --watch=true"
   },
   "dependencies": {
+    "@angular/animations": "21.2.4",
     "@angular/common": "^21.2.1",
     "@angular/compiler": "^21.2.1",
     "@angular/core": "^21.2.1",
@@ -113,7 +114,6 @@
     "@types/jasminewd2": "^2.0.13",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
-    "karma-chrome-launcher": "^3.2.0",
     "cypress": "^15.11.0",
     "cypress-shadow-dom": "^1.4.1",
     "electron": "^40.8.0",
@@ -128,6 +128,7 @@
     "jasmine-core": "^6.1.0",
     "jasmine-spec-reporter": "^7.0.0",
     "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
     "karma-coverage-istanbul-reporter": "^3.0.3",
     "karma-electron": "^7.3.0",
     "karma-jasmine": "^5.1.0",

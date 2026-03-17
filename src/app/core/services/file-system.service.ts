@@ -8,6 +8,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { ElectronService } from './electron.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from './config.service';
+import { TabManagerService } from './tab-manager.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
@@ -50,6 +51,7 @@ export class FileSystemService {
     private translate: TranslateService,
     private storageService: StorageService,
     private jsonFormatterService: JsonFormatterService,
+    private tabManagerService: TabManagerService,
   ) {
     this.initialize();
   }
@@ -114,8 +116,24 @@ export class FileSystemService {
     })();
   }
 
-  async openFile(filename: string, callbackDone?: Function) {
+  async openFile(filename: string, callbackDone?: Function, tabId?: string) {
     if (!filename) return;
+
+    // Determine component type from filename
+    const extension = filename.toLowerCase().split('.').pop();
+    let componentType: 'visualization' | 'covisualization' = 'visualization';
+    if (extension === 'khcj') {
+      componentType = 'covisualization';
+    }
+
+    // Create a new tab if no tabId provided
+    let finalTabId = tabId;
+    if (!finalTabId) {
+      finalTabId = this.tabManagerService.openFileInTab(
+        filename,
+        componentType,
+      );
+    }
 
     // Check if we need to save current work before opening new file
     const currentActiveType = this.configService.getActiveComponentType();
@@ -123,14 +141,18 @@ export class FileSystemService {
 
     if (hasCurrentFile && currentActiveType === 'covisualization') {
       this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone);
+        await this.performOpenFile(filename, callbackDone, finalTabId);
       });
     } else {
-      await this.performOpenFile(filename, callbackDone);
+      await this.performOpenFile(filename, callbackDone, finalTabId);
     }
   }
 
-  private async performOpenFile(filename: string, callbackDone?: Function) {
+  private async performOpenFile(
+    filename: string,
+    callbackDone?: Function,
+    tabId?: string,
+  ) {
     // For JSON files, read and analyze content first to determine component type
     const extension = filename.toLowerCase().split('.').pop();
     let jsonData: any = null;
@@ -167,15 +189,28 @@ export class FileSystemService {
       .then((datas: any) => {
         this.setTitleBar(filename, componentType);
         this.setFileHistory(filename);
-        // Add small delay to ensure component is fully rendered before setting data
+        // Add delay to ensure component is fully configured before setting data
         setTimeout(() => {
-          this.configService.setDatas(datas);
+          if (tabId) {
+            // Send data to specific tab - use compatible data format
+            const dataWithFilename = { ...datas, filename: filename };
+            this.configService.notifyTabData(tabId, dataWithFilename);
+            // Mark tab as loaded
+            this.tabManagerService.updateTab(tabId, { isLoading: false });
+          } else {
+            // Fallback to global setDatas
+            this.configService.setDatas(datas);
+          }
           if (callbackDone) callbackDone();
-        }, 500);
+        }, 750); // Longer delay for Shadow DOM components
       })
       .catch((error: any) => {
         console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
         this.closeFile();
+        // Mark tab as finished loading (even on error)
+        if (tabId) {
+          this.tabManagerService.updateTab(tabId, { isLoading: false });
+        }
         Toastify({
           text: this.translate.instant('OPEN_FILE_ERROR'),
           gravity: 'bottom',

@@ -14,6 +14,9 @@ export class StorageService {
   private _storage: any = {};
   private _storageKey: string = 'KHIOPS_VISUALIZATION_DESKTOP';
 
+  // Storage for individual tab instances
+  private _tabStorages: Map<string, any> = new Map();
+
   constructor(private electronService: ElectronService) {
     try {
       // Use userData directory instead of temp directory to persist data across updates
@@ -85,5 +88,49 @@ export class StorageService {
 
   getStorageKey() {
     return this._storageKey;
+  }
+
+  // Tab-specific storage methods for isolated instances
+  getTabStorage(instanceId: string): any {
+    if (!this._tabStorages.has(instanceId)) {
+      // Initialize with empty storage for this tab instance
+      this._tabStorages.set(instanceId, {});
+    }
+    return this._tabStorages.get(instanceId);
+  }
+
+  saveTabStorage(instanceId: string, cb?: Function) {
+    const tabStorage = this._tabStorages.get(instanceId);
+    if (tabStorage) {
+      const tabStorageKey = `${this._storageKey}_tab_${instanceId}`;
+      this.electronService.storage?.set(tabStorageKey, tabStorage, () => {
+        console.log('Saved tab storage for instance:', instanceId);
+        cb && cb();
+      });
+    }
+  }
+
+  delTabStorage(instanceId: string) {
+    this._tabStorages.delete(instanceId);
+    const tabStorageKey = `${this._storageKey}_tab_${instanceId}`;
+    this.electronService.storage?.remove(tabStorageKey, (error: any) => {
+      if (error) console.error('Error deleting tab storage:', error);
+      else console.log('Deleted tab storage for instance:', instanceId);
+    });
+  }
+
+  setTabStorageItem(instanceId: string, key: string, value: any) {
+    if (!this._tabStorages.has(instanceId)) {
+      this._tabStorages.set(instanceId, {});
+    }
+    const tabStorage = this._tabStorages.get(instanceId)!;
+    tabStorage[key] = value;
+    // Auto-save tab storage
+    this.saveTabStorage(instanceId);
+  }
+
+  getTabStorageItem(instanceId: string, key: string): any {
+    const tabStorage = this._tabStorages.get(instanceId);
+    return tabStorage ? tabStorage[key] : undefined;
   }
 }
