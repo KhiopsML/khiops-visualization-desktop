@@ -137,20 +137,11 @@
   cursor: pointer;
   color: #5f6368;
   flex-shrink: 0;
-  opacity: 0;
   transition: all 0.2s ease;
 
   &:hover {
     background: #e8eaed;
     color: #202124;
-  }
-
-  .tab:hover & {
-    opacity: 1;
-  }
-
-  .tab.active & {
-    opacity: 1;
   }
 
   svg {
