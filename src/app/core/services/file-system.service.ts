@@ -126,6 +126,14 @@ export class FileSystemService {
       componentType = 'covisualization';
     }
 
+    // Check if file is already open - if so, just activate the tab
+    const existingTab = this.tabManagerService.getTabByFilePath(filename);
+    if (existingTab) {
+      this.tabManagerService.setActiveTab(existingTab.id);
+      callbackDone && callbackDone();
+      return;
+    }
+
     // Create a new tab if no tabId provided
     let finalTabId = tabId;
     if (!finalTabId) {

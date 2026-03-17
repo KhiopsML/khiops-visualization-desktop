@@ -60,6 +60,13 @@ export class TabManagerService {
     const currentState = this.tabState.value;
     const fileName = this.getFileNameFromPath(filePath);
 
+    // Check if file is already open in an existing tab
+    const existingTab = currentState.tabs.find((tab) => tab.filePath === filePath);
+    if (existingTab) {
+      this.setActiveTab(existingTab.id);
+      return existingTab.id;
+    }
+
     let targetTabId = tabId;
     let updatedTabs = [...currentState.tabs];
 
@@ -181,6 +188,14 @@ export class TabManagerService {
   getTab(tabId: string): Tab | null {
     const currentState = this.tabState.value;
     return currentState.tabs.find((tab) => tab.id === tabId) || null;
+  }
+
+  /**
+   * Get tab by file path
+   */
+  getTabByFilePath(filePath: string): Tab | null {
+    const currentState = this.tabState.value;
+    return currentState.tabs.find((tab) => tab.filePath === filePath) || null;
   }
 
   /**
