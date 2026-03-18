@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2023-2025 Orange. All rights reserved.
+ * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
+ * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
+ */
+
+#app-recently-opened-files {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(4, 32, 69, 0.1);
+  background-color: #fff;
+
+  h3 {
+    margin: 1rem 0 2rem;
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 600;
+    text-align: left;
+    padding-left: 10px;
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .recent-files-list {
+    list-style: none;
+    max-height: 40vh;
+    overflow: auto;
+    padding: 0;
+    margin: 0;
+
+    .recent-file-item {
+      margin-bottom: 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .file-button {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background-color: #f9fafb;
+        border: 1px solid rgba(4, 32, 69, 0.1);
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background-color: #f5f5f5;
+          border-color: #999;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        &:active {
+          background-color: #efefef;
+        }
+
+        .file-info {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          margin-bottom: 0.25rem;
+        }
+
+        .file-type-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 0.5rem;
+          color: #666;
+          flex-shrink: 0;
+
+          &.icon-visualization {
+            color: #0066cc;
+          }
+
+          &.icon-covisualization {
+            color: #cc6600;
+          }
+        }
+
+        .file-name {
+          display: inline;
+          color: #cd3c14;
+          font-weight: 600;
+          word-break: break-word;
+        }
+
+        .file-size {
+          display: inline;
+          margin-left: 0.75rem;
+          color: #999;
+          font-size: 0.8rem;
+          white-space: nowrap;
+        }
+
+        .file-path {
+          display: block;
+          font-size: 0.75rem;
+          color: #999;
+          margin-top: 0.25rem;
+        }
+      }
+    }
+  }
+
+  > p {
+    font-size: 0.8rem;
+    color: #777;
+    padding: 50px;
+  }
+}

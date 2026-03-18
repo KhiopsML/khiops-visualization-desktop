@@ -1,0 +1,59 @@
+<!--
+ * Copyright (c) 2023-2025 Orange. All rights reserved.
+ * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
+ * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
+-->
+
+<div id="app-recently-opened-files">
+  <h3>
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      width="16"
+      height="16"
+      style="vertical-align: middle; margin-right: 6px; color: inherit"
+    >
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2" />
+      <path
+        d="M8 4.5V8l2.5 1.5"
+        stroke="currentColor"
+        stroke-width="1.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    {{ 'RECENTLY_OPENED_FILES' | translate }}
+  </h3>
+  <ul class="recent-files-list" *ngIf="recentFiles.length > 0">
+    <li *ngFor="let file of recentFiles" class="recent-file-item">
+      <button type="button" class="file-button" (click)="openFile(file.path)">
+        <div class="file-info">
+          <span
+            class="file-type-icon"
+            [ngClass]="'icon-' + file.fileType"
+            [title]="file.fileType"
+          >
+            <img
+              *ngIf="file.fileType === 'visualization'"
+              src="assets/icons/icon-visu.png"
+              alt="Visualization"
+              width="20"
+              height="20"
+            />
+            <img
+              *ngIf="file.fileType === 'covisualization'"
+              src="assets/icons/icon-covisu.png"
+              alt="Covisualization"
+              width="20"
+              height="20"
+            />
+          </span>
+          <span class="file-name">{{ file.filename }}</span>
+          <span class="file-size">{{ file.sizeDisplay }}</span>
+        </div>
+        <span class="file-path">{{ file.path }}</span>
+      </button>
+    </li>
+  </ul>
+  <p *ngIf="recentFiles.length === 0">{{ 'NO_RECENT_FILES' | translate }}</p>
+</div>

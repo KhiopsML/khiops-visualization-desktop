@@ -53,7 +53,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   config: any;
   tabs: Tab[] = [];
   activeTab: Tab | null = null;
-  currentFileType?: string;
   isDragOver: boolean = false;
   private destroy$ = new Subject<void>();
   private dragCounter: number = 0;
@@ -124,6 +123,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     });
 
     this.setAppConfig();
+
+    // Subscribe to menu rebuild signal (e.g., when file is opened from recently opened files)
+    this.menuService.menuShouldRebuild$.subscribe(() => {
+      this.constructMenu();
+    });
+
     if (this.electronService.isElectron) {
       this.addIpcRendererEvents();
     }
@@ -217,6 +222,38 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       console.warn('Could not find component element for tab:', tab);
       return;
     }
+    this.config.setConfig({
+      appSource: 'ELECTRON',
+      storage: 'ELECTRON',
+      lsId: this.storageService.getStorageKey(),
+      onFileOpen: () => {
+        console.log('fileOpen');
+        this.menuService.openFileDialog();
+      },
+      onCopyImage: (base64data: any) => {
+        const natImage =
+          this.electronService.nativeImage.createFromDataURL(base64data);
+        this.electronService.clipboard.writeImage(natImage);
+      },
+      readLocalFile: (file: File | any, cb: Function) => {
+        return this.readLocalFile(file, cb);
+      },
+      onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
+        if (event.message === 'forgetConsentGiven') {
+          this.trackerService.forgetConsentGiven();
+        } else if (event.message === 'setConsentGiven') {
+          this.trackerService.setConsentGiven();
+        } else if (event.message === 'trackEvent') {
+          this.trackerService.trackEvent(event.data);
+        } else if (event.message === 'ls.getAll') {
+          cb && cb(this.storageService.getAll());
+        } else if (event.message === 'ls.saveAll') {
+          this.storageService.saveAll();
+        } else if (event.message === 'ls.delAll') {
+          this.storageService.delAll();
+        }
+      },
+    });
 
     // Generate unique instance ID for this tab to prevent localStorage and state collision
     // Use timestamp format compatible with visualization-component Shadow DOM isolation
@@ -398,8 +435,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             path = this.electronService.electron.webUtils.getPathForFile(input);
           }
 
-          this.currentFileType = path;
-
           const content = await this.electronService.ipcRenderer?.invoke(
             'read-local-file',
             path,
@@ -487,18 +522,14 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.electronService.ipcRenderer?.sendSync('get-input-file');
     if (inputFile && inputFile !== '.') {
       setTimeout(() => {
-        this.fileSystemService.openFile(inputFile, () => {
-          this.constructMenu();
-        });
+        this.fileSystemService.openFile(inputFile);
       });
     }
     this.electronService.ipcRenderer?.on('file-open-system', (event, arg) => {
       if (arg) {
         // Add delay to ensure component is fully loaded before opening file
         setTimeout(() => {
-          this.fileSystemService.openFile(arg, () => {
-            this.constructMenu();
-          });
+          this.fileSystemService.openFile(arg);
         }, 100);
       }
     });
@@ -578,9 +609,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
 
     // Open the file - openFile will create the tab
-    this.fileSystemService.openFile(path, () => {
-      this.constructMenu();
-    });
+    this.fileSystemService.openFile(path);
   }
 
   beforeQuit() {

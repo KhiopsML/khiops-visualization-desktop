@@ -44,6 +44,9 @@
   "GLOBAL_INSTALL_AND_RESTART": "Install and restart",
   "GLOBAL_UPDATE_WAITING_FOR_DOWNLOAD": "Waiting For download",
   "OPEN_FILE_ERROR": "No data or file error !",
-  "WELCOME": "Open a file from the menu",
-  "LONG_LOADING": "Loading very large reports may take more than a minute..."
+  "LONG_LOADING": "Loading very large reports may take more than a minute...",
+  "RECENTLY_OPENED_FILES": "Recently Opened Files",
+  "NO_RECENT_FILES": "No recent files",
+  "OPEN_A_FILE_FROM_THE_MENU": "Open a file from the menu",
+  "START_BY_LOADING_DATASET": "Start by loading a dataset"
 }

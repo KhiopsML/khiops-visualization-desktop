@@ -4,4 +4,11 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  -->
 
-<span id="app-welcome" *ngIf="visible">{{ 'WELCOME' | translate }}</span>
+<div id="app-welcome" *ngIf="visible">
+  <div class="welcome-header">
+    <img src="assets/icons/favicon.png" height="80px" width="80px" />
+    <span>Khiops Visualization Desktop</span>
+  </div>
+  <app-start-panel></app-start-panel>
+  <app-recently-opened-files></app-recently-opened-files>
+</div>

@@ -6,11 +6,43 @@
 
 #app-welcome {
   display: flex;
+  width: 100%;
+  height: 100%;
+  background: #f9fafb;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
   text-align: center;
   padding: 0 1rem;
   z-index: 999;
   opacity: 0;
   animation: fadeIn 0s 1s forwards;
+  flex-direction: column;
+
+  .welcome-header {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-bottom: 40px;
+    align-items: center;
+    justify-content: center;
+    img {
+      width: 80px;
+      height: 80px;
+    }
+
+    span {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111;
+    }
+  }
+  app-recently-opened-files {
+    width: 800px;
+  }
+  app-start-panel {
+    width: 800px;
+  }
 }
 
 @keyframes fadeIn {
