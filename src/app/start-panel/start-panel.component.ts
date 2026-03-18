@@ -1,11 +1,5 @@
-/*
- * Copyright (c) 2023-2025 Orange. All rights reserved.
- * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
- * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
- */
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { StartPanelService } from '../core/services/start-panel.service';
 import { MenuService } from '../core/services/menu.service';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -30,12 +24,17 @@ export class StartPanelComponent implements OnInit {
   };
 
   constructor(
-    private readonly startPanelService: StartPanelService,
     private readonly menuService: MenuService,
   ) {}
 
   ngOnInit(): void {
-    this.shortcut = this.startPanelService.getOpenFileShortcut();
+    // Detect OS and set shortcut dynamically
+    const isMac = /mac/i.test(navigator.userAgent);
+    const keys = isMac ? ['Cmd', 'O'] : ['Ctrl', 'O'];
+    this.shortcut = {
+      keys,
+      description: 'OPEN_A_FILE_FROM_THE_MENU',
+    };
   }
 
   getKeyDisplay(key: string): string {
