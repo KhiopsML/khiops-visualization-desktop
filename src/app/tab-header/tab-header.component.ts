@@ -85,6 +85,11 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    */
   private closeTabWithCleanup(tab: Tab): void {
     this.tabManager.closeTab(tab.id);
+    
+    // If no tabs left, show welcome screen by closing file
+    if (!this.tabManager.hasOpenTabs()) {
+      this.fileSystemService.closeFile();
+    }
   }
 
   /**

@@ -251,4 +251,11 @@ export class TabManagerService {
     // Set the restored tab as active
     this.setActiveTab(restoredTab.id, updatedTabs);
   }
+
+  /**
+   * Check if there are any open tabs
+   */
+  hasOpenTabs(): boolean {
+    return this.tabState.value.tabs.length > 0;
+  }
 }
