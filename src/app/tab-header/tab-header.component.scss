@@ -45,7 +45,8 @@
   border-right: 1px solid #dadce0;
   cursor: pointer;
   position: relative;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   // Smooth slide for neighbours during drag
   transition:
@@ -84,7 +85,9 @@
     pointer-events: none;
     transition: none; // JS drives position — no CSS transition
     background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.15),
+      0 1px 3px rgba(0, 0, 0, 0.1);
     z-index: 9999;
     opacity: 1 !important;
 
@@ -120,7 +123,7 @@
 .tab-title {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: #202124;
   overflow: hidden;
   white-space: nowrap;
@@ -144,8 +147,12 @@
 }
 
 @keyframes spin {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .tab-dirty {
@@ -250,29 +257,41 @@
     border-color: #3c4043;
     color: #e8eaed;
 
-    &:hover { background: #3c4043; }
+    &:hover {
+      background: #3c4043;
+    }
 
     &.active {
       background: #202124;
       border-color: #202124;
 
-      &::after { background: #8ab4f8; }
+      &::after {
+        background: #8ab4f8;
+      }
     }
 
     &.tab--ghost {
       background: #202124;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.5),
+        0 1px 4px rgba(0, 0, 0, 0.3);
 
-      &::after { background: #8ab4f8; }
+      &::after {
+        background: #8ab4f8;
+      }
     }
   }
 
   .tab-icon {
     color: #9aa0a6;
-    .active & { color: #8ab4f8; }
+    .active & {
+      color: #8ab4f8;
+    }
   }
 
-  .tab-title { color: #e8eaed; }
+  .tab-title {
+    color: #e8eaed;
+  }
 
   .spinner {
     border-color: #3c4043;
@@ -281,14 +300,22 @@
 
   .tab-close {
     color: #9aa0a6;
-    &:hover { background: #3c4043; color: #e8eaed; }
+    &:hover {
+      background: #3c4043;
+      color: #e8eaed;
+    }
   }
 
   .new-tab-btn,
   .control-btn {
     color: #9aa0a6;
-    &:hover { background: #3c4043; color: #e8eaed; }
+    &:hover {
+      background: #3c4043;
+      color: #e8eaed;
+    }
   }
 
-  .window-controls { border-color: #3c4043; }
+  .window-controls {
+    border-color: #3c4043;
+  }
 }
