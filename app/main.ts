@@ -10,6 +10,7 @@ import * as url from 'url';
 
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
+const openWindows: BrowserWindow[] = []; // Track all open windows for multi-window support
 let isQuitting = false;
 let isUpdateReadyToInstall = false;
 let updateAutoInstallPending = false;
@@ -81,7 +82,7 @@ function createWindow(): BrowserWindow {
   const size = screen.getPrimaryDisplay().workAreaSize;
 
   // Create the browser window.
-  win = new electron.BrowserWindow({
+  const newWindow = new electron.BrowserWindow({
     x: 0,
     y: 0,
     width: size.width,
@@ -99,24 +100,24 @@ function createWindow(): BrowserWindow {
     backgroundColor: '#ffffff',
   });
 
-  win.once('ready-to-show', () => {
-    win?.show();
+  newWindow.once('ready-to-show', () => {
+    newWindow?.show();
   });
 
   // Enable remote for main process
-  require('@electron/remote/main').enable(win);
+  require('@electron/remote/main').enable(newWindow);
   // Enable remote for renderer process
-  require('@electron/remote/main').enable(win.webContents);
+  require('@electron/remote/main').enable(newWindow.webContents);
 
   // Custom context menu
-  win.webContents.on('context-menu', (_event, params) => {
+  newWindow.webContents.on('context-menu', (_event, params) => {
     // Check if there is selected text or if clipboard has content to enable/disable menu items
     const hasSelection =
       params.selectionText && params.selectionText.trim().length > 0;
     const hasClipboard = clipboard.readText().trim().length > 0;
 
     // process right-click event and send to renderer process
-    win?.webContents?.send('right-click', params);
+    newWindow?.webContents?.send('right-click', params);
     Menu.buildFromTemplate([
       { label: 'Copy', role: 'copy', enabled: hasSelection },
       { label: 'Paste', role: 'paste', enabled: hasClipboard },
@@ -124,14 +125,14 @@ function createWindow(): BrowserWindow {
       {
         label: 'Copy image',
         click: () => {
-          win?.webContents?.send('copy-image', params);
+          newWindow?.webContents?.send('copy-image', params);
         },
         accelerator: 'CommandOrControl+Shift+c',
       },
       {
         label: 'Copy datas',
         click: () => {
-          win?.webContents?.send('copy-datas', params);
+          newWindow?.webContents?.send('copy-datas', params);
         },
         accelerator: 'CommandOrControl+Shift+d',
       },
@@ -148,7 +149,7 @@ function createWindow(): BrowserWindow {
 
   if (serve) {
     require('electron-reloader')(module);
-    win.loadURL('http://localhost:4200');
+    newWindow.loadURL('http://localhost:4200');
 
     const electronReload = require('electron-reload');
     electronReload(
@@ -158,7 +159,7 @@ function createWindow(): BrowserWindow {
       ),
     );
     const setupReloading = require('../electron-reload.js');
-    setupReloading(win);
+    setupReloading(newWindow);
   } else {
     // Path when running electron executable
     let pathIndex = './index.html';
@@ -174,27 +175,40 @@ function createWindow(): BrowserWindow {
       slashes: true,
     });
 
-    win.loadURL(urlPath);
+    newWindow.loadURL(urlPath);
   }
 
   // Emitted when the window is closed.
-  win.on('closed', () => {
-    // Dereference the window object, usually you would store window
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null;
-  });
-
-  win.on('close', (event) => {
-    if (!isQuitting) {
-      event.preventDefault();
-      win?.show(); // Show window if hidden or minimized
-      win?.focus(); // Focus the window to bring it to the front
-      win?.webContents?.send('before-quit');
+  newWindow.on('closed', () => {
+    // Remove window from tracking array
+    const index = openWindows.indexOf(newWindow);
+    if (index > -1) {
+      openWindows.splice(index, 1);
+    }
+    // Dereference the window object
+    if (newWindow === win) {
+      win = null;
     }
   });
 
-  return win;
+  newWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      newWindow?.show(); // Show window if hidden or minimized
+      newWindow?.focus(); // Focus the window to bring it to the front
+      newWindow?.webContents?.send('before-quit');
+    }
+  });
+
+  // Track the primary window
+  if (!win) {
+    win = newWindow;
+  }
+
+  // Add to windows array for multi-window support
+  openWindows.push(newWindow);
+
+  return newWindow;
 }
 
 try {
@@ -321,6 +335,34 @@ ipcMain.handle('install-update-now', () => {
 ipcMain.handle('set-update-auto-install-on-quit', () => {
   log.info('set-update-auto-install-on-quit requested');
   updateAutoInstallPending = true;
+});
+
+/**
+ * Handle creating a new window with a detached tab
+ * @param _event The IPC event
+ * @param data Object containing the tab data to restore in the new window
+ */
+ipcMain.handle('create-window-with-tab', async (_event: any, data: any) => {
+  try {
+    log.info('create-window-with-tab requested with tab:', data?.tab?.title);
+    const newWindow = createWindow();
+
+    // Store the tab data to be passed to the new window once it's ready
+    if (data && data.tab) {
+      // Wait for the window to be fully loaded before sending the tab data
+      newWindow.webContents.once('did-finish-load', () => {
+        log.info('New window loaded, sending restore-tab event');
+        newWindow.webContents?.send('restore-tab', {
+          tab: data.tab,
+        });
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    log.error('Error creating new window with tab:', error);
+    return { success: false, error: error };
+  }
 });
 
 autoUpdater.on('checking-for-update', () => {

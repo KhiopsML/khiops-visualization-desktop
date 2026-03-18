@@ -230,4 +230,25 @@ export class TabManagerService {
 
     this.tabState.next({ ...state, tabs });
   }
+
+  /**
+   * Restore a tab from detached tab data
+   * @param tabData The tab data to restore
+   */
+  restoreTab(tabData: Tab): void {
+    const currentState = this.tabState.value;
+    
+    // Create a new tab with the provided data but generate a new ID
+    this.tabCounter++;
+    const restoredTab: Tab = {
+      ...tabData,
+      id: `tab-${this.tabCounter}`,
+      isActive: false,
+    };
+
+    const updatedTabs = [...currentState.tabs, restoredTab];
+
+    // Set the restored tab as active
+    this.setActiveTab(restoredTab.id, updatedTabs);
+  }
 }

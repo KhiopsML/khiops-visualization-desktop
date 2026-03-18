@@ -494,6 +494,27 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         }, 100);
       }
     });
+
+    // Listen for detached tab restoration from new window
+    this.electronService.ipcRenderer?.on('restore-tab', (event, data) => {
+      console.log('[AppComponent] restore-tab event received:', data);
+      if (data && data.tab) {
+        const tab = data.tab;
+        // Add delay to ensure component is fully loaded before restoring tab
+        setTimeout(() => {
+          console.log('[AppComponent] Restoring tab:', tab.title, 'with filePath:', tab.filePath);
+          if (tab.filePath) {
+            // If the tab has a file path, open the file which will load the data
+            console.log('[AppComponent] Opening file:', tab.filePath);
+            this.fileSystemService.openFile(tab.filePath);
+          } else {
+            // If no file path, just restore the tab with existing data
+            console.log('[AppComponent] Restoring tab with existing data');
+            this.tabManager.restoreTab(tab);
+          }
+        }, 100);
+      }
+    });
   }
 
   /**
