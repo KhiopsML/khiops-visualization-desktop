@@ -43,6 +43,11 @@ export class FileSystemService {
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
   public fileLoader$: Observable<any> = this._fileLoaderSub.asObservable();
 
+  // Subject emitted when recent files list changes
+  private _recentFilesChanged = new BehaviorSubject<void>(undefined);
+  public recentFilesChanged$: Observable<void> =
+    this._recentFilesChanged.asObservable();
+
   constructor(
     private ngzone: NgZone,
     private configService: ConfigService,
@@ -441,7 +446,7 @@ export class FileSystemService {
         filesHistory.files.splice(isExistingHistoryIndex, 1);
       } else {
         // remove last item
-        if (filesHistory.files.length >= 5) {
+        if (filesHistory.files.length >= 10) {
           filesHistory.files.splice(-1, 1);
         }
       }
@@ -451,10 +456,95 @@ export class FileSystemService {
     // add to the top of the list
     filesHistory.files.unshift(filename);
     this.storageService.setOne('OPEN_FILE', filesHistory);
+
+    // Emit signal that recent files list has changed
+    this._recentFilesChanged.next();
   }
 
   getFileHistory() {
     return this.storageService.getOne('OPEN_FILE') || { files: [] };
+  }
+
+  getRecentFiles() {
+    const fileHistory = this.getFileHistory();
+    const path = this.electronService.isElectron
+      ? window.require('path')
+      : null;
+
+    // Work with the existing format: {files: Array of strings}
+    const filesArray = fileHistory.files || [];
+
+    return filesArray.map((filePath: string, index: number) => {
+      let filename = filePath;
+      if (path && typeof filePath === 'string') {
+        filename = path.basename(filePath);
+      }
+
+      // Get file size
+      let fileSize = 0;
+      try {
+        const stats = this.electronService.fs.statSync(filePath);
+        fileSize = stats.size;
+      } catch (error) {
+        console.warn('Could not get file size for:', filePath, error);
+      }
+
+      // Determine file type based on extension
+      const fileType = this.getFileType(filePath);
+
+      return {
+        path: filePath,
+        filename: filename,
+        size: fileSize,
+        sizeDisplay: this.formatFileSize(fileSize),
+        fileType: fileType,
+      };
+    });
+  }
+
+  /**
+   * Determine file type based on extension and file content
+   */
+  private getFileType(filePath: string): 'visualization' | 'covisualization' {
+    const extension = filePath.toLowerCase().split('.').pop();
+
+    if (extension === 'khcj') {
+      return 'covisualization';
+    } else if (extension === 'khj') {
+      return 'visualization';
+    } else if (extension === 'json') {
+      // For .json files, we need to check the content to determine the type
+      try {
+        const content = this.electronService.fs.readFileSync(filePath, 'utf-8');
+        const jsonData = JSON.parse(content);
+
+        if (jsonData.tool === 'Khiops Coclustering') {
+          return 'covisualization';
+        } else {
+          return 'visualization';
+        }
+      } catch (error) {
+        console.warn(
+          'Could not read file content for type detection:',
+          filePath,
+          error,
+        );
+        return 'visualization'; // Default fallback
+      }
+    }
+
+    return 'visualization'; // Default
+  }
+
+  /**
+   * Format file size in human-readable format (B, KB, MB, GB)
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
   save(datas: any) {

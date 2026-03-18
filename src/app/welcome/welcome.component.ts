@@ -8,6 +8,8 @@ import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
+import { StartPanelComponent } from '../start-panel/start-panel.component';
+import { RecentlyOpenedFilesComponent } from '../recently-opened-files/recently-opened-files.component';
 import { Subscription } from 'rxjs';
 import { FileLoaderI } from '../interfaces/file-system.interface';
 
@@ -16,7 +18,12 @@ import { FileLoaderI } from '../interfaces/file-system.interface';
   templateUrl: './welcome.component.html',
   styleUrl: './welcome.component.scss',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [
+    CommonModule,
+    TranslateModule,
+    StartPanelComponent,
+    RecentlyOpenedFilesComponent,
+  ],
 })
 export class WelcomeComponent implements OnInit, OnDestroy {
   private fileLoaderSub?: Subscription;

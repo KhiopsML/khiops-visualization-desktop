@@ -80,6 +80,12 @@ export class AppComponent implements AfterViewInit {
     });
 
     this.setAppConfig();
+
+    // Subscribe to menu rebuild signal (e.g., when file is opened from recently opened files)
+    this.menuService.menuShouldRebuild$.subscribe(() => {
+      this.constructMenu();
+    });
+
     if (this.electronService.isElectron) {
       this.addIpcRendererEvents();
     }
@@ -134,9 +140,7 @@ export class AppComponent implements AfterViewInit {
       lsId: this.storageService.getStorageKey(),
       onFileOpen: () => {
         console.log('fileOpen');
-        this.menuService.openFileDialog(() => {
-          this.constructMenu();
-        });
+        this.menuService.openFileDialog();
       },
       onCopyImage: (base64data: any) => {
         const natImage =
@@ -287,9 +291,7 @@ export class AppComponent implements AfterViewInit {
     if (inputFile && inputFile !== '.') {
       setTimeout(() => {
         this.currentFileType = inputFile;
-        this.fileSystemService.openFile(inputFile, () => {
-          this.constructMenu();
-        });
+        this.menuService.openFile(inputFile);
       });
     }
     this.electronService.ipcRenderer?.on('file-open-system', (event, arg) => {
@@ -297,9 +299,7 @@ export class AppComponent implements AfterViewInit {
         // Add delay to ensure component is fully loaded before opening file
         setTimeout(() => {
           this.currentFileType = arg;
-          this.fileSystemService.openFile(arg, () => {
-            this.constructMenu();
-          });
+          this.menuService.openFile(arg);
         }, 750); // 500ms delay to ensure component initialization
       }
     });
@@ -383,9 +383,7 @@ export class AppComponent implements AfterViewInit {
     }
 
     this.currentFileType = path;
-    this.fileSystemService.openFile(path, () => {
-      this.constructMenu();
-    });
+    this.menuService.openFile(path);
   }
 
   beforeQuit() {

@@ -3,9 +3,19 @@
  * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
-
+@use './assets/fonts/Poppins.scss';
+* {
+  font-family: 'Poppins', Verdana, Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+html,
 body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+  min-width: 800px;
+  min-height: 600px;
+  overflow: hidden;
 }
 app-root {
   margin: 0;
@@ -18,7 +28,8 @@ app-root {
   padding: 12px 20px;
   color: #ffffff;
   display: inline-block;
-  box-shadow: 0 3px 6px -1px rgba(0, 0, 0, 0.12),
+  box-shadow:
+    0 3px 6px -1px rgba(0, 0, 0, 0.12),
     0 10px 36px -4px rgba(77, 96, 232, 0.3);
   background: red;
   position: fixed;
@@ -47,4 +58,47 @@ app-root {
   right: 0;
   max-width: fit-content;
   max-width: -moz-fit-content;
+}
+
+::-webkit-scrollbar-thumb {
+  width: 10px;
+  height: 10px;
+  background: #ccc !important;
+  border: unset !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999 !important;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #666 !important;
+}
+
+::-webkit-scrollbar-track {
+  width: 10px;
+  height: 10px;
+  background: #f5f5f5 !important;
+}
+
+::-webkit-scrollbar-track:hover {
+  background: #f5f5f5 !important;
+}
+
+::-webkit-scrollbar-track:active {
+  background: #f5f5f5 !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-button {
+  width: 0px;
+  height: 0px;
 }

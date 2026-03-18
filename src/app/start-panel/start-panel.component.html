@@ -1,0 +1,38 @@
+<!--
+ * Copyright (c) 2023-2025 Orange. All rights reserved.
+ * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
+ * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
+-->
+<div class="start-panel-container" *ngIf="shortcut">
+  <h3>
+    <svg
+      class="folder-icon"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+    >
+      <path
+        d="M1.5 4.5C1.5 3.67 2.17 3 3 3H6.38c.35 0 .68.13.93.37L8.5 4.5H13c.83 0 1.5.67 1.5 1.5v6c0 .83-.67 1.5-1.5 1.5H3c-.83 0-1.5-.67-1.5-1.5v-7z"
+        fill="currentColor"
+        fill-opacity="0.15"
+        stroke="currentColor"
+        stroke-width="1.2"
+        stroke-linejoin="round"
+      />
+    </svg>
+    {{ 'START_BY_LOADING_DATASET' | translate }}
+  </h3>
+  <div class="shortcut-item">
+    <button class="description" type="button" (click)="openFile()">
+      <span>{{ shortcut.description | translate }}</span>
+    </button>
+    <div class="keys">
+      <span class="key" *ngFor="let key of shortcut.keys; let last = last">
+        <span class="key-label">{{ getKeyDisplay(key) }}</span>
+        <span class="key-plus" *ngIf="!last">+</span>
+      </span>
+    </div>
+  </div>
+</div>

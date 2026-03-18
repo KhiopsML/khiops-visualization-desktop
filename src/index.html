@@ -56,6 +56,25 @@
           opacity: 0.5;
         }
       }
+
+      .welcome-header {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        margin-bottom: 40px;
+        align-items: center;
+        justify-content: center;
+        img {
+          width: 80px;
+          height: 80px;
+        }
+
+        span {
+          font-size: 24px;
+          font-weight: 700;
+          color: #111;
+        }
+      }
     </style>
   </head>
   <body>
@@ -71,7 +90,10 @@
           flex-direction: column;
         "
       >
-        <img src="assets/icons/favicon.png" height="80px" width="80px" />
+        <div class="welcome-header">
+          <img src="assets/icons/favicon.png" height="80px" width="80px" />
+          <span>Khiops Visualization Desktop</span>
+        </div>
         <div class="loading-dots">
           <div class="dot"></div>
           <div class="dot"></div>

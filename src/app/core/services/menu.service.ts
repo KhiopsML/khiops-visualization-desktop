@@ -11,6 +11,7 @@ import { FileSystemService } from './file-system.service';
 import { LibVersionService } from './lib-version.service';
 import { ConfigService } from './config.service';
 import { StorageService } from './storage.service';
+import { Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,9 @@ import { StorageService } from './storage.service';
 export class MenuService {
   private currentChannel: string = 'latest';
   private updateInProgress = false;
+
+  // Subject emitted when menu needs to be rebuilt (e.g., after opening file)
+  public menuShouldRebuild$ = new Subject<void>();
 
   constructor(
     private electronService: ElectronService,
@@ -194,7 +198,7 @@ export class MenuService {
             label: filename,
             enabled: true,
             click: () => {
-              this.openFile(filename, refreshCb);
+              this.openFile(filename);
             },
           });
         }
@@ -374,15 +378,28 @@ export class MenuService {
 
   openFileDialog(cb: any = undefined) {
     this.fileSystemService.openFileDialog(() => {
-      this.storageService.saveAll();
-      cb();
+      // Wait for storage to be saved before rebuilding menu to ensure history is persisted
+      this.storageService.saveAll(() => {
+        // Small delay to ensure activeComponent is updated before rebuilding menu
+        setTimeout(() => {
+          // Notify that menu should be rebuilt after file opens
+          this.menuShouldRebuild$.next();
+          cb && cb();
+        }, 100);
+      });
     });
   }
 
-  async openFile(filename: string, callbackDone: Function | undefined) {
-    await this.fileSystemService.openFile(filename, () => {
-      this.storageService.saveAll();
-      callbackDone && callbackDone();
+  openFile(filename: string) {
+    this.fileSystemService.openFile(filename, () => {
+      // Wait for storage to be saved before rebuilding menu to ensure history is persisted
+      this.storageService.saveAll(() => {
+        // Small delay to ensure activeComponent is updated before rebuilding menu
+        setTimeout(() => {
+          // Notify that menu should be rebuilt after file opens
+          this.menuShouldRebuild$.next();
+        }, 100);
+      });
     });
   }
 
