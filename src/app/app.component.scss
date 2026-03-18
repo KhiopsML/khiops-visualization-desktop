@@ -10,24 +10,6 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-khiops-visualization {
-  &[style*='display: block'] {
-    display: block !important;
-    visibility: visible !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-}
-
-khiops-covisualization {
-  &[style*='display: block'] {
-    display: block !important;
-    visibility: visible !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-}
-
 app-welcome {
   position: absolute;
   top: 0;
