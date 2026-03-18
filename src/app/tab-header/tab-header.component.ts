@@ -84,7 +84,6 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * Close tab and clean up file system state if needed
    */
   private closeTabWithCleanup(tab: Tab): void {
-    if (tab.filePath) this.fileSystemService.closeFile();
     this.tabManager.closeTab(tab.id);
   }
 
