@@ -40,6 +40,9 @@ export class FileSystemService {
   /** Format state captured when the file was opened – reused on save. */
   private jsonFormatState: JsonFormatState | null = null;
 
+  /** Raw JSON content pending lazy format analysis on first save */
+  private pendingFormatAnalysisRaw: string | null = null;
+
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
   public fileLoader$: Observable<any> = this._fileLoaderSub.asObservable();
 
@@ -93,7 +96,7 @@ export class FileSystemService {
           this.openFile(result.filePaths[0], callbackDone);
         }
       })
-      .catch((err: any) => console.log(err));
+      .catch((err: any) => console.error(err?.message || err));
   }
 
   /**
@@ -136,18 +139,18 @@ export class FileSystemService {
   }
 
   private async performOpenFile(filename: string, callbackDone?: Function) {
-    // For JSON files, read and analyze content first to determine component type
     const extension = filename.toLowerCase().split('.').pop();
     let jsonData: any = null;
     let rawContent: string | null = null;
     let componentType: 'visualization' | 'covisualization' = 'visualization';
 
+    // Single parse for all operations
     if (extension === 'json' || extension === 'khj' || extension === 'khcj') {
       try {
         rawContent = await this.readFileContent(filename);
         jsonData = JSON.parse(rawContent);
       } catch (error) {
-        console.warn('Error pre-reading JSON file for analysis:', error);
+        console.warn('Error reading/parsing JSON file:', error);
       }
     }
 
@@ -157,18 +160,16 @@ export class FileSystemService {
       componentType = 'visualization';
     }
 
-    // Capture format state from the raw source
+    // Store raw content for lazy format analysis on first save
     if (rawContent) {
-      this.jsonFormatState =
-        this.jsonFormatterService.analyzeJsonFormat(rawContent);
-    } else {
-      this.jsonFormatState = null;
+      this.pendingFormatAnalysisRaw = rawContent;
     }
 
     await this.configService.requestComponentChange(filename, jsonData);
     this.configService.setDatas();
 
-    this.readFile(filename)
+    // Pass already-parsed JSON to avoid re-parsing
+    this.readFile(filename, jsonData)
       .then((datas: any) => {
         this.setTitleBar(filename, componentType);
         this.setFileHistory(filename);
@@ -176,10 +177,9 @@ export class FileSystemService {
         setTimeout(() => {
           this.configService.setDatas(datas);
           if (callbackDone) callbackDone();
-        }, 500);
+        }, 750);
       })
       .catch((error: any) => {
-        console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
         this.closeFile();
         Toastify({
           text: this.translate.instant('OPEN_FILE_ERROR'),
@@ -197,8 +197,11 @@ export class FileSystemService {
         filename,
         'utf-8',
         (err: any, data: string) => {
-          if (err) reject(err);
-          else resolve(data);
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
         },
       );
     });
@@ -207,19 +210,31 @@ export class FileSystemService {
   /**
    * Reads a file and returns its content. If the file is a large JSON file, it uses streaming to read and parse the content without blocking the UI.
    * @param filename The path of the file to be read.
+   * @param preParsedData Optional pre-parsed JSON data to avoid re-parsing (avoids blocking on large files)
    * @returns A promise that resolves with the file content or rejects with an error.
    */
-  readFile(filename: string): any {
+  readFile(filename: string, preParsedData?: any): any {
     const activeComponentType = this.configService.getActiveComponentType();
 
     if (activeComponentType === 'covisualization') {
-      return this.readFileSimple(filename);
+      return this.readFileSimple(filename, preParsedData);
     }
 
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
     this._fileLoaderSub.next(this.fileLoaderDatas);
+
+    // If data is already parsed, use it directly
+    if (preParsedData) {
+      return new Promise((resolve) => {
+        this.fileLoaderDatas!.isLoadingDatas = false;
+        preParsedData.filename = filename;
+        this.fileLoaderDatas!.datas = preParsedData;
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+        resolve(preParsedData);
+      });
+    }
 
     return new Promise((resolve, reject) => {
       this.electronService.fs.stat(filename, (err: any) => {
@@ -268,7 +283,9 @@ export class FileSystemService {
                     this._fileLoaderSub.next(this.fileLoaderDatas);
                     resolve(this.fileLoaderDatas?.datas);
                   })
-                  .on('error', () => reject());
+                  .on('error', () => {
+                    reject();
+                  });
               } else {
                 this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
@@ -329,12 +346,23 @@ export class FileSystemService {
     });
   }
 
-  readFileSimple(filename: string): Promise<any> {
+  readFileSimple(filename: string, preParsedData?: any): Promise<any> {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
     this.fileLoaderDatas!.loadingInfo = '';
     this._fileLoaderSub.next(this.fileLoaderDatas);
+
+    // If data is already parsed, use it directly
+    if (preParsedData) {
+      return new Promise((resolve) => {
+        this.fileLoaderDatas!.isLoadingDatas = false;
+        preParsedData.filename = filename;
+        this.fileLoaderDatas!.datas = preParsedData;
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+        resolve(preParsedData);
+      });
+    }
 
     return new Promise((resolve, reject) => {
       this.electronService.fs.stat(filename, (err: any) => {
@@ -565,6 +593,14 @@ export class FileSystemService {
   }
 
   saveFile(filename: string, datas: any) {
+    // Lazy format analysis on first save if not done yet
+    if (!this.jsonFormatState && this.pendingFormatAnalysisRaw) {
+      this.jsonFormatState = this.jsonFormatterService.analyzeJsonFormat(
+        this.pendingFormatAnalysisRaw,
+      );
+      this.pendingFormatAnalysisRaw = null;
+    }
+
     const serialized = this.jsonFormatState
       ? this.jsonFormatterService.serializeWithFormatState(
           datas,
