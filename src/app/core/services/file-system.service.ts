@@ -129,12 +129,20 @@ export class FileSystemService {
     const currentActiveType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
+    this.fileLoaderDatas!.datas = undefined;
+    this.fileLoaderDatas!.isLoadingDatas = true;
+    this.fileLoaderDatas!.isBigJsonFile = false;
+    this._fileLoaderSub.next(this.fileLoaderDatas);
+
     if (hasCurrentFile && currentActiveType === 'covisualization') {
       this.handleSaveBeforeAction(async () => {
         await this.performOpenFile(filename, callbackDone);
       });
     } else {
-      await this.performOpenFile(filename, callbackDone);
+      // Skip storage save for file open - we manage history separately and don't want to overwrite it
+      this.handleSaveBeforeAction(async () => {
+        await this.performOpenFile(filename, callbackDone);
+      }, true);
     }
   }
 
@@ -170,12 +178,11 @@ export class FileSystemService {
 
     // Pass already-parsed JSON to avoid re-parsing
     this.readFile(filename, jsonData)
-      .then((datas: any) => {
+      .then(async (datas: any) => {
         this.setTitleBar(filename, componentType);
-        this.setFileHistory(filename);
-        // Add small delay to ensure component is fully rendered before setting data
-        setTimeout(() => {
+        setTimeout(async () => {
           this.configService.setDatas(datas);
+          await this.setFileHistory(filename);
           if (callbackDone) callbackDone();
         }, 750);
       })
@@ -424,8 +431,12 @@ export class FileSystemService {
   /**
    * Generic method to handle save before action logic for covisualization mode
    * @param finalAction The action to execute after save/cancel operations
+   * @param skipStorageSave If true, skip the storage save (useful for file open where we manage history separately)
    */
-  handleSaveBeforeAction(finalAction: () => void | Promise<void>) {
+  handleSaveBeforeAction(
+    finalAction: () => void | Promise<void>,
+    skipStorageSave: boolean = false,
+  ) {
     const activeComponentType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
@@ -445,7 +456,12 @@ export class FileSystemService {
         }
       });
     } else {
-      this.storageService.saveAll(() => finalAction());
+      // For file open, skip storage restore to avoid overwriting history changes
+      if (skipStorageSave) {
+        finalAction();
+      } else {
+        this.storageService.saveAll(() => finalAction());
+      }
     }
   }
 
@@ -465,32 +481,31 @@ export class FileSystemService {
     });
   }
 
-  setFileHistory(filename: string) {
-    let filesHistory = this.storageService.getOne('OPEN_FILE');
-    if (filesHistory) {
-      const isExistingHistoryIndex = filesHistory.files.indexOf(filename);
-      if (isExistingHistoryIndex !== -1) {
-        // remove at index
-        filesHistory.files.splice(isExistingHistoryIndex, 1);
-      } else {
-        // remove last item
-        if (filesHistory.files.length >= 10) {
-          filesHistory.files.splice(-1, 1);
+  setFileHistory(filename: string): Promise<void> {
+    return new Promise((resolve) => {
+      let filesHistory = this.storageService.getOne('OPEN_FILE');
+      if (filesHistory) {
+        const isExistingHistoryIndex = filesHistory.files.indexOf(filename);
+        if (isExistingHistoryIndex !== -1) {
+          filesHistory.files.splice(isExistingHistoryIndex, 1);
+        } else {
+          if (filesHistory.files.length >= 10) {
+            filesHistory.files.splice(-1, 1);
+          }
         }
+      } else {
+        filesHistory = { files: [] };
       }
-    } else {
-      filesHistory = { files: [] };
-    }
-    // add to the top of the list
-    filesHistory.files.unshift(filename);
-    this.storageService.setOne('OPEN_FILE', filesHistory);
-
-    // Emit signal that recent files list has changed
-    this._recentFilesChanged.next();
+      filesHistory.files.unshift(filename);
+      this.storageService.setOne('OPEN_FILE', filesHistory);
+      this._recentFilesChanged.next();
+      resolve();
+    });
   }
 
   getFileHistory() {
-    return this.storageService.getOne('OPEN_FILE') || { files: [] };
+    const history = this.storageService.getOne('OPEN_FILE') || { files: [] };
+    return history;
   }
 
   getRecentFiles() {
