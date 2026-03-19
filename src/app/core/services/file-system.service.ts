@@ -157,10 +157,12 @@ export class FileSystemService {
 
     if (hasCurrentFile && currentActiveType === 'covisualization') {
       this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone, finalTabId);
+        await this.performOpenFile(filename, callbackDone, finalTabId, true);
       });
     } else {
-      await this.performOpenFile(filename, callbackDone, finalTabId);
+      this.handleSaveBeforeAction(async () => {
+        await this.performOpenFile(filename, callbackDone, finalTabId, false);
+      }, true);
     }
   }
 
@@ -168,16 +170,8 @@ export class FileSystemService {
     filename: string,
     callbackDone?: Function,
     tabId?: string,
+    skipStorageSave: boolean = false,
   ) {
-    //   // For JSON files, read and analyze content first to determine component type
-    //     // Skip storage save for file open - we manage history separately and don't want to overwrite it
-    //     this.handleSaveBeforeAction(async () => {
-    //       await this.performOpenFile(filename, callbackDone);
-    //     }, true);
-    //   }
-    // }
-
-    // private async performOpenFile(filename: string, callbackDone?: Function) {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
@@ -216,8 +210,13 @@ export class FileSystemService {
     this.readFile(filename, jsonData)
       .then(async (datas: any) => {
         this.setTitleBar(filename, componentType);
-        this.setFileHistory(filename);
+        await this.setFileHistory(filename);
         // Add delay to ensure component is fully configured before setting data
+        if (!skipStorageSave) {
+          await this.storageService.saveAll(() => {});
+        }
+
+        if (callbackDone) callbackDone();
         setTimeout(() => {
           if (tabId) {
             // Send data to specific tab - use compatible data format
@@ -229,13 +228,7 @@ export class FileSystemService {
             // Fallback to global setDatas
             this.configService.setDatas(datas);
           }
-          if (callbackDone) callbackDone();
         }, 750); // Longer delay for Shadow DOM components
-        setTimeout(async () => {
-          this.configService.setDatas(datas);
-          await this.setFileHistory(filename);
-          if (callbackDone) callbackDone();
-        }, 750);
       })
       .catch((error: any) => {
         this.closeFile();
