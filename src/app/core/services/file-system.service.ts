@@ -41,6 +41,9 @@ export class FileSystemService {
   /** Format state captured when the file was opened – reused on save. */
   private jsonFormatState: JsonFormatState | null = null;
 
+  /** Raw JSON content pending lazy format analysis on first save */
+  private pendingFormatAnalysisRaw: string | null = null;
+
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
   public fileLoader$: Observable<any> = this._fileLoaderSub.asObservable();
 
@@ -95,7 +98,7 @@ export class FileSystemService {
           this.openFile(result.filePaths[0], callbackDone);
         }
       })
-      .catch((err: any) => console.log(err));
+      .catch((err: any) => console.error(err?.message || err));
   }
 
   /**
@@ -166,18 +169,32 @@ export class FileSystemService {
     callbackDone?: Function,
     tabId?: string,
   ) {
-    // For JSON files, read and analyze content first to determine component type
+    //   // For JSON files, read and analyze content first to determine component type
+    //     // Skip storage save for file open - we manage history separately and don't want to overwrite it
+    //     this.handleSaveBeforeAction(async () => {
+    //       await this.performOpenFile(filename, callbackDone);
+    //     }, true);
+    //   }
+    // }
+
+    // private async performOpenFile(filename: string, callbackDone?: Function) {
+    this.fileLoaderDatas!.datas = undefined;
+    this.fileLoaderDatas!.isLoadingDatas = true;
+    this.fileLoaderDatas!.isBigJsonFile = false;
+    this._fileLoaderSub.next(this.fileLoaderDatas);
+
     const extension = filename.toLowerCase().split('.').pop();
     let jsonData: any = null;
     let rawContent: string | null = null;
     let componentType: 'visualization' | 'covisualization' = 'visualization';
 
+    // Single parse for all operations
     if (extension === 'json' || extension === 'khj' || extension === 'khcj') {
       try {
         rawContent = await this.readFileContent(filename);
         jsonData = JSON.parse(rawContent);
       } catch (error) {
-        console.warn('Error pre-reading JSON file for analysis:', error);
+        console.warn('Error reading/parsing JSON file:', error);
       }
     }
 
@@ -187,19 +204,17 @@ export class FileSystemService {
       componentType = 'visualization';
     }
 
-    // Capture format state from the raw source
+    // Store raw content for lazy format analysis on first save
     if (rawContent) {
-      this.jsonFormatState =
-        this.jsonFormatterService.analyzeJsonFormat(rawContent);
-    } else {
-      this.jsonFormatState = null;
+      this.pendingFormatAnalysisRaw = rawContent;
     }
 
     await this.configService.requestComponentChange(filename, jsonData);
     this.configService.setDatas();
 
-    this.readFile(filename)
-      .then((datas: any) => {
+    // Pass already-parsed JSON to avoid re-parsing
+    this.readFile(filename, jsonData)
+      .then(async (datas: any) => {
         this.setTitleBar(filename, componentType);
         this.setFileHistory(filename);
         // Add delay to ensure component is fully configured before setting data
@@ -216,9 +231,13 @@ export class FileSystemService {
           }
           if (callbackDone) callbackDone();
         }, 750); // Longer delay for Shadow DOM components
+        setTimeout(async () => {
+          this.configService.setDatas(datas);
+          await this.setFileHistory(filename);
+          if (callbackDone) callbackDone();
+        }, 750);
       })
       .catch((error: any) => {
-        console.warn(this.translate.instant('OPEN_FILE_ERROR'), error);
         this.closeFile();
         // Mark tab as finished loading (even on error)
         if (tabId) {
@@ -240,8 +259,11 @@ export class FileSystemService {
         filename,
         'utf-8',
         (err: any, data: string) => {
-          if (err) reject(err);
-          else resolve(data);
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
         },
       );
     });
@@ -250,19 +272,31 @@ export class FileSystemService {
   /**
    * Reads a file and returns its content. If the file is a large JSON file, it uses streaming to read and parse the content without blocking the UI.
    * @param filename The path of the file to be read.
+   * @param preParsedData Optional pre-parsed JSON data to avoid re-parsing (avoids blocking on large files)
    * @returns A promise that resolves with the file content or rejects with an error.
    */
-  readFile(filename: string): any {
+  readFile(filename: string, preParsedData?: any): any {
     const activeComponentType = this.configService.getActiveComponentType();
 
     if (activeComponentType === 'covisualization') {
-      return this.readFileSimple(filename);
+      return this.readFileSimple(filename, preParsedData);
     }
 
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
     this._fileLoaderSub.next(this.fileLoaderDatas);
+
+    // If data is already parsed, use it directly
+    if (preParsedData) {
+      return new Promise((resolve) => {
+        this.fileLoaderDatas!.isLoadingDatas = false;
+        preParsedData.filename = filename;
+        this.fileLoaderDatas!.datas = preParsedData;
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+        resolve(preParsedData);
+      });
+    }
 
     return new Promise((resolve, reject) => {
       this.electronService.fs.stat(filename, (err: any) => {
@@ -311,7 +345,9 @@ export class FileSystemService {
                     this._fileLoaderSub.next(this.fileLoaderDatas);
                     resolve(this.fileLoaderDatas?.datas);
                   })
-                  .on('error', () => reject());
+                  .on('error', () => {
+                    reject();
+                  });
               } else {
                 this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
@@ -372,12 +408,23 @@ export class FileSystemService {
     });
   }
 
-  readFileSimple(filename: string): Promise<any> {
+  readFileSimple(filename: string, preParsedData?: any): Promise<any> {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
     this.fileLoaderDatas!.loadingInfo = '';
     this._fileLoaderSub.next(this.fileLoaderDatas);
+
+    // If data is already parsed, use it directly
+    if (preParsedData) {
+      return new Promise((resolve) => {
+        this.fileLoaderDatas!.isLoadingDatas = false;
+        preParsedData.filename = filename;
+        this.fileLoaderDatas!.datas = preParsedData;
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+        resolve(preParsedData);
+      });
+    }
 
     return new Promise((resolve, reject) => {
       this.electronService.fs.stat(filename, (err: any) => {
@@ -439,8 +486,12 @@ export class FileSystemService {
   /**
    * Generic method to handle save before action logic for covisualization mode
    * @param finalAction The action to execute after save/cancel operations
+   * @param skipStorageSave If true, skip the storage save (useful for file open where we manage history separately)
    */
-  handleSaveBeforeAction(finalAction: () => void | Promise<void>) {
+  handleSaveBeforeAction(
+    finalAction: () => void | Promise<void>,
+    skipStorageSave: boolean = false,
+  ) {
     const activeComponentType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
@@ -460,7 +511,12 @@ export class FileSystemService {
         }
       });
     } else {
-      this.storageService.saveAll(() => finalAction());
+      // For file open, skip storage restore to avoid overwriting history changes
+      if (skipStorageSave) {
+        finalAction();
+      } else {
+        this.storageService.saveAll(() => finalAction());
+      }
     }
   }
 
@@ -480,32 +536,31 @@ export class FileSystemService {
     });
   }
 
-  setFileHistory(filename: string) {
-    let filesHistory = this.storageService.getOne('OPEN_FILE');
-    if (filesHistory) {
-      const isExistingHistoryIndex = filesHistory.files.indexOf(filename);
-      if (isExistingHistoryIndex !== -1) {
-        // remove at index
-        filesHistory.files.splice(isExistingHistoryIndex, 1);
-      } else {
-        // remove last item
-        if (filesHistory.files.length >= 10) {
-          filesHistory.files.splice(-1, 1);
+  setFileHistory(filename: string): Promise<void> {
+    return new Promise((resolve) => {
+      let filesHistory = this.storageService.getOne('OPEN_FILE');
+      if (filesHistory) {
+        const isExistingHistoryIndex = filesHistory.files.indexOf(filename);
+        if (isExistingHistoryIndex !== -1) {
+          filesHistory.files.splice(isExistingHistoryIndex, 1);
+        } else {
+          if (filesHistory.files.length >= 10) {
+            filesHistory.files.splice(-1, 1);
+          }
         }
+      } else {
+        filesHistory = { files: [] };
       }
-    } else {
-      filesHistory = { files: [] };
-    }
-    // add to the top of the list
-    filesHistory.files.unshift(filename);
-    this.storageService.setOne('OPEN_FILE', filesHistory);
-
-    // Emit signal that recent files list has changed
-    this._recentFilesChanged.next();
+      filesHistory.files.unshift(filename);
+      this.storageService.setOne('OPEN_FILE', filesHistory);
+      this._recentFilesChanged.next();
+      resolve();
+    });
   }
 
   getFileHistory() {
-    return this.storageService.getOne('OPEN_FILE') || { files: [] };
+    const history = this.storageService.getOne('OPEN_FILE') || { files: [] };
+    return history;
   }
 
   getRecentFiles() {
@@ -608,6 +663,14 @@ export class FileSystemService {
   }
 
   saveFile(filename: string, datas: any) {
+    // Lazy format analysis on first save if not done yet
+    if (!this.jsonFormatState && this.pendingFormatAnalysisRaw) {
+      this.jsonFormatState = this.jsonFormatterService.analyzeJsonFormat(
+        this.pendingFormatAnalysisRaw,
+      );
+      this.pendingFormatAnalysisRaw = null;
+    }
+
     const serialized = this.jsonFormatState
       ? this.jsonFormatterService.serializeWithFormatState(
           datas,
