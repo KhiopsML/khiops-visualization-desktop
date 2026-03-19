@@ -7,7 +7,6 @@ import * as fs from 'fs';
 import { machineIdSync } from 'node-machine-id';
 const { autoUpdater } = require('electron-updater');
 import * as url from 'url';
-require('source-map-support').install();
 
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
@@ -19,6 +18,7 @@ const args = process.argv.slice(1),
 const { Menu } = require('electron');
 const { ipcMain } = require('electron');
 if (serve) require('electron-debug');
+if (serve) require('source-map-support').install();
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
