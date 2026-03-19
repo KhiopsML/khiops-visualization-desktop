@@ -1,12 +1,7 @@
-//Polyfill Node.js core modules in Webpack. This module is only needed for webpack 5+.
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
-/**
- * Custom angular webpack configuration
- */
 module.exports = (config, options) => {
-  // Default to 'web' target for browser environments (e.g., e2e tests)
-  // Will be overridden to 'electron-renderer' if not using web environment
+  // Default to 'web' - safe for browser/Cypress environments
   config.target = 'web';
 
   if (options.fileReplacements) {
@@ -16,27 +11,34 @@ module.exports = (config, options) => {
       }
 
       let fileReplacementParts = fileReplacement['with'].split('.');
-      // Use electron-renderer target only when NOT using web environment
-      if (
-        fileReplacementParts.length > 1 &&
-        ['web'].indexOf(fileReplacementParts[1]) >= 0
-      ) {
-        config.target = 'web';
-      } else {
-        // Only use electron-renderer for actual Electron builds (dev, prod environments)
+      // environment.web.ts      → parts: ['src/environments/environment', 'web', 'ts']
+      // environment.electron.ts → parts: ['src/environments/environment', 'electron', 'ts']
+      // environment.ts          → parts: ['src/environments/environment', 'ts']
+
+      const envName = fileReplacementParts[fileReplacementParts.length - 2];
+
+      // Only switch to electron-renderer for explicit electron environments
+      if (['electron', 'electron-dev', 'electron-prod'].includes(envName)) {
         config.target = 'electron-renderer';
+      } else {
+        config.target = 'web';
       }
+
       break;
     }
   }
 
-  config.plugins = [
-    ...config.plugins,
-    new NodePolyfillPlugin({
-      excludeAliases: ['console'],
-    }),
-  ];
+  // Only add NodePolyfillPlugin for web target — electron-renderer doesn't need polyfills
+  if (config.target === 'web') {
+    config.plugins = [
+      ...config.plugins,
+      new NodePolyfillPlugin({
+        excludeAliases: ['console'],
+      }),
+    ];
+  }
 
+  // Fix for karma-webpack globalObject issue
   // https://github.com/ryanclark/karma-webpack/issues/497
   config.output.globalObject = 'globalThis';
 
