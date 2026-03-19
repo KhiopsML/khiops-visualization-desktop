@@ -15,8 +15,8 @@
   text-align: center;
   padding: 0 1rem;
   z-index: 999;
-  opacity: 0;
-  animation: fadeIn 0s 1s forwards;
+  // opacity: 0;
+  // animation: fadeIn 0s 1s forwards;
   flex-direction: column;
 
   .welcome-header {
@@ -45,8 +45,8 @@
   }
 }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
+// @keyframes fadeIn {
+//   to {
+//     opacity: 1;
+//   }
+// }
