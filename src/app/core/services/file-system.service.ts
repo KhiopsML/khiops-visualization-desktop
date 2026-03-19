@@ -131,17 +131,20 @@ export class FileSystemService {
 
     if (hasCurrentFile && currentActiveType === 'covisualization') {
       this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone);
+        await this.performOpenFile(filename, callbackDone, true);
       });
     } else {
-      // Skip storage save for file open - we manage history separately and don't want to overwrite it
       this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone);
+        await this.performOpenFile(filename, callbackDone, false);
       }, true);
     }
   }
 
-  private async performOpenFile(filename: string, callbackDone?: Function) {
+  private async performOpenFile(
+    filename: string,
+    callbackDone?: Function,
+    skipStorageSave: boolean = false,
+  ) {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
     this.fileLoaderDatas!.isBigJsonFile = false;
@@ -180,10 +183,16 @@ export class FileSystemService {
     this.readFile(filename, jsonData)
       .then(async (datas: any) => {
         this.setTitleBar(filename, componentType);
-        setTimeout(async () => {
+        await this.setFileHistory(filename);
+
+        if (!skipStorageSave) {
+          await this.storageService.saveAll(() => {});
+        }
+
+        if (callbackDone) callbackDone();
+
+        setTimeout(() => {
           this.configService.setDatas(datas);
-          await this.setFileHistory(filename);
-          if (callbackDone) callbackDone();
         }, 750);
       })
       .catch((error: any) => {

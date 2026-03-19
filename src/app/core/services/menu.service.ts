@@ -378,28 +378,14 @@ export class MenuService {
 
   openFileDialog(cb: any = undefined) {
     this.fileSystemService.openFileDialog(() => {
-      // Wait for storage to be saved before rebuilding menu to ensure history is persisted
-      this.storageService.saveAll(() => {
-        // Small delay to ensure activeComponent is updated before rebuilding menu
-        setTimeout(() => {
-          // Notify that menu should be rebuilt after file opens
-          this.menuShouldRebuild$.next();
-          cb && cb();
-        }, 100);
-      });
+      this.menuShouldRebuild$.next();
+      cb && cb();
     });
   }
 
   openFile(filename: string) {
     this.fileSystemService.openFile(filename, () => {
-      // Wait for storage to be saved before rebuilding menu to ensure history is persisted
-      this.storageService.saveAll(() => {
-        // Small delay to ensure activeComponent is updated before rebuilding menu
-        setTimeout(() => {
-          // Notify that menu should be rebuilt after file opens
-          this.menuShouldRebuild$.next();
-        }, 100);
-      });
+      this.menuShouldRebuild$.next();
     });
   }
 
