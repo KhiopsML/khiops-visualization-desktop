@@ -117,7 +117,7 @@
     "karma-chrome-launcher": "^3.2.0",
     "cypress": "^15.11.0",
     "cypress-shadow-dom": "^1.4.1",
-    "electron": "^40.8.0",
+    "electron": "^41.0.3",
     "electron-builder": "^26.8.2",
     "electron-builder-notarize": "^1.5.2",
     "electron-debug": "^4.1.0",
