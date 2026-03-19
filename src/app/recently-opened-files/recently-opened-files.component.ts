@@ -28,7 +28,6 @@ interface RecentFileItem {
 })
 export class RecentlyOpenedFilesComponent implements OnInit, OnDestroy {
   recentFiles: RecentFileItem[] = [];
-  private recentFilesSubscription?: Subscription;
   private recentFilesChangedSubscription?: Subscription;
 
   constructor(
@@ -39,14 +38,9 @@ export class RecentlyOpenedFilesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadRecentFiles();
 
-    // Subscribe to file loader changes
-    this.recentFilesSubscription = this.fileSystemService.fileLoader$.subscribe(
-      () => {
-        this.loadRecentFiles();
-      },
-    );
-
     // Subscribe to recent files list changes (when history is updated)
+    // NOTE: Only reload when history changes, not on every file loader state change
+    // This prevents the recent files from disappearing when a file is closed
     this.recentFilesChangedSubscription =
       this.fileSystemService.recentFilesChanged$.subscribe(() => {
         this.loadRecentFiles();
@@ -54,7 +48,6 @@ export class RecentlyOpenedFilesComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.recentFilesSubscription?.unsubscribe();
     this.recentFilesChangedSubscription?.unsubscribe();
   }
 
