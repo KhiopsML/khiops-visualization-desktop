@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import { machineIdSync } from 'node-machine-id';
 const { autoUpdater } = require('electron-updater');
 import * as url from 'url';
+require('source-map-support').install();
 
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
