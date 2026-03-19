@@ -129,11 +129,6 @@ export class FileSystemService {
     const currentActiveType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
-    this.fileLoaderDatas!.datas = undefined;
-    this.fileLoaderDatas!.isLoadingDatas = true;
-    this.fileLoaderDatas!.isBigJsonFile = false;
-    this._fileLoaderSub.next(this.fileLoaderDatas);
-
     if (hasCurrentFile && currentActiveType === 'covisualization') {
       this.handleSaveBeforeAction(async () => {
         await this.performOpenFile(filename, callbackDone);
@@ -147,6 +142,11 @@ export class FileSystemService {
   }
 
   private async performOpenFile(filename: string, callbackDone?: Function) {
+    this.fileLoaderDatas!.datas = undefined;
+    this.fileLoaderDatas!.isLoadingDatas = true;
+    this.fileLoaderDatas!.isBigJsonFile = false;
+    this._fileLoaderSub.next(this.fileLoaderDatas);
+
     const extension = filename.toLowerCase().split('.').pop();
     let jsonData: any = null;
     let rawContent: string | null = null;
