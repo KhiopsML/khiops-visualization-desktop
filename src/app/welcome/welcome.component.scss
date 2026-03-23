@@ -3,27 +3,31 @@
  * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
-
+:host {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
 #app-welcome {
   display: flex;
   width: 100%;
-  height: 100%;
   background: #f9fafb;
   align-items: center;
-  justify-content: center;
+  min-height: 100vh;
   overflow-y: auto;
   text-align: center;
+  justify-content: center;
   padding: 0 1rem;
   z-index: 999;
-  opacity: 0;
-  animation: fadeIn 0s 1s forwards;
+  box-sizing: border-box;
   flex-direction: column;
-
+  margin: auto;
   .welcome-header {
     display: flex;
     align-items: center;
     flex-direction: column;
-    margin-bottom: 40px;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
     align-items: center;
     justify-content: center;
     img {
@@ -39,14 +43,12 @@
   }
   app-recently-opened-files {
     width: 800px;
+    display: block;
+    margin: 0.5rem auto;
   }
   app-start-panel {
     width: 800px;
-  }
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
+    display: block;
+    margin: 0.5rem auto;
   }
 }
