@@ -197,12 +197,12 @@ export class FileSystemService {
       })
       .catch((error: any) => {
         this.closeFile();
-        Toastify({
-          text: this.translate.instant('OPEN_FILE_ERROR'),
-          gravity: 'bottom',
-          position: 'center',
-          duration: 3000,
-        }).showToast();
+        // Toastify({
+        //   text: this.translate.instant('OPEN_FILE_ERROR'),
+        //   gravity: 'bottom',
+        //   position: 'center',
+        //   duration: 3000,
+        // }).showToast();
         this._fileLoaderSub.next(this.fileLoaderDatas);
       });
   }
@@ -346,7 +346,8 @@ export class FileSystemService {
                 Toastify({
                   text:
                     this.translate.instant('OPEN_FILE_ERROR') +
-                    ' - Invalid JSON format',
+                    this.translate.instant('INVALID_FILE_ERROR'),
+
                   gravity: 'bottom',
                   position: 'center',
                   duration: 3000,
@@ -423,7 +424,7 @@ export class FileSystemService {
                 Toastify({
                   text:
                     this.translate.instant('OPEN_FILE_ERROR') +
-                    ' - Invalid JSON format',
+                    this.translate.instant('INVALID_FILE_ERROR'),
                   gravity: 'bottom',
                   position: 'center',
                   duration: 3000,
