@@ -44,6 +44,7 @@
   "GLOBAL_INSTALL_AND_RESTART": "Install and restart",
   "GLOBAL_UPDATE_WAITING_FOR_DOWNLOAD": "Waiting For download",
   "OPEN_FILE_ERROR": "No data or file error !",
+  "INVALID_FILE_ERROR": " Invalid file format",
   "LONG_LOADING": "Loading very large reports may take more than a minute...",
   "RECENTLY_OPENED_FILES": "Recently Opened Files",
   "NO_RECENT_FILES": "No recent files",

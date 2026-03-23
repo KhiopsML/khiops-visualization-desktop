@@ -236,12 +236,12 @@ export class FileSystemService {
         if (tabId) {
           this.tabManagerService.updateTab(tabId, { isLoading: false });
         }
-        Toastify({
-          text: this.translate.instant('OPEN_FILE_ERROR'),
-          gravity: 'bottom',
-          position: 'center',
-          duration: 3000,
-        }).showToast();
+        // Toastify({
+        //   text: this.translate.instant('OPEN_FILE_ERROR'),
+        //   gravity: 'bottom',
+        //   position: 'center',
+        //   duration: 3000,
+        // }).showToast();
         this._fileLoaderSub.next(this.fileLoaderDatas);
       });
   }
@@ -385,7 +385,8 @@ export class FileSystemService {
                 Toastify({
                   text:
                     this.translate.instant('OPEN_FILE_ERROR') +
-                    ' - Invalid JSON format',
+                    this.translate.instant('INVALID_FILE_ERROR'),
+
                   gravity: 'bottom',
                   position: 'center',
                   duration: 3000,
@@ -462,7 +463,7 @@ export class FileSystemService {
                 Toastify({
                   text:
                     this.translate.instant('OPEN_FILE_ERROR') +
-                    ' - Invalid JSON format',
+                    this.translate.instant('INVALID_FILE_ERROR'),
                   gravity: 'bottom',
                   position: 'center',
                   duration: 3000,
@@ -531,6 +532,9 @@ export class FileSystemService {
 
   setFileHistory(filename: string): Promise<void> {
     return new Promise((resolve) => {
+      // Clean up deleted files first
+      this.cleanupHistoryOfDeletedFiles();
+
       let filesHistory = this.storageService.getOne('OPEN_FILE');
       if (filesHistory) {
         const isExistingHistoryIndex = filesHistory.files.indexOf(filename);
@@ -556,7 +560,34 @@ export class FileSystemService {
     return history;
   }
 
+  /**
+   * Clean up history by removing files that no longer exist
+   */
+  private cleanupHistoryOfDeletedFiles(): void {
+    const fileHistory = this.getFileHistory();
+    if (!fileHistory.files || fileHistory.files.length === 0) return;
+
+    const validFiles = fileHistory.files.filter((filePath: string) => {
+      try {
+        this.electronService.fs.statSync(filePath);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    });
+
+    // If any files were removed, update the history
+    if (validFiles.length !== fileHistory.files.length) {
+      fileHistory.files = validFiles;
+      this.storageService.setOne('OPEN_FILE', fileHistory);
+      this._recentFilesChanged.next();
+    }
+  }
+
   getRecentFiles() {
+    // Clean up deleted files first
+    this.cleanupHistoryOfDeletedFiles();
+
     const fileHistory = this.getFileHistory();
     const path = this.electronService.isElectron
       ? window.require('path')
@@ -565,32 +596,52 @@ export class FileSystemService {
     // Work with the existing format: {files: Array of strings}
     const filesArray = fileHistory.files || [];
 
-    return filesArray.map((filePath: string, index: number) => {
-      let filename = filePath;
-      if (path && typeof filePath === 'string') {
-        filename = path.basename(filePath);
-      }
+    // Filter out files that no longer exist and map valid files
+    return filesArray
+      .filter((filePath: string) => {
+        // Check if file still exists
+        try {
+          this.electronService.fs.statSync(filePath);
+          return true;
+        } catch (error) {
+          console.warn(
+            'File no longer exists, removing from history:',
+            filePath,
+          );
+          return false;
+        }
+      })
+      .map((filePath: string, index: number) => {
+        let filename = filePath;
+        if (path && typeof filePath === 'string') {
+          filename = path.basename(filePath);
+        }
 
-      // Get file size
-      let fileSize = 0;
-      try {
-        const stats = this.electronService.fs.statSync(filePath);
-        fileSize = stats.size;
-      } catch (error) {
-        console.warn('Could not get file size for:', filePath, error);
-      }
+        // Get file size
+        let fileSize = 0;
+        try {
+          const stats = this.electronService.fs.statSync(filePath);
+          fileSize = stats.size;
+        } catch (error) {
+          console.warn('Could not get file size for:', filePath, error);
+        }
 
-      // Determine file type based on extension
-      const fileType = this.getFileType(filePath);
+        // Determine file type based on extension
+        let fileType: 'visualization' | 'covisualization' = 'visualization';
+        try {
+          fileType = this.getFileType(filePath);
+        } catch (error) {
+          console.warn('Could not determine file type for:', filePath, error);
+        }
 
-      return {
-        path: filePath,
-        filename: filename,
-        size: fileSize,
-        sizeDisplay: this.formatFileSize(fileSize),
-        fileType: fileType,
-      };
-    });
+        return {
+          path: filePath,
+          filename: filename,
+          size: fileSize,
+          sizeDisplay: this.formatFileSize(fileSize),
+          fileType: fileType,
+        };
+      });
   }
 
   /**
