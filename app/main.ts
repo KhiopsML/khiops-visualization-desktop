@@ -359,6 +359,9 @@ autoUpdater.on(
   (event: any, releaseNotes: any, releaseName: any) => {
     log.info('update-downloaded', event);
     isUpdateReadyToInstall = true;
+    // Automatically flag update for silent installation on quit
+    // This ensures the update will be installed even if user closes app without clicking "Install"
+    updateAutoInstallPending = true;
     win?.webContents?.send('update-ready', {
       releaseNotes,
       releaseName,
