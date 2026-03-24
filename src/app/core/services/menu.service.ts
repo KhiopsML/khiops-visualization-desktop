@@ -37,6 +37,7 @@ export class MenuService {
         await this.electronService.ipcRenderer?.invoke(
           'launch-check-for-update',
           this.currentChannel,
+          10000,
         );
       } catch (error) {
         console.log('error', error);
