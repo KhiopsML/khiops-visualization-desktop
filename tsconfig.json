@@ -10,6 +10,7 @@
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
     "emitDecoratorMetadata": true,
     "strict": true,
     "experimentalDecorators": true,

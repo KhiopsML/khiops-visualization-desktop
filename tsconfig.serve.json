@@ -4,24 +4,13 @@
     "declaration": false,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
+    "ignoreDeprecations": "6.0",
     "experimentalDecorators": true,
     "module": "commonjs",
     "target": "es2015",
-    "types": [
-      "node"
-    ],
-    "lib": [
-      "es2017",
-      "es2016",
-      "es2015",
-      "dom"
-    ]
+    "types": ["node"],
+    "lib": ["es2017", "es2016", "es2015", "dom"]
   },
-  "files": [
-    "app/main.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ]
+  "files": ["app/main.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }
