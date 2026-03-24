@@ -55,38 +55,37 @@
           height="80"
           viewBox="0 0 496.31 305.509"
           xmlns="http://www.w3.org/2000/svg"
+          style="will-change: opacity; filter: url(#gpu-accel)"
         >
+          <defs>
+            <filter id="gpu-accel" style="color-interpolation-filters: sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0" />
+            </filter>
+          </defs>
           <style>
             @keyframes drawFill {
               0% {
-                stroke-dashoffset: 1200;
                 fill-opacity: 0;
               }
               18% {
-                stroke-dashoffset: 0;
                 fill-opacity: 0;
               }
               28% {
-                stroke-dashoffset: 0;
                 fill-opacity: 1;
               }
               70% {
-                stroke-dashoffset: 0;
                 fill-opacity: 1;
               }
               88% {
-                stroke-dashoffset: 1200;
                 fill-opacity: 0;
               }
               100% {
-                stroke-dashoffset: 1200;
                 fill-opacity: 0;
               }
             }
             .shape {
-              stroke-dasharray: 1200;
-              stroke-dashoffset: 1200;
               fill-opacity: 0;
+              will-change: fill-opacity;
             }
             .s1 {
               animation: drawFill 1.8s ease-in-out 0s infinite;
@@ -116,82 +115,42 @@
 
           <path
             class="shape s1"
-            style="
-              fill: #5f9ac7;
-              stroke: #5f9ac7;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #5f9ac7"
             d="m259.43 0 10.732 41.142-94.356 28.827z"
           />
           <path
             class="shape s2"
-            style="
-              fill: #2e5674;
-              stroke: #2e5674;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #2e5674"
             d="m259.43 0 10.732 41.142 39.138 9.382z"
           />
           <path
             class="shape s3"
-            style="
-              fill: #91cb47;
-              stroke: #91cb47;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #91cb47"
             d="m276.207 64.315 12.806 49.09-165.849 29.05z"
           />
           <path
             class="shape s4"
-            style="
-              fill: #527823;
-              stroke: #527823;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #527823"
             d="m276.207 64.315 12.806 49.09 78.288 11.98z"
           />
           <path
             class="shape s5"
-            style="
-              fill: #ffb448;
-              stroke: #ffb448;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #ffb448"
             d="m295.528 138.378 13.514 51.806-246.25 33.15z"
           />
           <path
             class="shape s6"
-            style="
-              fill: #996823;
-              stroke: #996823;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #996823"
             d="m295.528 138.378 13.514 51.806 119.647 21.577z"
           />
           <path
             class="shape s7"
-            style="
-              fill: #ed614e;
-              stroke: #ed614e;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #ed614e"
             d="m316.075 217.14 15.414 59.091-331.49 28.495z"
           />
           <path
             class="shape s8"
-            style="
-              fill: #8e3327;
-              stroke: #8e3327;
-              stroke-width: 2;
-              stroke-linejoin: round;
-            "
+            style="fill: #8e3327"
             d="m316.075 217.14 15.414 59.091 164.82 29.278z"
           />
         </svg>
