@@ -7,9 +7,12 @@ import * as fs from 'fs';
 import { machineIdSync } from 'node-machine-id';
 const { autoUpdater } = require('electron-updater');
 import * as url from 'url';
+import { spawn, ChildProcess } from 'child_process';
 
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
+let splashWin: BrowserWindow | null = null; // Fallback splash for production
+let splashProcess: ChildProcess | null = null; // Separate splash-process for development
 let isQuitting = false;
 let isUpdateReadyToInstall = false;
 let updateAutoInstallPending = false;
@@ -22,13 +25,148 @@ if (serve) require('source-map-support').install();
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
-// log.transports.file.level = 'info';
-// log.transports.file.file = __dirname + '/electron.log';
-// const storage = require('electron-json-storage');
-log.warn('App Desktop starting...');
-autoUpdater.autoInstallOnAppQuit = false;
-autoUpdater.autoDownload = false;
-autoUpdater.allowDowngrade = false;
+/**
+ * Launch the splash-process immediately on startup.
+ * This is a separate Electron process that displays immediately,
+ * without waiting for the main app's 10-second initialization.
+ *
+ * The splash-process runs in parallel while this main process initializes.
+ */
+function launchSplashProcess(): void {
+  try {
+    // Only launch splash in development mode (--serve flag)
+    // In production, the app loads from dist/ and splash timing is different
+    if (!serve) {
+      log.warn('[MAIN] Production mode - skipping splash process');
+      return;
+    }
+
+    // Determine path to splash-process-main.js
+    // In development: app/splash-process-main.js (relative to app/ dir which is __dirname)
+    let splashProcessPath = path.join(__dirname, 'splash-process-main.js');
+
+    // Check if splash-process exists in current location
+    if (!fs.existsSync(splashProcessPath)) {
+      log.error(
+        '[MAIN] splash-process-main.js not found at:',
+        splashProcessPath,
+      );
+      log.error('[MAIN] Skipping splash screen');
+      return; // Don't crash the main app if splash fails
+    }
+
+    log.warn('[MAIN] Launching splash-process from:', splashProcessPath);
+    log.warn('[MAIN] File exists:', fs.existsSync(splashProcessPath));
+
+    splashProcess = spawn(process.execPath, ['--app', splashProcessPath], {
+      detached: false,
+      stdio: ['inherit', 'inherit', 'inherit'], // Show splash process output
+      env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1' },
+    });
+
+    splashProcess.on('error', (err) => {
+      log.error('[MAIN] Failed to launch splash-process:', err);
+    });
+
+    splashProcess.on('exit', (code, signal) => {
+      log.warn(
+        '[MAIN] Splash-process exited with code:',
+        code,
+        'signal:',
+        signal,
+      );
+      splashProcess = null;
+    });
+
+    log.warn('[MAIN] Splash-process launched with PID:', splashProcess.pid);
+  } catch (error) {
+    log.error('[MAIN] Error launching splash-process:', error);
+  }
+}
+
+/**
+ * Close the splash-process when main app is ready to show.
+ */
+function closeSplashProcess(): void {
+  if (splashProcess && !splashProcess.killed) {
+    try {
+      log.info('Closing splash-process (PID:', splashProcess.pid, ')');
+      splashProcess.kill('SIGTERM');
+      splashProcess = null;
+    } catch (error) {
+      log.error('Error closing splash-process:', error);
+    }
+  }
+}
+
+/**
+ * Create a simple splash window for production mode.
+ * This is a built-in splash, not a separate process like in dev.
+ */
+function createProductionSplash(): void {
+  if (serve) {
+    log.info('[PROD-SPLASH] Skipping prod splash (serve mode detected)');
+    return;
+  }
+
+  try {
+    log.warn('[PROD-SPLASH] Creating production splash...');
+
+    splashWin = new BrowserWindow({
+      width: 424,
+      height: 284,
+      frame: false,
+      resizable: false,
+      center: true,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      hasShadow: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      type: process.platform === 'win32' ? 'toolbar' : undefined,
+      show: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+    });
+
+    const splashPath = path.join(__dirname, 'splash.html');
+    log.warn('[PROD-SPLASH] Loading splash from:', splashPath);
+
+    splashWin.loadFile(splashPath).catch((err) => {
+      log.error('[PROD-SPLASH] Error loading splash.html:', err);
+    });
+
+    splashWin.webContents.on('did-finish-load', () => {
+      log.warn('[PROD-SPLASH] Splash HTML loaded, showing window');
+    });
+
+    splashWin.once('ready-to-show', () => {
+      log.warn('[PROD-SPLASH] Window ready-to-show, displaying');
+      splashWin?.show();
+      splashWin?.focus();
+    });
+
+    splashWin.on('closed', () => {
+      log.warn('[PROD-SPLASH] Splash window closed');
+      splashWin = null;
+    });
+
+    log.warn('[PROD-SPLASH] Splash window created successfully');
+  } catch (error) {
+    log.error('[PROD-SPLASH] Error creating splash window:', error);
+  }
+}
+
+/**
+ * Close the production splash window.
+ */
+function closeProductionSplash(): void {
+  if (splashWin && !splashWin.isDestroyed()) {
+    splashWin.close();
+  }
+}
 
 // Try to fix ERR_HTTP2_PROTOCOL_ERROR
 // https://github.com/electron-userland/electron-builder/issues/4987
@@ -37,6 +175,18 @@ autoUpdater.allowDowngrade = false;
 //   'Cache-Control':
 //     'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
 // };
+
+log.warn('App Desktop starting...');
+autoUpdater.autoInstallOnAppQuit = false;
+autoUpdater.autoDownload = false;
+autoUpdater.allowDowngrade = false;
+
+/**
+ * CRITICAL: Launch splash immediately BEFORE app.on('ready') is called.
+ * This executes synchronously during module load, ensuring the splash
+ * displays before Electron's 10-second initialization completes.
+ */
+launchSplashProcess();
 
 ipcMain.handle('get-machine-id', async () => {
   try {
@@ -55,23 +205,8 @@ app.on('will-finish-launching', function () {
   app.on('open-file', function (event, filepath) {
     fileToLoad = filepath;
     event.preventDefault();
-
-    if (fileToLoad) {
-      log.info('fileToLoad');
-
-      if (win) {
-        setTimeout(() => {
-          win?.webContents?.send('file-open-system', fileToLoad);
-        }, 2500);
-      } else {
-        // if win is not ready, wait for it
-        app.once('browser-window-created', () => {
-          setTimeout(() => {
-            win?.webContents?.send('file-open-system', fileToLoad);
-          }, 2500);
-        });
-      }
-    }
+    log.info('[FILE-OPEN] File to load stored:', filepath);
+    // Don't send file here - wait for app to be ready (see ready-to-show handler)
   });
 });
 
@@ -100,8 +235,30 @@ function createWindow(): BrowserWindow {
     backgroundColor: '#ffffff',
   });
 
+  // When the main window is fully loaded, close the splash process and reveal the app
   win.once('ready-to-show', () => {
-    win?.show();
+    // Keep splash visible for at least 1.5 more seconds to give user
+    // visual feedback and let them see the loading process
+    setTimeout(() => {
+      closeSplashProcess(); // Close the separate splash-process (dev mode)
+      closeProductionSplash(); // Close the production splash window (prod mode)
+      if (win) {
+        win.show();
+        win.focus();
+        log.warn('[MAIN] Main app now displayed');
+
+        // Send fileToLoad after app is visible (ensures renderer is ready)
+        if (fileToLoad) {
+          log.warn(
+            '[MAIN] Sending fileToLoad after splash closes:',
+            fileToLoad,
+          );
+          setTimeout(() => {
+            win?.webContents?.send('file-open-system', fileToLoad);
+          }, 500); // Give renderer time to initialize
+        }
+      }
+    }, 500); // Keep splash visible during main app load
   });
 
   // Enable remote for main process
@@ -202,8 +359,17 @@ try {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
-  app.on('ready', () => setTimeout(createWindow, 400));
+  app.on('ready', () => {
+    // The splash-process was already launched during module load,
+    // displaying immediately. Now just create the main application window.
+
+    // In production mode, create a simple built-in splash window
+    if (!serve) {
+      createProductionSplash();
+    }
+
+    createWindow();
+  });
 
   // Handle before-quit event to allow window closing
   app.on('before-quit', () => {

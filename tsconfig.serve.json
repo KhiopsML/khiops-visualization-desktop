@@ -1,4 +1,8 @@
-{
+﻿{
+  "files": [
+    "app/main.ts",
+    "app/splash-process-main.ts"
+  ],
   "compilerOptions": {
     "sourceMap": true,
     "declaration": false,
@@ -17,9 +21,6 @@
       "dom"
     ]
   },
-  "files": [
-    "app/main.ts"
-  ],
   "exclude": [
     "node_modules",
     "**/*.spec.ts"

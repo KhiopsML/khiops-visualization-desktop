@@ -1,0 +1,322 @@
+<!--
+ * Copyright (c) 2023-2025 Orange. All rights reserved.
+ * This software is distributed under the BSD 3-Clause-clear License, the text of which is available
+ * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
+ -->
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Khiops Visualization Desktop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      /* Transparent so the OS draws no border at all */
+      html,
+      body {
+        background: transparent;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Fixed size — not 100% which would ignore body padding */
+      .window {
+        width: 400px;
+        height: 260px;
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 0px 10px rgba(0, 0, 0, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        user-select: none;
+        position: relative;
+      }
+
+      /* Close button — visible on hover, for emergency use */
+      .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          background 0.2s;
+        color: #999;
+        font-size: 16px;
+        line-height: 1;
+      }
+
+      .close-btn:hover {
+        background: #f0f0f0;
+        color: #333;
+      }
+
+      .window:hover .close-btn {
+        opacity: 1;
+      }
+
+      .welcome-header {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0px;
+      }
+
+      .welcome-header span {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      /* Starting up label at the bottom */
+      .starting {
+        position: absolute;
+        bottom: 18px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 12px;
+        color: #aaa;
+        letter-spacing: 0.02em;
+      }
+
+      @keyframes drawFill {
+        0% {
+          fill-opacity: 0;
+        }
+        18% {
+          fill-opacity: 0;
+        }
+        28% {
+          fill-opacity: 1;
+        }
+        70% {
+          fill-opacity: 1;
+        }
+        88% {
+          fill-opacity: 0;
+        }
+        100% {
+          fill-opacity: 0;
+        }
+      }
+
+      .shape {
+        fill-opacity: 0;
+        will-change: fill-opacity;
+      }
+      .s1 {
+        animation: drawFill 1.8s ease-in-out 0s infinite;
+      }
+      .s2 {
+        animation: drawFill 1.8s ease-in-out 0.02s infinite;
+      }
+      .s3 {
+        animation: drawFill 1.8s ease-in-out 0.04s infinite;
+      }
+      .s4 {
+        animation: drawFill 1.8s ease-in-out 0.08s infinite;
+      }
+      .s5 {
+        animation: drawFill 1.8s ease-in-out 0.12s infinite;
+      }
+      .s6 {
+        animation: drawFill 1.8s ease-in-out 0.16s infinite;
+      }
+      .s7 {
+        animation: drawFill 1.8s ease-in-out 0.2s infinite;
+      }
+      .s8 {
+        animation: drawFill 1.8s ease-in-out 0.24s infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="window">
+      <button class="close-btn" title="Cancel">✕</button>
+      <div class="welcome-header">
+        <svg
+          version="1.0"
+          width="80"
+          height="80"
+          viewBox="0 0 496.31 305.509"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <style>
+            @keyframes drawFill {
+              0% {
+                stroke-dashoffset: 1200;
+                fill-opacity: 0;
+              }
+              18% {
+                stroke-dashoffset: 0;
+                fill-opacity: 0;
+              }
+              28% {
+                stroke-dashoffset: 0;
+                fill-opacity: 1;
+              }
+              70% {
+                stroke-dashoffset: 0;
+                fill-opacity: 1;
+              }
+              88% {
+                stroke-dashoffset: 1200;
+                fill-opacity: 0;
+              }
+              100% {
+                stroke-dashoffset: 1200;
+                fill-opacity: 0;
+              }
+            }
+            .shape {
+              stroke-dasharray: 1200;
+              stroke-dashoffset: 1200;
+              fill-opacity: 0;
+            }
+            .s1 {
+              animation: drawFill 1.8s ease-in-out 0s infinite;
+            }
+            .s2 {
+              animation: drawFill 1.8s ease-in-out 0.02s infinite;
+            }
+            .s3 {
+              animation: drawFill 1.8s ease-in-out 0.04s infinite;
+            }
+            .s4 {
+              animation: drawFill 1.8s ease-in-out 0.08s infinite;
+            }
+            .s5 {
+              animation: drawFill 1.8s ease-in-out 0.12s infinite;
+            }
+            .s6 {
+              animation: drawFill 1.8s ease-in-out 0.16s infinite;
+            }
+            .s7 {
+              animation: drawFill 1.8s ease-in-out 0.2s infinite;
+            }
+            .s8 {
+              animation: drawFill 1.8s ease-in-out 0.24s infinite;
+            }
+          </style>
+
+          <path
+            class="shape s1"
+            style="
+              fill: #5f9ac7;
+              stroke: #5f9ac7;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m259.43 0 10.732 41.142-94.356 28.827z"
+          />
+          <path
+            class="shape s2"
+            style="
+              fill: #2e5674;
+              stroke: #2e5674;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m259.43 0 10.732 41.142 39.138 9.382z"
+          />
+          <path
+            class="shape s3"
+            style="
+              fill: #91cb47;
+              stroke: #91cb47;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m276.207 64.315 12.806 49.09-165.849 29.05z"
+          />
+          <path
+            class="shape s4"
+            style="
+              fill: #527823;
+              stroke: #527823;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m276.207 64.315 12.806 49.09 78.288 11.98z"
+          />
+          <path
+            class="shape s5"
+            style="
+              fill: #ffb448;
+              stroke: #ffb448;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m295.528 138.378 13.514 51.806-246.25 33.15z"
+          />
+          <path
+            class="shape s6"
+            style="
+              fill: #996823;
+              stroke: #996823;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m295.528 138.378 13.514 51.806 119.647 21.577z"
+          />
+          <path
+            class="shape s7"
+            style="
+              fill: #ed614e;
+              stroke: #ed614e;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m316.075 217.14 15.414 59.091-331.49 28.495z"
+          />
+          <path
+            class="shape s8"
+            style="
+              fill: #8e3327;
+              stroke: #8e3327;
+              stroke-width: 2;
+              stroke-linejoin: round;
+            "
+            d="m316.075 217.14 15.414 59.091 164.82 29.278z"
+          />
+        </svg>
+        <span>Khiops Visualization Desktop</span>
+      </div>
+
+      <p class="starting">Starting up</p>
+    </div>
+
+    <script>
+      // Close button calls ipcRenderer to notify splash-process
+      const { ipcRenderer } = require('electron');
+
+      document.querySelector('.close-btn').addEventListener('click', () => {
+        // Notify splash-process to close, which also quits if main app isn't ready
+        ipcRenderer.send('splash-user-close');
+      });
+    </script>
+  </body>
+</html>
