@@ -285,9 +285,12 @@ ipcMain.handle(
 function checkForUpdates(channel: string, delay: number = 10000) {
   autoUpdater.allowPrerelease = channel === 'beta';
   log.info('checkForUpdates');
-  // autoUpdater.forceDevUpdateConfig = true;
   setTimeout(() => {
-    autoUpdater.checkForUpdates();
+    autoUpdater.checkForUpdates().catch((err: Error) => {
+      // Silently ignore network errors during update check
+      log.warn('checkForUpdates failed (non-blocking):', err.message);
+      win?.webContents?.send('update-error', err);
+    });
   }, delay);
 }
 
