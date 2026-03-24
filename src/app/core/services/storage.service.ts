@@ -31,10 +31,13 @@ export class StorageService {
         return;
       }
 
-      const userDataPath = path.join(
-        this.electronService.remote?.app?.getPath('documents') || '',
-        'khiops-visualization-desktop',
-      );
+      const userDataPath =
+        process.platform === 'win32'
+          ? path.join('C:\\ProgramData', 'khiops-visualization-desktop')
+          : path.join(
+              this.electronService.remote?.app?.getPath('userData') || '',
+              'khiops-visualization-desktop',
+            );
       if (userDataPath) {
         // eg. C:\Users\USER\Documents\hiops-visualization-desktop
         this.electronService.storage?.setDataPath(userDataPath);
