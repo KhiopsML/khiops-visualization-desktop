@@ -241,10 +241,10 @@ jobs:
             exit 1
           }
           $content = Get-Content $latestYml
-          $content = $content -replace "(sha512:\s*).+", "`$1$base64"
-          $content = $content -replace "(size:\s*).+", "`$1$size"
-          $content = $content -replace "(url:\s*).+", "`$1$($exe.Name)"
-          $content = $content -replace "(path:\s*).+", "`$1$($exe.Name)"
+          $content = $content -replace "sha512:\s*.+", "sha512: $base64"
+          $content = $content -replace "size:\s*.+", "size: $size"
+          $content = $content -replace "url:\s*.+", "url: $($exe.Name)"
+          $content = $content -replace "path:\s*.+", "path: $($exe.Name)"
           $content | Set-Content $latestYml
           Write-Output "✅ Updated latest.yml (sha512, size, path, url) for: $($exe.Name)"
         continue-on-error: true
