@@ -84,11 +84,41 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * Close tab and clean up file system state if needed
    */
   private closeTabWithCleanup(tab: Tab): void {
-    this.tabManager.closeTab(tab.id);
-    
-    // If no tabs left, show welcome screen by closing file
-    if (!this.tabManager.hasOpenTabs()) {
-      this.fileSystemService.closeFile();
+    // For covisualization files, show save dialog before closing
+    if (tab.componentType === 'covisualization' && tab.filePath) {
+      // Save the currently active tab so we can restore it after closing
+      const previousActiveTab = this.tabManager.getActiveTab();
+
+      // Set the tab to close as active so we can access its save dialog
+      this.tabManager.setActiveTab(tab.id);
+      // Store the currentFilePath and component type so the dialog can access them
+      this.fileSystemService.currentFilePath = tab.filePath;
+      this.fileSystemService['configService'].setActiveComponentType(
+        'covisualization',
+      );
+
+      // Wait for Angular to render the covisualization component before showing the dialog
+      // This ensures the save dialog method is available
+      setTimeout(() => {
+        // Close file with save dialog and tab cleanup
+        this.fileSystemService.closeFile(() => {
+          // After closing, restore the previously active tab if it still exists
+          if (
+            previousActiveTab &&
+            this.tabManager.getTab(previousActiveTab.id)
+          ) {
+            this.tabManager.setActiveTab(previousActiveTab.id);
+          }
+        }, tab.id);
+      }, 150); // Increased delay to ensure component is fully rendered
+    } else {
+      // For visualization or empty tabs, close directly
+      this.tabManager.closeTab(tab.id);
+
+      // If no tabs left, show welcome screen by closing file
+      if (!this.tabManager.hasOpenTabs()) {
+        this.fileSystemService.closeFile();
+      }
     }
   }
 

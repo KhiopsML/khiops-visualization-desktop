@@ -11,6 +11,7 @@ import { FileSystemService } from './file-system.service';
 import { LibVersionService } from './lib-version.service';
 import { ConfigService } from './config.service';
 import { StorageService } from './storage.service';
+import { TabManagerService } from './tab-manager.service';
 import { Subject } from 'rxjs';
 
 @Injectable({
@@ -29,6 +30,7 @@ export class MenuService {
     private translate: TranslateService,
     private fileSystemService: FileSystemService,
     private storageService: StorageService,
+    private tabManager: TabManagerService,
   ) {
     this.currentChannel = this.storageService.getOne('CHANNEL') || 'latest';
 
@@ -391,9 +393,12 @@ export class MenuService {
   }
 
   closeFile(callbackDone?: Function) {
+    // Get the currently active tab
+    const activeTab = this.tabManager.getActiveTab();
+    const tabIdToClose = activeTab ? activeTab.id : undefined;
     this.fileSystemService.closeFile(() => {
       callbackDone && callbackDone();
-    });
+    }, tabIdToClose);
   }
 
   setChannel(channel: string, refreshCb?: Function) {

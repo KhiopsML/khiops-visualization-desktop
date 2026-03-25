@@ -151,19 +151,7 @@ export class FileSystemService {
       );
     }
 
-    // Check if we need to save current work before opening new file
-    const currentActiveType = this.configService.getActiveComponentType();
-    const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
-
-    if (hasCurrentFile && currentActiveType === 'covisualization') {
-      this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone, finalTabId, true);
-      });
-    } else {
-      this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone, finalTabId, false);
-      }, true);
-    }
+    await this.performOpenFile(filename, callbackDone, finalTabId, false);
   }
 
   private async performOpenFile(
@@ -481,10 +469,12 @@ export class FileSystemService {
    * Generic method to handle save before action logic for covisualization mode
    * @param finalAction The action to execute after save/cancel operations
    * @param skipStorageSave If true, skip the storage save (useful for file open where we manage history separately)
+   * @param tabIdToClose Optional tab ID to close after the action completes
    */
   handleSaveBeforeAction(
     finalAction: () => void | Promise<void>,
     skipStorageSave: boolean = false,
+    tabIdToClose?: string,
   ) {
     const activeComponentType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
@@ -514,20 +504,53 @@ export class FileSystemService {
     }
   }
 
-  closeFile(callbackDone?: Function) {
-    this.handleSaveBeforeAction(() => {
-      this.performCloseFile();
+  closeFile(callbackDone?: Function, tabIdToClose?: string) {
+    // Check if the tab being closed is a covisualization
+    const tabToClose = tabIdToClose
+      ? this.tabManagerService.getTab(tabIdToClose)
+      : null;
+    const isCovisualizationTab =
+      tabToClose?.componentType === 'covisualization' && tabToClose?.filePath;
+
+    if (isCovisualizationTab) {
+      // Show dialog for covisualization files
+      this.handleSaveBeforeAction(
+        () => {
+          this.performCloseFile(tabIdToClose);
+          callbackDone && callbackDone();
+        },
+        false,
+        tabIdToClose,
+      );
+    } else {
+      // For other tabs (visualization or no file), just close without dialog
+      this.performCloseFile(tabIdToClose);
       callbackDone && callbackDone();
-    });
+    }
   }
 
-  private performCloseFile() {
-    this.initialize();
-    this.ngzone.run(() => {
-      this.configService.setDatas();
-      this.setTitleBar('');
-      this._fileLoaderSub.next(this.fileLoaderDatas);
-    });
+  private performCloseFile(tabIdToClose?: string) {
+    const activeTab = this.tabManagerService.getActiveTab();
+    const isClosingActiveTab = tabIdToClose && activeTab?.id === tabIdToClose;
+
+    // Close the tab if specified
+    if (tabIdToClose) {
+      this.tabManagerService.closeTab(tabIdToClose);
+    }
+
+    // Only clear data if no specific tab to close (old behavior)
+    // or if we closed the active tab and there are no more tabs
+    if (
+      !tabIdToClose ||
+      (isClosingActiveTab && !this.tabManagerService.hasOpenTabs())
+    ) {
+      this.initialize();
+      this.ngzone.run(() => {
+        this.configService.setDatas();
+        this.setTitleBar('');
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+      });
+    }
   }
 
   setFileHistory(filename: string): Promise<void> {
