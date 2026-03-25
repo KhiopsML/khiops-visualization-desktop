@@ -5408,10 +5408,10 @@ cypress-shadow-dom@^1.4.1:
   resolved "https://registry.yarnpkg.com/cypress-shadow-dom/-/cypress-shadow-dom-1.4.1.tgz#51b0d49d2a516571e2c0c7230f7744374771c2e0"
   integrity sha512-q0y6aMMrTB7RgJcj25+ClK9c4O6HvQAb1UxDAKYn1LSyBXdXqr+tCvjFYhpk3dTU+EBXKbPoNrfUZbUH/ijQTQ==
 
-cypress@^15.12.0:
-  version "15.12.0"
-  resolved "https://registry.yarnpkg.com/cypress/-/cypress-15.12.0.tgz#84be43a9d85cb390ca404e5b1d030568a06ab4eb"
-  integrity sha512-B2BRcudLfA4NZZP5QpA45J70bu1heCH59V1yKRLHAtiC49r7RV03X5ifUh7Nfbk8QNg93RAsc6oAmodm/+j0pA==
+cypress@^15.13.0:
+  version "15.13.0"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-15.13.0.tgz#e3c5487efd815e7f1e6f0ec76e4f7b4f9fe7cd21"
+  integrity sha512-hJ9sY++TUC/HlUzHVJpIrDyqKMjlhx5PTXl/A7eA91JNEtUWkJAqefQR5mo9AtLra/9+m+JJaMg2U5Qd0a74Fw==
   dependencies:
     "@cypress/request" "^3.0.10"
     "@cypress/xvfb" "^1.2.4"
@@ -5936,10 +5936,10 @@ electron-updater@^6.8.3:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^41.0.3:
-  version "41.0.3"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-41.0.3.tgz#fa8864adacf903b986cd1d532db130f070e320f1"
-  integrity sha512-IDjx8liW1q+r7+MOip5W1Eo1eMwJzVObmYrd9yz2dPCkS7XlgLq3qPVMR80TpiROFp73iY30kTzMdpA6fEVs3A==
+electron@^41.0.4:
+  version "41.0.4"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-41.0.4.tgz#5c7904082397e931a0f03016fa5705a8904fef96"
+  integrity sha512-rO08CxnAsAkKPFj3OZnxFkKrlnpSL3OCOewMDj5kaohVo++7e8hIT5Sl+tNl9WkNKiLvfZSW180ueA9s5zh9dg==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^24.9.0"
