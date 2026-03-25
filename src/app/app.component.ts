@@ -290,22 +290,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Set data to a specific tab's component
-   */
-  private setDataToTab(tabId: string, data: any) {
-    const tabConfig = this.tabConfigs.get(tabId);
-    if (
-      tabConfig &&
-      tabConfig.setDatas &&
-      typeof tabConfig.setDatas === 'function'
-    ) {
-      tabConfig.setDatas(data);
-    } else {
-      console.warn('Cannot set data to tab:', tabId, 'component not ready');
-    }
-  }
-
-  /**
    * Get the active component element from the DOM
    */
   private getActiveComponentElement(): HTMLElement | undefined {
@@ -490,7 +474,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       if (arg) {
         // Add delay to ensure component is fully loaded before opening file
         // setTimeout(() => {
-          this.fileSystemService.openFile(arg);
+        this.fileSystemService.openFile(arg);
         // }, 100);
       }
     });
