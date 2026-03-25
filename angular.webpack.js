@@ -1,7 +1,7 @@
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 module.exports = (config, options) => {
-  // Default to 'web' - safe for browser/Cypress environments
+  // Default to 'web' - safe for browser environments
   config.target = 'web';
 
   if (options.fileReplacements) {
