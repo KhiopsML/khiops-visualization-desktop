@@ -72,3 +72,5 @@ node_modules/
 playwright-report/
 test-results/
 .auth/
+/e2e/screenshots/
+/e2e/tracing/

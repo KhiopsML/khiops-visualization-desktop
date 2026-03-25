@@ -33,7 +33,7 @@
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
     "ng": "ng",
-    "e2e": "playwright test",
+    "e2e": "playwright test -c e2e/playwright.config.ts",
     "dev": "./scripts/build-dev-watch.sh",
     "buildNstart": "yarn build-visu && npm-run-all -p electron:serve ng:serve",
     "start": "npm-run-all -p electron:serve ng:serve:dev",

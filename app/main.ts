@@ -253,6 +253,11 @@ try {
 ipcMain.on('get-input-file', async (event: any) => {
   try {
     log.info('get-input-file');
+    // In serve mode (dev/test), argv[1] is main.js itself - not a user file
+    if (serve) {
+      event.returnValue = null;
+      return;
+    }
     // return input files on Windows
     event.returnValue = process.argv[1];
   } catch (error) {
