@@ -29,8 +29,12 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Watch main.js — produced directly by ng build, exists before the bundle post-processing step
 BUNDLE_PATH="$REPO_ROOT/visualization-component/dist/khiops-webcomponent/main.js"
 
-# Change directory to visualization component and build development webcomponents
+# Remove previous build artifacts to prevent false-positive readiness detection
 cd "$REPO_ROOT/visualization-component"
+rm -f dist/khiops-webcomponent/main.js
+rm -f dist/khiops-webcomponent/khiops-webcomponents.bundle.js
+
+# Change directory to visualization component and build development webcomponents
 yarn buildDev:webcomponents &
 WEBCOMPONENT_PID=$!
 PIDS+=($WEBCOMPONENT_PID)
