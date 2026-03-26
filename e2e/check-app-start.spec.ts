@@ -1,50 +1,24 @@
-import {
-  BrowserContext,
-  ElectronApplication,
-  Page,
-  _electron as electron,
-} from 'playwright';
-import { test, expect } from '@playwright/test';
-import * as PATH from 'path';
+import { BrowserContext } from 'playwright';
+import { test, expect } from './fixtures/launch-electron';
 
 test.describe('Check Home Page', () => {
-  let app: ElectronApplication;
-  let firstWindow: Page;
   let context: BrowserContext;
 
-  test.beforeAll(async () => {
-    app = await electron.launch({
-      args: [PATH.join(__dirname, '../app/main.js'), '--serve', '--no-sandbox'],
-    });
+  test.beforeAll(async ({ app }) => {
+    // Tracing setup using the shared app instance from fixture
     context = app.context();
     await context.tracing.start({ screenshots: true, snapshots: true });
-    firstWindow = await app.firstWindow();
-    await firstWindow.waitForLoadState('domcontentloaded');
   });
 
-  test('Launch electron app', async () => {
-    const windowState: {
-      isVisible: boolean;
-      isDevToolsOpened: boolean;
-      isCrashed: boolean;
-    } = await app.evaluate(async (process) => {
-      const mainWindow = process.BrowserWindow.getAllWindows()[0];
-
-      const getState = () => ({
+  test('Launch electron app', async ({ app, firstWindow }) => {
+    // firstWindow is already loaded via fixture, just check window state
+    const windowState = await app.evaluate(({ BrowserWindow }) => {
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      return {
         isVisible: mainWindow.isVisible(),
         isDevToolsOpened: mainWindow.webContents.isDevToolsOpened(),
         isCrashed: mainWindow.webContents.isCrashed(),
-      });
-
-      return new Promise((resolve) => {
-        if (mainWindow.isVisible()) {
-          resolve(getState());
-        } else {
-          mainWindow.once('ready-to-show', () =>
-            setTimeout(() => resolve(getState()), 0),
-          );
-        }
-      });
+      };
     });
 
     expect(windowState.isVisible).toBeTruthy();
@@ -52,7 +26,9 @@ test.describe('Check Home Page', () => {
     expect(windowState.isCrashed).toBeFalsy();
   });
 
-  test('.start-panel-container div must display Open a file', async () => {
+  test('.start-panel-container div must display Open a file', async ({
+    firstWindow,
+  }) => {
     // The text is inside a button > span inside .start-panel-container, not a direct div
     const appWelcome = firstWindow.locator('app-welcome');
     await expect(appWelcome).toContainText(/open a file from the menu/i, {
@@ -60,12 +36,12 @@ test.describe('Check Home Page', () => {
     });
   });
 
-  test('Recent file component should be displayed', async () => {
+  test('Recent file component should be displayed', async ({ firstWindow }) => {
     const recentFiles = firstWindow.locator('app-recently-opened-files');
     await expect(recentFiles).toBeVisible();
   });
 
-  test('File menu contains Open', async () => {
+  test('File menu contains Open', async ({ app, firstWindow }) => {
     // Wait for Angular to fully initialize and set the application menu
     await firstWindow.waitForLoadState('networkidle');
     await firstWindow.waitForTimeout(2000);
@@ -89,6 +65,5 @@ test.describe('Check Home Page', () => {
 
   test.afterAll(async () => {
     await context.tracing.stop({ path: 'e2e/tracing/trace.zip' });
-    // await app.close();
   });
 });
