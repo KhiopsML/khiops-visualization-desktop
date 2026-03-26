@@ -60,6 +60,11 @@ test.describe('Check Home Page', () => {
     });
   });
 
+  test('Recent file component should be displayed', async () => {
+    const recentFiles = firstWindow.locator('app-recently-opened-files');
+    await expect(recentFiles).toBeVisible();
+  });
+
   test('File menu contains Open', async () => {
     // Wait for Angular to fully initialize and set the application menu
     await firstWindow.waitForLoadState('networkidle');
