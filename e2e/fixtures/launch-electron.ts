@@ -1,4 +1,4 @@
-// e2e/fixtures.ts
+// e2e/fixtures/launch-electron.ts
 import { test as base, expect } from '@playwright/test';
 import { ElectronApplication, Page, _electron as electron } from 'playwright';
 import * as PATH from 'path';
@@ -10,7 +10,6 @@ type ElectronWorkerFixtures = {
 };
 
 export const test = base.extend<{}, ElectronWorkerFixtures>({
-  // Second generic = worker-scoped fixtures
   app: [
     async ({}, use) => {
       const app = await electron.launch({
@@ -29,7 +28,34 @@ export const test = base.extend<{}, ElectronWorkerFixtures>({
   firstWindow: [
     async ({ app }, use) => {
       const firstWindow = await app.firstWindow();
-      await firstWindow.waitForLoadState('domcontentloaded');
+
+      // Wait for the window to be visible
+      await app.evaluate(({ BrowserWindow }) => {
+        return new Promise<void>((resolve) => {
+          const win = BrowserWindow.getAllWindows()[0];
+          if (win?.isVisible()) {
+            resolve();
+          } else {
+            win?.once('show', () => resolve());
+          }
+        });
+      });
+
+      // Wait for Angular to bootstrap (app-root must be in the DOM)
+      await firstWindow.waitForSelector('app-root', { timeout: 60000 });
+
+      // Wait for Angular to finish rendering (no pending tasks)
+      await firstWindow.waitForFunction(
+        () => {
+          const root = document.querySelector('app-root');
+          // Angular sets this attribute when stable
+          return root && root.children.length > 0;
+        },
+        { timeout: 60000 },
+      );
+
+      await firstWindow.waitForLoadState('networkidle', { timeout: 60000 });
+
       await use(firstWindow);
     },
     { scope: 'worker' },

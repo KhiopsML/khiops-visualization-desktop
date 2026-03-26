@@ -19,6 +19,13 @@ jobs:
         run: yarn playwright install --with-deps
       - name: Build Electron main process
         run: yarn electron:serve-tsc
+
+      - name: Start Angular dev server
+        run: yarn ng:serve:dev &
+
+      - name: Wait for Angular to be ready
+        run: yarn wait-on http://localhost:4200 --timeout 120000
+
       - name: Run Playwright tests
         run: xvfb-run --auto-servernum yarn e2e
       - uses: actions/upload-artifact@v4
