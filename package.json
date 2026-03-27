@@ -31,6 +31,7 @@
     "tls": false
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "postinstall": "electron-builder install-app-deps",
     "ng": "ng",
     "e2e": "playwright test -c e2e/playwright.config.ts",
