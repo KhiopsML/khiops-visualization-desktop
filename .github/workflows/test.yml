@@ -28,6 +28,9 @@ jobs:
       - name: Setup Chrome
         uses: browser-actions/setup-chrome@v1
 
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
       - name: Run unit tests
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
