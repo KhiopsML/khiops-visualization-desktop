@@ -2,6 +2,26 @@ import { test, expect } from './fixtures/launch-electron';
 import { clickMenuItem, mockOpenDialog } from './helpers/electron-menu';
 import * as PATH from 'path';
 
+test.describe('Check loading saved external datas', () => {
+  // Open file directly via IPC, bypassing the native file dialog
+  test('Open file and check visualization', async ({ app, firstWindow }) => {
+    // Wait for Angular to fully initialize
+    await firstWindow.waitForLoadState('networkidle');
+    await firstWindow.waitForTimeout(2000);
+
+    await mockOpenDialog(app, 'check-ext-datas-e2e.json');
+    await clickMenuItem(app, 'File', 'Open');
+
+    // app-external-datas component should be visible
+    const extDatas = firstWindow.locator('app-external-datas');
+    await expect(extDatas).toBeVisible();
+
+    // Text into app-external-datas must be valid
+    await expect(extDatas).toContainText('External data of Bachelors');
+    await expect(extDatas).toContainText('This text is standard');
+  });
+});
+
 test.describe('Check loading external datas', () => {
   // Open file directly via IPC, bypassing the native file dialog
   test('Open file and check visualization', async ({ app, firstWindow }) => {

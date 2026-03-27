@@ -380,6 +380,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             path = this.electronService.electron.webUtils.getPathForFile(input);
           }
 
+          console.log('🚀 ~ AppComponent ~ readLocalFile ~ path:', path);
+          if (path === 'END_TO_END_PATH') {
+            path =
+              process.env.GITHUB_WORKSPACE +
+              'e2e/mocks/ExternalDataEducation.txt';
+          }
+
           const content = await this.electronService.ipcRenderer?.invoke(
             'read-local-file',
             path,
