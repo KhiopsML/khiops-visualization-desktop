@@ -34,6 +34,7 @@
     "postinstall": "electron-builder install-app-deps",
     "ng": "ng",
     "e2e": "playwright test -c e2e/playwright.config.ts",
+    "e2e:ui": "playwright test -c e2e/playwright.config.ts  --ui",
     "e2e:watch": "concurrently --kill-others-on-fail \"yarn ng:serve:dev\" \"wait-on http://localhost:4200 && playwright test -c e2e/playwright.config.ts --ui --ui-host=localhost --ui-port=8080\"",
     "dev": "./scripts/build-dev-watch.sh",
     "buildNstart": "yarn build-visu && npm-run-all -p electron:serve ng:serve",
