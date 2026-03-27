@@ -20,14 +20,23 @@ jobs:
       - name: Build Electron main process
         run: yarn electron:serve-tsc
 
-      - name: Start Angular dev server
-        run: yarn ng:serve:dev &
+      - name: Start Angular dev server and wait
+        run: |
+          yarn ng:serve:dev &
+          SERVER_PID=$!
 
-      - name: Wait for Angular to be ready
-        run: yarn wait-on http://localhost:4200 --timeout 120000
+          # Wait for server to be ready, checking process health
+          yarn wait-on http://localhost:4200 --timeout 120000 || {
+            echo "wait-on failed. Checking if server process is alive..."
+            kill -0 $SERVER_PID 2>/dev/null && echo "Process alive but not responding" || echo "Process is dead"
+            exit 1
+          }
+
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
 
       - name: Run Playwright tests
         run: xvfb-run --auto-servernum yarn e2e
+
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
