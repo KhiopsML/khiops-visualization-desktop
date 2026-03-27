@@ -12,6 +12,8 @@ test.describe('Check loading saved external datas', () => {
     await mockOpenDialog(app, 'check-ext-datas-e2e.json');
     await clickMenuItem(app, 'File', 'Open');
 
+    await firstWindow.waitForTimeout(2000);
+
     // app-external-datas component should be visible
     const extDatas = firstWindow.locator('app-external-datas').first();
     await expect(extDatas).toBeVisible();
