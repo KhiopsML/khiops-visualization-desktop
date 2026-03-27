@@ -13,12 +13,19 @@ test.describe('Check loading saved external datas', () => {
     await clickMenuItem(app, 'File', 'Open');
 
     // app-external-datas component should be visible
-    const extDatas = firstWindow.locator('app-external-datas').last();
+    const extDatas = firstWindow.locator('app-external-datas').first();
     await expect(extDatas).toBeVisible();
 
     // Text into app-external-datas must be valid
     await expect(extDatas).toContainText('External data of Bachelors');
     await expect(extDatas).toContainText('This text is standard');
+
+    // app-external-datas component should be visible
+    const extNoDatas = firstWindow.locator('app-external-datas').last();
+    await expect(extNoDatas).toBeVisible();
+
+    // Text into app-external-datas must be valid
+    await expect(extNoDatas).toContainText('No external datas');
   });
 });
 
@@ -62,7 +69,7 @@ test.describe('Check loading external datas', () => {
     await firstWindow.locator('button', { hasText: 'Load datas' }).click();
 
     // app-external-datas component should be visible
-    const extDatas = firstWindow.locator('app-external-datas').last();
+    const extDatas = firstWindow.locator('app-external-datas').first();
     await expect(extDatas).toBeVisible();
 
     // Text into app-external-datas must be valid
