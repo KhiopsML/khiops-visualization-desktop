@@ -13,7 +13,7 @@ test.describe('Check loading saved external datas', () => {
     await clickMenuItem(app, 'File', 'Open');
 
     // app-external-datas component should be visible
-    const extDatas = firstWindow.locator('app-external-datas');
+    const extDatas = firstWindow.locator('app-external-datas').last();
     await expect(extDatas).toBeVisible();
 
     // Text into app-external-datas must be valid
@@ -43,6 +43,11 @@ test.describe('Check loading external datas', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePath);
 
+    // Wait for the button to appear after file selection
+    await firstWindow
+      .locator('#import-ext-datas-dimension-btn')
+      .waitFor({ state: 'visible', timeout: 10000 });
+
     // click on button with id import-ext-datas-dimension-btn
     await firstWindow.locator('#import-ext-datas-dimension-btn').click();
 
@@ -57,7 +62,7 @@ test.describe('Check loading external datas', () => {
     await firstWindow.locator('button', { hasText: 'Load datas' }).click();
 
     // app-external-datas component should be visible
-    const extDatas = firstWindow.locator('app-external-datas');
+    const extDatas = firstWindow.locator('app-external-datas').last();
     await expect(extDatas).toBeVisible();
 
     // Text into app-external-datas must be valid
