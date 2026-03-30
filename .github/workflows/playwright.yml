@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: npm install -g yarn && yarn
       - name: Install Playwright Browsers
-        run: yarn playwright install --with-deps
+        run: yarn playwright install --with-deps chromium
       - name: Build Electron main process
         run: yarn electron:serve-tsc
 

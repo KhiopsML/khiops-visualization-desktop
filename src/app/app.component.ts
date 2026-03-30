@@ -377,22 +377,47 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           '🚀 ~ AppComponent ~ readLocalFile ~ this.electronService.isElectron:',
           this.electronService.isElectron,
         );
+        console.log('🚀 ~ AppComponent ~ readLocalFile ~ input object:', input);
+        console.log('🚀 ~ AppComponent ~ readLocalFile ~ input.path:', input?.path);
+        console.log('🚀 ~ AppComponent ~ readLocalFile ~ input structure:', Object.keys(input || {}));
+        
         if (this.electronService.isElectron) {
           let path: string = '';
 
           if (input?.path) {
             // If command is called by saved json datas
             path = input?.path;
+            console.log('🚀 ~ AppComponent ~ readLocalFile ~ using input.path:', path);
           } else {
             // If command is called by user
             path = this.electronService.electron.webUtils.getPathForFile(input);
+            console.log('🚀 ~ AppComponent ~ readLocalFile ~ using getPathForFile:', path);
           }
 
-          console.log('🚀 ~ AppComponent ~ readLocalFile ~ path:', path);
+          console.log('🚀 ~ AppComponent ~ readLocalFile ~ final path:', path);
+          console.log('🚀 ~ AppComponent ~ readLocalFile ~ checking if path === END_TO_END_PATH');
           if (path === 'END_TO_END_PATH') {
-            path =
-              process.env.GITHUB_WORKSPACE +
-              'e2e/mocks/ExternalDataEducation.txt';
+            console.log('🚀 ~ AppComponent ~ readLocalFile ~ MATCH! Converting END_TO_END_PATH to real path');
+            
+            // Check if we're in CI environment (GitHub Actions)
+            if (process.env.GITHUB_WORKSPACE) {
+              // CI environment - use GITHUB_WORKSPACE
+              path = process.env.GITHUB_WORKSPACE + '/khiops-visualization-desktop/e2e/mocks/ExternalDataEducation.txt';
+              console.log('🚀 ~ AppComponent ~ readLocalFile ~ CI environment detected, using GITHUB_WORKSPACE');
+            } else {
+              // Local development environment - construct relative path
+              // __dirname is typically something like: .../khiops-visualization-desktop/src/app
+              // We need to go up to project root and then to e2e/mocks
+              const appDir = __dirname; // src/app
+              const srcDir = appDir.replace(/[\\\/]app$/, ''); // src
+              const projectRoot = srcDir.replace(/[\\\/]src$/, ''); // project root
+              path = projectRoot + '/e2e/mocks/ExternalDataEducation.txt';
+              console.log('🚀 ~ AppComponent ~ readLocalFile ~ Local environment detected, constructed path from __dirname:', __dirname);
+            }
+            
+            console.log('🚀 ~ AppComponent ~ readLocalFile ~ converted path:', path);
+          } else {
+            console.log('🚀 ~ AppComponent ~ readLocalFile ~ NO MATCH, path is:', path);
           }
           console.log('🚀 ~ AppComponent ~ readLocalFile ~ path:', path);
 
