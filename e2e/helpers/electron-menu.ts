@@ -39,7 +39,6 @@ export async function mockOpenDialog(
   mockFileName: string,
 ): Promise<void> {
   const filePath = PATH.join(__dirname, '../mocks', mockFileName);
-  console.log('🚀 ~ mockOpenDialog ~ filePath:', filePath);
 
   await app.evaluate(({ dialog }, path) => {
     // Override showOpenDialog to return our test file without showing the native dialog

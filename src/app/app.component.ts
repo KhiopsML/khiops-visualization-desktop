@@ -252,6 +252,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           this.electronService.clipboard.writeImage(natImage);
         },
         readLocalFile: (file: File | any, cb: Function) => {
+          console.log(
+            '🚀 ~ AppComponent ~ configureTabComponent ~ file:',
+            file,
+          );
           return this.readLocalFile(file, cb, tab);
         },
         onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
@@ -369,6 +373,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   readLocalFile(input: File | any, cb: Function, tab?: Tab) {
     (async () => {
       try {
+        console.log(
+          '🚀 ~ AppComponent ~ readLocalFile ~ this.electronService.isElectron:',
+          this.electronService.isElectron,
+        );
         if (this.electronService.isElectron) {
           let path: string = '';
 
@@ -386,6 +394,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
               process.env.GITHUB_WORKSPACE +
               'e2e/mocks/ExternalDataEducation.txt';
           }
+          console.log('🚀 ~ AppComponent ~ readLocalFile ~ path:', path);
 
           const content = await this.electronService.ipcRenderer?.invoke(
             'read-local-file',
