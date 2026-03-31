@@ -1,4 +1,5 @@
 name: Playwright Tests
+
 on:
   push:
     branches: [main, feat-multi-tabs]
@@ -9,17 +10,22 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
       - name: Install dependencies
-        run: npm install -g yarn && yarn
+        run: |
+          npm install -g yarn
+          yarn
 
-      - name: Install Playwright Browsers
+      - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
       - name: Build Electron main process
@@ -29,12 +35,13 @@ jobs:
         run: |
           yarn ng:serve:dev &
           SERVER_PID=$!
-          # Wait for server to be ready, checking process health
+
           yarn wait-on http://localhost:4200 --timeout 120000 || {
-            echo "wait-on failed. Checking if server process is alive..."
+            echo "wait-on failed. Checking server process..."
             kill -0 $SERVER_PID 2>/dev/null && echo "Process alive but not responding" || echo "Process is dead"
             exit 1
           }
+
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
 
       - name: Run Playwright tests
@@ -45,17 +52,20 @@ jobs:
       - name: Debug - list generated files
         if: always()
         run: |
-          echo "=== e2e/playwright-report/ ==="
-          find e2e/playwright-report/ -type f 2>/dev/null || echo "Directory not found"
-          echo "=== e2e/playwright-report/test-results/ ==="
-          find e2e/playwright-report/test-results/ -type f 2>/dev/null || echo "No test-results"
+          echo "=== e2e/test-results ==="
+          find e2e/test-results -type f 2>/dev/null || echo "No test-results"
 
-      - name: Upload Playwright Report
+          echo "=== e2e/playwright-report ==="
+          find e2e/playwright-report -type f 2>/dev/null || echo "No report"
+
+      - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: e2e/playwright-report/
+          name: playwright-artifacts
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
           retention-days: 30
           if-no-files-found: warn
 
