@@ -3,12 +3,9 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: '.',
   timeout: 60000,
-  outputDir: './screenshots',
+  outputDir: './playwright-report/test-results',
   workers: 1,
-  reporter: [
-    ['html', { outputFolder: '../playwright-report' }],
-    ['list'],
-  ],
+  reporter: [['html', { outputFolder: './playwright-report' }], ['list']],
   use: {
     headless: false,
     viewport: { width: 1280, height: 720 },
