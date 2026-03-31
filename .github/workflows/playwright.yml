@@ -4,19 +4,24 @@ on:
     branches: [main, feat-multi-tabs]
   pull_request:
     branches: [main, feat-multi-tabs]
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+
       - name: Install dependencies
         run: npm install -g yarn && yarn
+
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps chromium
+
       - name: Build Electron main process
         run: yarn electron:serve-tsc
 
@@ -24,24 +29,37 @@ jobs:
         run: |
           yarn ng:serve:dev &
           SERVER_PID=$!
-
           # Wait for server to be ready, checking process health
           yarn wait-on http://localhost:4200 --timeout 120000 || {
             echo "wait-on failed. Checking if server process is alive..."
             kill -0 $SERVER_PID 2>/dev/null && echo "Process alive but not responding" || echo "Process is dead"
             exit 1
           }
-
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
 
       - name: Run Playwright tests
+        id: playwright-tests
+        continue-on-error: true
         run: xvfb-run --auto-servernum yarn e2e
 
-      - uses: actions/upload-artifact@v4
-        if: failure() && steps.playwright-tests.outcome == 'failure'
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: playwright-failures
-          path: |
-            playwright-report/
-            screenshots/
+          name: playwright-report
+          path: e2e/playwright-report/
           retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload Test Results (screenshots, traces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: e2e/playwright-report/test-results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Fail job if tests failed
+        if: steps.playwright-tests.outcome == 'failure'
+        run: exit 1
