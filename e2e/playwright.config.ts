@@ -5,6 +5,10 @@ export default defineConfig({
   timeout: 60000,
   outputDir: './screenshots',
   workers: 1,
+  reporter: [
+    ['html', { outputFolder: '../playwright-report' }],
+    ['list'],
+  ],
   use: {
     headless: false,
     viewport: { width: 1280, height: 720 },
