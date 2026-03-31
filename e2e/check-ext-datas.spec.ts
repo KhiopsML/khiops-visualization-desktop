@@ -61,7 +61,7 @@ test.describe('Check loading external datas', () => {
     await fileChooser.setFiles(filePath);
 
     const importDimensionBtn = firstWindow.locator(
-      '#import-ext-datas-dimension-btn',
+      'button[matMenuTriggerFor="dimensionMenu"]',
     );
     await expect(importDimensionBtn).toBeVisible({ timeout: 10000 });
 
