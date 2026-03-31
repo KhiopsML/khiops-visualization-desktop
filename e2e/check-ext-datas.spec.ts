@@ -15,7 +15,7 @@ test.describe('Check loading saved external datas', () => {
     await firstWindow.waitForTimeout(2000);
 
     // app-external-datas component should be visible
-    const extDatas = firstWindow.locator('app-external-datas').first();
+    const extDatas = firstWindow.locator('app-external-datas').last();
     await expect(extDatas).toBeVisible();
 
     // Text into app-external-datas must be valid
@@ -23,7 +23,7 @@ test.describe('Check loading saved external datas', () => {
     await expect(extDatas).toContainText('This text is standard');
 
     // app-external-datas component should be visible
-    const extNoDatas = firstWindow.locator('app-external-datas').last();
+    const extNoDatas = firstWindow.locator('app-external-datas').first();
     await expect(extNoDatas).toBeVisible();
 
     // Text into app-external-datas must be valid
@@ -36,7 +36,7 @@ test.describe('Check loading external datas', () => {
   test('Open file and check visualization', async ({ app, firstWindow }) => {
     // Wait for Angular to fully initialize
     await firstWindow.waitForLoadState('networkidle');
-    await firstWindow.waitForTimeout(2000);
+    await firstWindow.waitForTimeout(4000);
 
     await mockOpenDialog(app, 'adult2var.json');
     await clickMenuItem(app, 'File', 'Open');
@@ -80,4 +80,8 @@ test.describe('Check loading external datas', () => {
 
     await firstWindow.waitForTimeout(5000);
   });
+
+  // test.describe('Check copying external datas', () => {
+
+  // });
 });
