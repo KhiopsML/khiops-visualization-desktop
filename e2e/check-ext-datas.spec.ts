@@ -60,9 +60,9 @@ test.describe('Check loading external datas', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePath);
 
-    const importDimensionBtn = firstWindow.locator(
-      'button[matMenuTriggerFor="dimensionMenu"]',
-    );
+    const importDimensionBtn = firstWindow
+      .locator('button:has(mat-icon:text("keyboard_arrow_down"))')
+      .nth(1);
     await expect(importDimensionBtn).toBeVisible({ timeout: 10000 });
 
     await importDimensionBtn.click();
