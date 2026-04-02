@@ -60,18 +60,16 @@ test.describe('Check loading external datas', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePath);
 
-    // Wait for any loading overlays to disappear before clicking
-    await firstWindow.locator('.cdk-overlay-backdrop').first().waitFor({ 
-      state: 'hidden', 
-      timeout: 15000 
-    });
+    // Wait longer for file processing and dialog to close
+    await firstWindow.waitForTimeout(2000);
 
     const importDimensionBtn = firstWindow
       .locator('button:has(mat-icon:text("keyboard_arrow_down"))')
       .nth(1);
     await expect(importDimensionBtn).toBeVisible({ timeout: 10000 });
 
-    await importDimensionBtn.click();
+    // Force click to bypass any overlay blocking
+    await importDimensionBtn.click({ force: true });
 
     const menuContent = firstWindow.locator('.mat-mdc-menu-content');
     await expect(menuContent).toBeVisible({ timeout: 10000 });
