@@ -402,15 +402,16 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             // Check if we're in CI environment (GitHub Actions)
             if (process.env.GITHUB_WORKSPACE) {
               // CI environment - use GITHUB_WORKSPACE
-              path = process.env.GITHUB_WORKSPACE + '/khiops-visualization-desktop/e2e/mocks/ExternalDataEducation.txt';
+              path = process.env.GITHUB_WORKSPACE + '/e2e/mocks/ExternalDataEducation.txt';
               console.log('🚀 ~ AppComponent ~ readLocalFile ~ CI environment detected, using GITHUB_WORKSPACE');
             } else {
               // Local development environment - construct relative path
               // __dirname is typically something like: .../khiops-visualization-desktop/src/app
               // We need to go up to project root and then to e2e/mocks
-              const appDir = __dirname; // src/app
-              const srcDir = appDir.replace(/[\\\/]app$/, ''); // src
-              const projectRoot = srcDir.replace(/[\\\/]src$/, ''); // project root
+              const projectRoot = 'C:/Applications/Workspace/khiops/khiops-visualization-desktop'; // project root
+              // const appDir = __dirname; // src/app
+              // const srcDir = appDir.replace(/[\\\/]app$/, ''); // src
+              // const projectRoot = srcDir.replace(/[\\\/]src$/, ''); // project root
               path = projectRoot + '/e2e/mocks/ExternalDataEducation.txt';
               console.log('🚀 ~ AppComponent ~ readLocalFile ~ Local environment detected, constructed path from __dirname:', __dirname);
             }
