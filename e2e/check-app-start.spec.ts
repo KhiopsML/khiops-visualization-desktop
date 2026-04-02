@@ -53,17 +53,26 @@ test.describe('Check Home Page', () => {
 
       return menu.items.map((item) => ({
         label: item.label,
-        submenu: item.submenu?.items.map((s) => s.label) ?? [],
+        submenu: (item.submenu?.items ?? [])
+          .map((s) => s.label)
+          .filter((label) => label && label.trim() !== ''),
       }));
     });
 
-    console.log('Menu structure:', JSON.stringify(menuItems, null, 2));
-
-    const flatLabels = menuItems.flatMap((i) => [i.label, ...i.submenu]);
-    expect(flatLabels).toContain('Open');
+    // check that menuItem contains Open into [{"label": "File", "submenu": ["Open", ...
+    const fileMenu = menuItems.find((item) => item.label === 'File');
+    expect(fileMenu).toBeDefined();
+    expect(fileMenu?.submenu).toContain('Open');
   });
 
   test.afterAll(async () => {
-    await context.tracing.stop({ path: 'e2e/tracing/trace.zip' });
+    if (context) {
+      try {
+        await context.tracing.stop({ path: 'e2e/tracing/trace.zip' });
+      } catch (error) {
+        // Context may already be closed
+        console.log('Tracing could not be stopped:', error);
+      }
+    }
   });
 });
