@@ -25,6 +25,11 @@ export const test = base.extend<ElectronFixtures>({
   firstWindow: async ({ app }, use) => {
     const firstWindow = await app.firstWindow();
 
+    // Forward browser console logs to terminal
+    firstWindow.on('console', (msg) => {
+      console.log(`[browser] ${msg.type()}: ${msg.text()}`);
+    });
+
     await app.evaluate(({ BrowserWindow }) => {
       return new Promise<void>((resolve) => {
         const win = BrowserWindow.getAllWindows()[0];
