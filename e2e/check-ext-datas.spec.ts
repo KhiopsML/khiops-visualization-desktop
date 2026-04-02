@@ -61,7 +61,7 @@ test.describe('Check loading external datas', () => {
     await fileChooser.setFiles(filePath);
 
     // Wait longer for file processing and component to fully load
-    await firstWindow.waitForTimeout(2000);
+    await firstWindow.waitForTimeout(1000);
 
     // Target the second .mat-mdc-menu-trigger INSIDE import-ext-datas-content
     const importDimensionBtn = firstWindow
@@ -84,6 +84,8 @@ test.describe('Check loading external datas', () => {
     const loadBtn = firstWindow.locator('button', { hasText: 'Load datas' });
     await expect(loadBtn).toBeVisible();
     await loadBtn.click();
+
+    await firstWindow.waitForTimeout(1000);
 
     const extDatas = firstWindow.locator('app-external-datas').first();
     await expect(extDatas).toBeVisible({ timeout: 10000 });
