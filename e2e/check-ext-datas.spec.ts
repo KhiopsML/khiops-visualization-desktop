@@ -60,11 +60,12 @@ test.describe('Check loading external datas', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePath);
 
-    // Wait longer for file processing and dialog to close
+    // Wait longer for file processing and component to fully load
     await firstWindow.waitForTimeout(2000);
 
+    // Target the second .mat-mdc-menu-trigger INSIDE import-ext-datas-content
     const importDimensionBtn = firstWindow
-      .locator('button:has(mat-icon:text("keyboard_arrow_down"))')
+      .locator('#import-ext-datas-content .mat-mdc-menu-trigger')
       .nth(1);
     await expect(importDimensionBtn).toBeVisible({ timeout: 10000 });
 
