@@ -1,18 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["es2022", "dom"],
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "outDir": "./dist/out-tsc",
-    "rootDir": "./e2e",
-    "sourceMap": true,
-    "types": ["cypress", "node"]
-  },
-  "include": ["e2e/**/*.ts"]
+  "extends": "../tsconfig.json",
+  "include": ["**/*.ts"]
 }
