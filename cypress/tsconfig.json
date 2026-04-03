@@ -2,7 +2,9 @@
   "extends": "../tsconfig.json",
   "include": ["e2e/**/*.ts", "support/**/*.ts", "fixtures/**/*.ts"],
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "./dist/out-tsc"
+    "outDir": "./dist/out-tsc",
+    "isolatedModules": false,
+    "types": ["node"],
+    "typeRoots": ["../node_modules/@types", "../node_modules/cypress"]
   }
 }
