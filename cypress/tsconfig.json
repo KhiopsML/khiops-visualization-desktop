@@ -1,10 +1,17 @@
 {
-  "extends": "../tsconfig.json",
-  "include": ["e2e/**/*.ts", "support/**/*.ts", "fixtures/**/*.ts"],
   "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["es2022", "dom"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
     "outDir": "./dist/out-tsc",
-    "isolatedModules": false,
-    "types": ["node"],
-    "typeRoots": ["../node_modules/@types", "../node_modules/cypress"]
-  }
+    "rootDir": "./e2e",
+    "sourceMap": true,
+    "types": ["cypress", "node"]
+  },
+  "include": ["e2e/**/*.ts"]
 }
