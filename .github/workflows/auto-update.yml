@@ -1,9 +1,9 @@
-name: Update libs
+name: Auto-update dependencies
 
 on:
   schedule:
     # Every day at 02:00 UTC
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 permissions:
@@ -15,9 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Electron mirror
-        run: echo "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/" >> $GITHUB_ENV
-
       - name: Check out Git repository
         uses: actions/checkout@v4
 
@@ -26,22 +23,26 @@ jobs:
         with:
           node-version: 22
 
-      - name: yarn install
-        run: yarn install
-
       - name: Update dependencies
         run: |
           npm install -g npm-check-updates
-          ncu -u
+
+          # Update to latest minor+patch (non-breaking)
+          # This covers both minor and patch updates in one command
+          ncu -u --target minor
+
+          # Install dependencies and update yarn.lock
           yarn install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request
         id: create-pr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          commit-message: 'chore: update dependencies'
-          title: 'chore: update dependencies'
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
           body: |
             Automated dependency update.
 
