@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@electron/remote@2.1.3":
+"@electron/remote@^2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@electron/remote/-/remote-2.1.3.tgz#fe3341ea6a23c72f663ed611cf7dc2b7784d36d1"
   integrity sha512-XlpxC8S4ttj/v2d+PKp9na/3Ev8bV7YWNL7Cw5b9MAWgTphEml7iYgbc7V0r9D6yDOfOkj06bchZgOZdlWJGNA==
@@ -32,10 +32,10 @@ brace-expansion@^1.1.7:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
 
-builder-util-runtime@9.5.0:
-  version "9.5.0"
-  resolved "https://registry.yarnpkg.com/builder-util-runtime/-/builder-util-runtime-9.5.0.tgz#0074d170608cee67a48578141b32d217b824f942"
-  integrity sha512-7qmRMH8X/IzDM+1TysKNFo5cNWBbfacdLX4EqkuE5aiRTECAlYiKHSqEc6cc3c4Lrmpgk0utbxOPkj0iYaWAWQ==
+builder-util-runtime@9.6.0:
+  version "9.6.0"
+  resolved "https://registry.yarnpkg.com/builder-util-runtime/-/builder-util-runtime-9.6.0.tgz#c663cd84adea60209ccc57e233a93d08776102fe"
+  integrity sha512-k9V5I18PXLepLZ8jVmPzsH+gVCVZ+9aMVLyCZ0ZLOkT2KSyiBblDCCN8WxDbjOpfLGNHZqqJPBmW0HYeqxlgkQ==
   dependencies:
     debug "^4.3.4"
     sax "^1.2.4"
@@ -52,7 +52,7 @@ debug@^4.0.1, debug@^4.3.4:
   dependencies:
     ms "^2.1.3"
 
-electron-debug@4.1.0:
+electron-debug@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/electron-debug/-/electron-debug-4.1.0.tgz#e86d78a6eaeaffcec87f88e990805ea22bcc8041"
   integrity sha512-rdbvmotqbaNcSuinPe1tzB5zK+JKal+4LSDbguBcqTLARNqWrGoRS/TkR1gGH4+63boYH3HUaf9r9ECAxgIe9g==
@@ -70,7 +70,7 @@ electron-is-dev@^3.0.1:
   resolved "https://registry.yarnpkg.com/electron-is-dev/-/electron-is-dev-3.0.1.tgz#1cbc79b1dd046787903acd357efdfab6549dc17a"
   integrity sha512-8TjjAh8Ec51hUi3o4TaU0mD3GMTOESi866oRNavj9A3IQJ7pmv+MJVmdZBFGw4GFT36X7bkqnuDNYvkQgvyI8Q==
 
-electron-json-storage@4.6.0:
+electron-json-storage@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/electron-json-storage/-/electron-json-storage-4.6.0.tgz#13ca643b9cd280316d645affd83ee6dd0c15a244"
   integrity sha512-gAgNsnA7tEtV9LzzOnZTyVIb3cQtCva+bEBVT5pbRGU8ZSZTVKPBrTxIAYjeVfdSjyNXgfb1mr/CZrOJgeHyqg==
@@ -92,23 +92,23 @@ electron-localshortcut@^3.2.1:
     keyboardevent-from-electron-accelerator "^2.0.0"
     keyboardevents-areequal "^0.2.1"
 
-electron-log@5.4.3:
+electron-log@^5.4.3:
   version "5.4.3"
   resolved "https://registry.yarnpkg.com/electron-log/-/electron-log-5.4.3.tgz#02a90baf4256950ca416095db6e5745268584d20"
   integrity sha512-sOUsM3LjZdugatazSQ/XTyNcw8dfvH1SYhXWiJyfYodAAKOZdHs0txPiLDXFzOZbhXgAgshQkshH2ccq0feyLQ==
 
-electron-updater@6.7.0:
-  version "6.7.0"
-  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-6.7.0.tgz#8dd471de27193a5192bda322c66cdbff0add4123"
-  integrity sha512-j8ejBZCkp5kvv1MxJNoQaSjNvEbr/ZHSeQdwm0jbZGgVm+Z6ExqRpqE8oRxDsDacxQfk7l8hlBAnlq4qAk2wfw==
+electron-updater@^6.8.4:
+  version "6.8.4"
+  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-6.8.4.tgz#50a6daa950ae4eb0d7dac1379a6096b230a04144"
+  integrity sha512-LsJnXXpS3zhDPUv+YNBRf+OeX8D5h0DRZZa93ajCR43ncSZHYRs7m+4KlEN1Xhl7lQvB9snq95ELoGqdGJdytA==
   dependencies:
-    builder-util-runtime "9.5.0"
+    builder-util-runtime "9.6.0"
     fs-extra "^10.1.0"
     js-yaml "^4.1.0"
     lazy-val "^1.0.5"
     lodash.escaperegexp "^4.1.2"
     lodash.isequal "^4.5.0"
-    semver "7.7.2"
+    semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
 fs-extra@^10.1.0:
@@ -237,7 +237,7 @@ ms@^2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-node-machine-id@1.1.12:
+node-machine-id@^1.1.12:
   version "1.1.12"
   resolved "https://registry.yarnpkg.com/node-machine-id/-/node-machine-id-1.1.12.tgz#37904eee1e59b320bb9c5d6c0a59f3b469cb6267"
   integrity sha512-QNABxbrPa3qEIfrE6GOJ7BYIuignnJw7iQ2YPbc3Nla1HzRJjXzZOiikfF8m7eAMfichLt3M4VgLOetqgDmgGQ==
@@ -266,10 +266,10 @@ sax@^1.2.4:
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.4.4.tgz#f29c2bba80ce5b86f4343b4c2be9f2b96627cf8b"
   integrity sha512-1n3r/tGXO6b6VXMdFT54SHzT9ytu9yr7TaELowdYpMqY/Ao7EnlQGmAQ1+RatX7Tkkdm6hONI2owqNx2aZj5Sw==
 
-semver@7.7.2:
-  version "7.7.2"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-7.7.2.tgz#67d99fdcd35cec21e6f8b87a7fd515a33f982b58"
-  integrity sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==
+semver@~7.7.3:
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.7.4.tgz#28464e36060e991fa7a11d0279d2d3f3b57a7e8a"
+  integrity sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==
 
 signal-exit@^3.0.2:
   version "3.0.7"
