@@ -2,7 +2,7 @@
   "name": "khiops-visualization-desktop",
   "title": "Khiops Visualization Desktop",
   "main": "app/main.js",
-  "version": "11.7.2",
+  "version": "11.7.3",
   "license": "BSD-3-Clause-Clear",
   "author": {
     "name": "Orange",
@@ -88,7 +88,7 @@
     "electron-log": "^5.4.3",
     "electron-updater": "^6.8.4",
     "event-stream": "^4.0.1",
-    "khiops-visualization": "^11.14.1",
+    "khiops-visualization": "^11.14.2",
     "ngx-matomo-client": "^9.0.1",
     "postcss-loader": "^8.2.1",
     "rxjs": "^7.8.2",
