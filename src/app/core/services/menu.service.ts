@@ -124,7 +124,7 @@ export class MenuService {
           label: this.translate.instant('GLOBAL_MENU_RESTART_APP'),
           accelerator: 'CommandOrControl+R',
           click: () => {
-            if (activeComponent === 'covisualization') {
+            if (activeComponent === 'covisualization' && this.fileSystemService.currentFilePath) {
               this.configService.openSaveBeforeQuitDialog((e: string) => {
                 if (e === 'confirm') {
                   const config = this.configService.getConfig();
@@ -158,7 +158,7 @@ export class MenuService {
           label: this.translate.instant('GLOBAL_MENU_EXIT'),
           accelerator: 'CommandOrControl+Q',
           click: () => {
-            if (activeComponent === 'covisualization') {
+            if (activeComponent === 'covisualization' && this.fileSystemService.currentFilePath) {
               this.configService.openSaveBeforeQuitDialog((e: string) => {
                 if (e === 'confirm') {
                   const config = this.configService.getConfig();
