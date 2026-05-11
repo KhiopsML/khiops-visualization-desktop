@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 ANGULAR_JSON="angular.json"
