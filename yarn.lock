@@ -1336,10 +1336,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@cypress/request@^3.0.10":
-  version "3.0.10"
-  resolved "https://registry.yarnpkg.com/@cypress/request/-/request-3.0.10.tgz#e09c695e8460a82acafe6cfaf089cf2ca06dc054"
-  integrity sha512-hauBrOdvu08vOsagkZ/Aju5XuiZx6ldsLfByg1htFeldhex+PeMrYauANzFsMJeAA0+dyPLbDoX2OYuvVoLDkQ==
+"@cypress/request@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@cypress/request/-/request-4.0.0.tgz#2bc3a10a7d50f338dc644dc5fd14a60107c6f3e2"
+  integrity sha512-wGTQfwDMMMiz/muFw4YbCLwTh0uZsXKK+6zWBzftADpitSi6iM62C8GzEhNcng2srUiGPksOriQkA8zakW2R0g==
   dependencies:
     aws-sign2 "~0.7.0"
     aws4 "^1.8.0"
@@ -1358,7 +1358,6 @@
     safe-buffer "^5.1.2"
     tough-cookie "^5.0.0"
     tunnel-agent "^0.6.0"
-    uuid "^8.3.2"
 
 "@cypress/schematic@^5.0.0":
   version "5.0.0"
@@ -5223,12 +5222,12 @@ cypress-shadow-dom@^1.4.1:
   resolved "https://registry.yarnpkg.com/cypress-shadow-dom/-/cypress-shadow-dom-1.4.1.tgz#51b0d49d2a516571e2c0c7230f7744374771c2e0"
   integrity sha512-q0y6aMMrTB7RgJcj25+ClK9c4O6HvQAb1UxDAKYn1LSyBXdXqr+tCvjFYhpk3dTU+EBXKbPoNrfUZbUH/ijQTQ==
 
-cypress@^15.14.2:
-  version "15.14.2"
-  resolved "https://registry.yarnpkg.com/cypress/-/cypress-15.14.2.tgz#3890ec5a2340480ec055732cd28cf9983ea846e9"
-  integrity sha512-xMWg/iEImeIThRQZdnf3BFJT1a84apM/R91Feoa4vVWGuYWDphMT5jLhRVTBVlCgi+6axegF1zqhNyjhug2SsQ==
+cypress@^15.15.0:
+  version "15.15.0"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-15.15.0.tgz#5f9d9e8304636f7add7cb296130c0262960648bc"
+  integrity sha512-N8qBv3AUYn6xfIG73O5O58kTClUBSZ7a3C08IQFkSGTUdEauJ3BqwTFb/f9KPZgadftoZjllC0XSwD7xNNolbA==
   dependencies:
-    "@cypress/request" "^3.0.10"
+    "@cypress/request" "^4.0.0"
     "@cypress/xvfb" "^1.2.4"
     "@types/sinonjs__fake-timers" "8.1.1"
     "@types/sizzle" "^2.3.2"
@@ -5755,10 +5754,10 @@ electron-updater@^6.8.5:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^41.5.1:
-  version "41.5.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-41.5.1.tgz#5a04923f1db2d9006e713e1a5dfc156c09b487db"
-  integrity sha512-l3sIu10LcXe38iNZMfTR4EKmVc1K3Luw5HBfjvd2xszj6DHhU4yuXqlb1wtSAt1+7QY817w/be59bIkaFLLUBA==
+electron@^41.5.2:
+  version "41.5.2"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-41.5.2.tgz#f9c79ce7e58c23f434cc84914525a9fd91a414b9"
+  integrity sha512-bxlZeH/1WzvKbijmT7dH5MCqlJ/h2SfDJczNhHJe5srDJzZboiOQpwTlUFBecqDbGoBpmEekhDfjbubPnM8G7g==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^24.9.0"
