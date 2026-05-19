@@ -26,10 +26,10 @@ export class TrackerService {
         ?.invoke('get-machine-id')
         .then((machineId: string) => {
           const config = {
-            scriptUrl: 'https://matomo.apps.tech.orange/matomo.js',
+            scriptUrl: 'https://tracker.analytics.tech.orange/matomo.js',
             trackers: [
               {
-                trackerUrl: 'https://matomo.apps.tech.orange/',
+                trackerUrl: 'https://tracker.analytics.tech.orange/',
                 // @ts-ignore
                 siteId: APP_CONFIG.TRACKER_ID,
               },
