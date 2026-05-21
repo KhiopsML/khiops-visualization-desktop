@@ -1,6 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
+  // Limit to 1 worker in CI to avoid resource contention (SIGBUS) from
+  // multiple Electron+webpack-dev-server instances running in parallel.
+  workers: process.env['CI'] ? 1 : undefined,
   outputDir: 'test-results',
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
