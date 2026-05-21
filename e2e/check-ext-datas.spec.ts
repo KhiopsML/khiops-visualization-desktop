@@ -87,13 +87,7 @@ test.describe('Check loading external datas', () => {
 
     // await firstWindow.waitForTimeout(1000);
 
-    // click on close icon into import-ext-datas-list-comp
-    const closeBtn = firstWindow.locator(
-      '#import-ext-datas-list-comp button[mat-icon-button]',
-    );
-    await expect(closeBtn).toBeVisible();
-    await closeBtn.click();
-
+    // Dialog closes automatically after loading data
     const extDatas = firstWindow.locator('app-external-datas').first();
     await expect(extDatas).toBeVisible({ timeout: 10000 });
 
