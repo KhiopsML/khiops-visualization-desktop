@@ -31,6 +31,9 @@ jobs:
           # This covers both minor and patch updates in one command
           ncu -u --target minor
 
+          # Also update app/package.json dependencies
+          ncu -u --target minor --packageFile app/package.json
+
           # Install dependencies and update yarn.lock
           yarn install
         env:
