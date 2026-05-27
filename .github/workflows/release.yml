@@ -169,6 +169,21 @@ jobs:
         shell: bash
         continue-on-error: true
 
+      # Remove "Setup" from Windows installer filename
+      - name: Remove Setup from Windows executable name
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd release
+          for f in *-Setup-*; do
+            if [ -f "$f" ]; then
+              newname=$(echo "$f" | sed 's/-Setup-/-/')
+              mv -- "$f" "$newname"
+              echo "✅ Renamed '$f' → '$newname'"
+            fi
+          done
+        continue-on-error: true
+
       # Capitalize lowercase Linux artifacts (zip, deb, rpm)
       - name: Rename Linux artifacts to capitalized convention
         if: runner.os == 'Linux'
@@ -182,12 +197,25 @@ jobs:
           done
         continue-on-error: true
 
+      # Fix deb naming: first underscore before version becomes hyphen
+      - name: Fix deb artifact naming convention
+        if: runner.os == 'Linux'
+        run: |
+          for f in release/Khiops-Visualization-Desktop_[0-9]*; do
+            if [ -f "$f" ]; then
+              newname=$(echo "$f" | sed 's|Khiops-Visualization-Desktop_\([0-9]\)|Khiops-Visualization-Desktop-\1|')
+              mv "$f" "$newname"
+              echo "✅ Renamed $f → $newname"
+            fi
+          done
+        continue-on-error: true
+
       # Update all latest*.yml files with correct (hyphenated, capitalized) filenames
       - name: Update latest yml files with correct filenames
         run: |
           for yml in release/latest*.yml; do
             if [ -f "$yml" ]; then
-              sed 's/Khiops Visualization Desktop/Khiops-Visualization-Desktop/g; s/khiops-visualization-desktop/Khiops-Visualization-Desktop/g' "$yml" > "${yml}.tmp" && mv "${yml}.tmp" "$yml"
+              sed 's/Khiops Visualization Desktop/Khiops-Visualization-Desktop/g; s/khiops-visualization-desktop/Khiops-Visualization-Desktop/g; s/Khiops-Visualization-Desktop_\([0-9]\)/Khiops-Visualization-Desktop-\1/g; s/-Setup-/-/g' "$yml" > "${yml}.tmp" && mv "${yml}.tmp" "$yml"
               echo "✅ Updated $yml"
             fi
           done
@@ -199,7 +227,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Filter "Khiops-Visualization-Desktop-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem -Path release -Filter "Khiops-Visualization-Desktop-*.exe" | Select-Object -First 1
           if (-not $exe) {
             Write-Error "No signed executable found in release directory."
             exit 1
