@@ -235,6 +235,12 @@ jobs:
           Write-Output "✅ Updated latest.yml (sha512, size, path, url) for: $($exe.Name)"
         continue-on-error: true
 
+      # List release directory contents for debugging
+      - name: List release directory contents
+        run: ls -lah release/ || true
+        shell: bash
+        continue-on-error: true
+
       # Create/update the single GitHub Release from all runners
       - name: Extract version from tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -242,18 +248,34 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Create GitHub Release
+      - name: Create draft release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: ncipollo/release-action@v1.14.0
-        with:
-          allowUpdates: true
-          tag: ${{ github.ref_name }}
-          name: ${{ steps.version.outputs.VERSION }}
-          artifacts: |
-            release/Khiops-Visualization-Desktop-*
-            release/Khiops-Visualization-Desktop_*
-            release/Khiops.Visualization.Desktop-*
-            release/latest*.yml
-          generateReleaseNotes: true
-          draft: true
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          gh release create "${{ github.ref_name }}" --draft --generate-notes --title "$VERSION" || echo "Release already exists, will upload to existing"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        continue-on-error: true
+
+      - name: Upload release artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          shopt -s nullglob
+          files=(release/Khiops-Visualization-Desktop-* release/Khiops-Visualization-Desktop_* release/Khiops.Visualization.Desktop-* release/latest*.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "⚠️ No artifacts found to upload"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo "⬆️ Uploading $(basename "$f") ($(du -h "$f" | cut -f1))..."
+            if ! gh release upload "${{ github.ref_name }}" "$f" --clobber; then
+              echo "⚠️ Failed, retrying in 5s..."
+              sleep 5
+              gh release upload "${{ github.ref_name }}" "$f" --clobber || echo "❌ Failed to upload $f after retry"
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         continue-on-error: true
