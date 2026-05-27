@@ -32,7 +32,12 @@
   },
   "win": {
     "icon": "dist/khiops-visualization-desktop/icons/256x256.png",
-    "target": ["nsis"],
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
     "fileAssociations": [
       {
         "ext": "khj",
