@@ -125,7 +125,8 @@ jobs:
           release: false
           args: >-
             ${{ runner.os == 'Windows' && '--publish never' ||
-                matrix.arch == 'arm64' && '--arm64 --linux' || '' }}
+                runner.os == 'Linux' && matrix.arch == 'arm64' && '--publish never --arm64 --linux' ||
+                runner.os == 'Linux' && '--publish never' || '' }}
 
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
@@ -191,9 +192,34 @@ jobs:
       #     }
       #   continue-on-error: true
 
-      # Rename signed exe from "khiops visualization Desktop Setup X.Y.Z.exe" to "khiops-visualization-desktop-Setup-X.Y.Z.exe"
-      # and blockmap from "khiops visualization Desktop Setup X.Y.Z.exe.blockmap" to "khiops-visualization-desktop-Setup-X.Y.Z.exe.blockmap"
-      - name: Rename signed executable and blockmap to khiops-visualization-desktop-Setup-*.exe
+      # Rename Linux zip artifacts to capitalized convention
+      - name: Rename Linux zip artifacts
+        if: runner.os == 'Linux'
+        run: |
+          for f in release/khiops-visualization-desktop-*.zip; do
+            if [ -f "$f" ]; then
+              newname=$(echo "$f" | sed 's|release/khiops-visualization-desktop-|release/Khiops-Visualization-Desktop-|')
+              mv "$f" "$newname"
+              echo "✅ Renamed $f to $newname"
+            fi
+          done
+        continue-on-error: true
+
+      # Update latest-linux yml files with capitalized zip names
+      - name: Update latest-linux yml with capitalized names
+        if: runner.os == 'Linux'
+        run: |
+          for yml in release/latest-linux*.yml; do
+            if [ -f "$yml" ]; then
+              sed -i 's|khiops-visualization-desktop-|Khiops-Visualization-Desktop-|g' "$yml"
+              echo "✅ Updated $yml"
+            fi
+          done
+        continue-on-error: true
+
+      # Rename signed exe from "khiops visualization Desktop Setup X.Y.Z.exe" to "Khiops-Visualization-Desktop-Setup-X.Y.Z.exe"
+      # and blockmap from "khiops visualization Desktop Setup X.Y.Z.exe.blockmap" to "Khiops-Visualization-Desktop-Setup-X.Y.Z.exe.blockmap"
+      - name: Rename signed executable and blockmap to Khiops-Visualization-Desktop-Setup-*.exe
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -205,14 +231,14 @@ jobs:
             exit 1
           }
           $version = $env:GITHUB_REF.Split('/')[-1].TrimStart('v')
-          $new_exe_name = "release/khiops-visualization-desktop-Setup-$version.exe"
+          $new_exe_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe"
           Move-Item $signed_exe.FullName $new_exe_name
           Write-Output "✅ Renamed signed executable to: $new_exe_name"
 
           # Find and rename the corresponding blockmap file
           $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe.blockmap" | Select-Object -First 1
           if ($blockmap_file) {
-            $new_blockmap_name = "release/khiops-visualization-desktop-Setup-$version.exe.blockmap"
+            $new_blockmap_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe.blockmap"
             Move-Item $blockmap_file.FullName $new_blockmap_name
             Write-Output "✅ Renamed blockmap file to: $new_blockmap_name"
           } else {
@@ -225,7 +251,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem -Path release -Filter "Khiops-Visualization-Desktop-Setup-*.exe" | Select-Object -First 1
           if (-not $exe) {
             Write-Error "No signed executable found in release directory."
             exit 1
@@ -264,9 +290,24 @@ jobs:
           tag: ${{ github.ref_name }}
           name: ${{ steps.version.outputs.VERSION }}
           artifacts: |
-            release/khiops-visualization-desktop-Setup-*.exe
+            release/Khiops-Visualization-Desktop-Setup-*.exe
             release/latest.yml
-            release/khiops-visualization-desktop-Setup-*.exe.blockmap
+            release/Khiops-Visualization-Desktop-Setup-*.exe.blockmap
+          generateReleaseNotes: true
+          draft: true
+        continue-on-error: true
+
+      - name: Create GitHub Release with Linux files
+        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Linux'
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          allowUpdates: true
+          tag: ${{ github.ref_name }}
+          name: ${{ steps.version.outputs.VERSION }}
+          artifacts: |
+            release/Khiops-Visualization-Desktop-*
+            release/Khiops-Visualization-Desktop_*
+            release/latest-linux*.yml
           generateReleaseNotes: true
           draft: true
         continue-on-error: true

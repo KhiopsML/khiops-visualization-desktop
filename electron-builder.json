@@ -94,5 +94,11 @@
         "role": "Editor"
       }
     ]
+  },
+  "deb": {
+    "artifactName": "Khiops-Visualization-Desktop_${version}_${arch}.${ext}"
+  },
+  "rpm": {
+    "artifactName": "Khiops-Visualization-Desktop-${version}.${arch}.${ext}"
   }
 }
