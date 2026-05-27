@@ -11,7 +11,7 @@ env:
   KEYPAIR_TEST: KP_Khiops_Test
 
 jobs:
-  release:
+  build:
     permissions: write-all
     runs-on: ${{ matrix.os }}
 
@@ -117,7 +117,7 @@ jobs:
           build_script_name: 'build:prod'
           github_token: ${{ secrets.github_token }}
 
-          # All platforms use --publish never so we control uploads via ncipollo
+          # All platforms use --publish never so we control uploads ourselves
           release: false
           args: >-
             ${{ matrix.arch == 'arm64' && '--publish never --arm64 --linux' || '--publish never' }}
@@ -155,7 +155,21 @@ jobs:
           Write-Output "✅ Listed all .exe files."
         continue-on-error: true
 
-      # Rename Linux artifacts to capitalized convention (zip, deb, rpm)
+      # Replace spaces with hyphens in all artifact filenames (AppImage, macOS dmg/zip, Windows exe)
+      - name: Rename artifacts (replace spaces with hyphens)
+        run: |
+          cd release
+          for f in *; do
+            if [[ "$f" == *" "* ]] && [ -f "$f" ]; then
+              newname=$(echo "$f" | tr ' ' '-')
+              mv -- "$f" "$newname"
+              echo "✅ Renamed '$f' → '$newname'"
+            fi
+          done
+        shell: bash
+        continue-on-error: true
+
+      # Capitalize lowercase Linux artifacts (zip, deb, rpm)
       - name: Rename Linux artifacts to capitalized convention
         if: runner.os == 'Linux'
         run: |
@@ -168,42 +182,16 @@ jobs:
           done
         continue-on-error: true
 
-      # Update latest-linux yml files with capitalized artifact names
-      - name: Update latest-linux yml with capitalized names
-        if: runner.os == 'Linux'
+      # Update all latest*.yml files with correct (hyphenated, capitalized) filenames
+      - name: Update latest yml files with correct filenames
         run: |
-          for yml in release/latest-linux*.yml; do
+          for yml in release/latest*.yml; do
             if [ -f "$yml" ]; then
-              sed -i 's|khiops-visualization-desktop|Khiops-Visualization-Desktop|g' "$yml"
+              sed 's/Khiops Visualization Desktop/Khiops-Visualization-Desktop/g; s/khiops-visualization-desktop/Khiops-Visualization-Desktop/g' "$yml" > "${yml}.tmp" && mv "${yml}.tmp" "$yml"
               echo "✅ Updated $yml"
             fi
           done
-        continue-on-error: true
-
-      # Rename signed exe from "Khiops Visualization Desktop Setup X.Y.Z.exe" to "Khiops-Visualization-Desktop-Setup-X.Y.Z.exe"
-      - name: Rename signed executable and blockmap
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Output "🔄 Renaming signed executable and blockmap..."
-          $signed_exe = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe" | Select-Object -First 1
-          if (-not $signed_exe) {
-            Write-Output "❌ No signed executable found to rename"
-            exit 1
-          }
-          $version = $env:GITHUB_REF.Split('/')[-1].TrimStart('v')
-          $new_exe_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe"
-          Move-Item $signed_exe.FullName $new_exe_name
-          Write-Output "✅ Renamed signed executable to: $new_exe_name"
-
-          $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe.blockmap" | Select-Object -First 1
-          if ($blockmap_file) {
-            $new_blockmap_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe.blockmap"
-            Move-Item $blockmap_file.FullName $new_blockmap_name
-            Write-Output "✅ Renamed blockmap file to: $new_blockmap_name"
-          } else {
-            Write-Output "⚠️ No blockmap file found to rename"
-          }
+        shell: bash
         continue-on-error: true
 
       # Update latest.yml sha, size, path, and url for the signed Windows exe
@@ -235,47 +223,78 @@ jobs:
           Write-Output "✅ Updated latest.yml (sha512, size, path, url) for: $($exe.Name)"
         continue-on-error: true
 
-      # List release directory contents for debugging
+      # Debug: list release directory contents
       - name: List release directory contents
         run: ls -lah release/ || true
         shell: bash
         continue-on-error: true
 
-      # Create/update the single GitHub Release from all runners
-      - name: Extract version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-        shell: bash
-
-      - name: Create draft release
+      # Stage artifacts for upload to workflow artifacts
+      - name: Stage artifacts for upload
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          gh release create "${{ github.ref_name }}" --draft --generate-notes --title "$VERSION" || echo "Release already exists, will upload to existing"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mkdir -p staging
+          cp release/Khiops-Visualization-Desktop-* staging/ 2>/dev/null || true
+          cp release/Khiops-Visualization-Desktop_* staging/ 2>/dev/null || true
+          cp release/latest*.yml staging/ 2>/dev/null || true
+          echo "📦 Staged artifacts:"
+          ls -lah staging/
         shell: bash
         continue-on-error: true
 
-      - name: Upload release artifacts
+      - name: Upload build artifacts
         if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}-${{ matrix.arch || 'default' }}
+          path: staging/
+          if-no-files-found: warn
+          retention-days: 1
+
+  publish-release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: List all artifacts
         run: |
-          shopt -s nullglob
-          files=(release/Khiops-Visualization-Desktop-* release/Khiops-Visualization-Desktop_* release/Khiops.Visualization.Desktop-* release/latest*.yml)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "⚠️ No artifacts found to upload"
-            exit 0
-          fi
-          for f in "${files[@]}"; do
-            echo "⬆️ Uploading $(basename "$f") ($(du -h "$f" | cut -f1))..."
-            if ! gh release upload "${{ github.ref_name }}" "$f" --clobber; then
-              echo "⚠️ Failed, retrying in 5s..."
-              sleep 5
-              gh release upload "${{ github.ref_name }}" "$f" --clobber || echo "❌ Failed to upload $f after retry"
+          echo "📦 All artifacts to upload:"
+          ls -lah artifacts/
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create draft release and upload artifacts
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          echo "Creating draft release $TAG..."
+          gh release create "$TAG" --repo "${{ github.repository }}" --draft --generate-notes --title "$VERSION"
+
+          echo ""
+          echo "Uploading artifacts..."
+          for f in artifacts/*; do
+            if [ -f "$f" ]; then
+              echo "⬆️ Uploading $(basename "$f") ($(du -h "$f" | cut -f1))..."
+              if ! gh release upload "$TAG" "$f" --repo "${{ github.repository }}" --clobber; then
+                echo "⚠️ Retry in 5s..."
+                sleep 5
+                gh release upload "$TAG" "$f" --repo "${{ github.repository }}" --clobber || echo "❌ Failed: $f"
+              fi
             fi
           done
+
+          echo ""
+          echo "✅ Release $VERSION created successfully!"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
         continue-on-error: true
