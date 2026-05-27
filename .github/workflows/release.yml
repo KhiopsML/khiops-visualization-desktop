@@ -115,17 +115,12 @@ jobs:
         uses: samuelmeuli/action-electron-builder@v1.6.0
         with:
           build_script_name: 'build:prod'
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
 
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          # On Windows, we sign the exe after building, so we release via ncipollo/release-action instead
+          # All platforms use --publish never so we control uploads via ncipollo
           release: false
           args: >-
-            ${{ runner.os == 'Windows' && '--publish never' ||
-                matrix.arch == 'arm64' && '--arm64 --linux' || '' }}
+            ${{ matrix.arch == 'arm64' && '--publish never --arm64 --linux' || '--publish never' }}
 
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
@@ -160,59 +155,50 @@ jobs:
           Write-Output "✅ Listed all .exe files."
         continue-on-error: true
 
-      # # Delete old non signed exe from release
-      # # it is named like : khiops-visualization-desktop-Setup-X.Y.Z.exe
-      # - name: Delete old non signed exe from release
-      #   if: runner.os == 'Windows'
-      #   shell: pwsh
-      #   run: |
-      #     Write-Output "🗑️  Deleting old non-signed executables..."
-      #     $files = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe"
-      #     if ($files) {
-      #         Remove-Item $files.FullName -Force
-      #         Write-Output "✅ Old non-signed executables deleted."
-      #     } else {
-      #         Write-Output "No old non-signed executables found."
-      #     }
-      #   continue-on-error: true
+      # Rename Linux artifacts to capitalized convention (zip, deb, rpm)
+      - name: Rename Linux artifacts to capitalized convention
+        if: runner.os == 'Linux'
+        run: |
+          for f in release/khiops-visualization-desktop[-_]*; do
+            if [ -f "$f" ]; then
+              newname=$(echo "$f" | sed 's|release/khiops-visualization-desktop|release/Khiops-Visualization-Desktop|')
+              mv "$f" "$newname"
+              echo "✅ Renamed $f → $newname"
+            fi
+          done
+        continue-on-error: true
 
-      # # Delete old khiops.visualization.Setup.X.Y.Z.exe.blockmap
-      # - name: Delete old blockmap files
-      #   if: runner.os == 'Windows'
-      #   shell: pwsh
-      #   run: |
-      #     Write-Output "🗑️  Deleting old blockmap files..."
-      #     $blockmap_files = Get-ChildItem -Path release -Filter "khiops.visualization.Setup.*.exe.blockmap"
-      #     if ($blockmap_files) {
-      #         Remove-Item $blockmap_files.FullName -Force
-      #         Write-Output "✅ Old blockmap files deleted."
-      #     } else {
-      #         Write-Output "No old blockmap files found."
-      #     }
-      #   continue-on-error: true
+      # Update latest-linux yml files with capitalized artifact names
+      - name: Update latest-linux yml with capitalized names
+        if: runner.os == 'Linux'
+        run: |
+          for yml in release/latest-linux*.yml; do
+            if [ -f "$yml" ]; then
+              sed -i 's|khiops-visualization-desktop|Khiops-Visualization-Desktop|g' "$yml"
+              echo "✅ Updated $yml"
+            fi
+          done
+        continue-on-error: true
 
-      # Rename signed exe from "khiops visualization Desktop Setup X.Y.Z.exe" to "khiops-visualization-desktop-Setup-X.Y.Z.exe"
-      # and blockmap from "khiops visualization Desktop Setup X.Y.Z.exe.blockmap" to "khiops-visualization-desktop-Setup-X.Y.Z.exe.blockmap"
-      - name: Rename signed executable and blockmap to khiops-visualization-desktop-Setup-*.exe
+      # Rename signed exe from "Khiops Visualization Desktop Setup X.Y.Z.exe" to "Khiops-Visualization-Desktop-Setup-X.Y.Z.exe"
+      - name: Rename signed executable and blockmap
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           Write-Output "🔄 Renaming signed executable and blockmap..."
-          # Find the signed executable and rename it
           $signed_exe = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe" | Select-Object -First 1
           if (-not $signed_exe) {
             Write-Output "❌ No signed executable found to rename"
             exit 1
           }
           $version = $env:GITHUB_REF.Split('/')[-1].TrimStart('v')
-          $new_exe_name = "release/khiops-visualization-desktop-Setup-$version.exe"
+          $new_exe_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe"
           Move-Item $signed_exe.FullName $new_exe_name
           Write-Output "✅ Renamed signed executable to: $new_exe_name"
 
-          # Find and rename the corresponding blockmap file
           $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe.blockmap" | Select-Object -First 1
           if ($blockmap_file) {
-            $new_blockmap_name = "release/khiops-visualization-desktop-Setup-$version.exe.blockmap"
+            $new_blockmap_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe.blockmap"
             Move-Item $blockmap_file.FullName $new_blockmap_name
             Write-Output "✅ Renamed blockmap file to: $new_blockmap_name"
           } else {
@@ -225,7 +211,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem -Path release -Filter "Khiops-Visualization-Desktop-Setup-*.exe" | Select-Object -First 1
           if (-not $exe) {
             Write-Error "No signed executable found in release directory."
             exit 1
@@ -249,24 +235,25 @@ jobs:
           Write-Output "✅ Updated latest.yml (sha512, size, path, url) for: $($exe.Name)"
         continue-on-error: true
 
-      # Now we can create the release with the signed files
+      # Create/update the single GitHub Release from all runners
       - name: Extract version from tag
         if: startsWith(github.ref, 'refs/tags/v')
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Create GitHub Release with signed files
-        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Windows'
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: ncipollo/release-action@v1.14.0
         with:
           allowUpdates: true
           tag: ${{ github.ref_name }}
           name: ${{ steps.version.outputs.VERSION }}
           artifacts: |
-            release/khiops-visualization-desktop-Setup-*.exe
-            release/latest.yml
-            release/khiops-visualization-desktop-Setup-*.exe.blockmap
+            release/Khiops-Visualization-Desktop-*
+            release/Khiops-Visualization-Desktop_*
+            release/Khiops.Visualization.Desktop-*
+            release/latest*.yml
           generateReleaseNotes: true
           draft: true
         continue-on-error: true
