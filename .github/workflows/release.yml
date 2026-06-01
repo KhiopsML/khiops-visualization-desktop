@@ -11,7 +11,7 @@ env:
   KEYPAIR_TEST: KP_Khiops_Test
 
 jobs:
-  release:
+  build:
     permissions: write-all
     runs-on: ${{ matrix.os }}
 
@@ -115,18 +115,12 @@ jobs:
         uses: samuelmeuli/action-electron-builder@v1.6.0
         with:
           build_script_name: 'build:prod'
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
 
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          # On Windows, we sign the exe after building, so we release via ncipollo/release-action instead
+          # All platforms use --publish never so we control uploads ourselves
           release: false
           args: >-
-            ${{ runner.os == 'Windows' && '--publish never' ||
-                runner.os == 'Linux' && matrix.arch == 'arm64' && '--publish never --arm64 --linux' ||
-                runner.os == 'Linux' && '--publish never' || '' }}
+            ${{ matrix.arch == 'arm64' && '--publish never --arm64 --linux' || '--publish never' }}
 
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
@@ -161,89 +155,71 @@ jobs:
           Write-Output "✅ Listed all .exe files."
         continue-on-error: true
 
-      # # Delete old non signed exe from release
-      # # it is named like : khiops-visualization-desktop-Setup-X.Y.Z.exe
-      # - name: Delete old non signed exe from release
-      #   if: runner.os == 'Windows'
-      #   shell: pwsh
-      #   run: |
-      #     Write-Output "🗑️  Deleting old non-signed executables..."
-      #     $files = Get-ChildItem -Path release -Filter "khiops-visualization-desktop-Setup-*.exe"
-      #     if ($files) {
-      #         Remove-Item $files.FullName -Force
-      #         Write-Output "✅ Old non-signed executables deleted."
-      #     } else {
-      #         Write-Output "No old non-signed executables found."
-      #     }
-      #   continue-on-error: true
-
-      # # Delete old khiops.visualization.Setup.X.Y.Z.exe.blockmap
-      # - name: Delete old blockmap files
-      #   if: runner.os == 'Windows'
-      #   shell: pwsh
-      #   run: |
-      #     Write-Output "🗑️  Deleting old blockmap files..."
-      #     $blockmap_files = Get-ChildItem -Path release -Filter "khiops.visualization.Setup.*.exe.blockmap"
-      #     if ($blockmap_files) {
-      #         Remove-Item $blockmap_files.FullName -Force
-      #         Write-Output "✅ Old blockmap files deleted."
-      #     } else {
-      #         Write-Output "No old blockmap files found."
-      #     }
-      #   continue-on-error: true
-
-      # Rename Linux zip artifacts to capitalized convention
-      - name: Rename Linux zip artifacts
-        if: runner.os == 'Linux'
+      # Replace spaces with hyphens in all artifact filenames (AppImage, macOS dmg/zip, Windows exe)
+      - name: Rename artifacts (replace spaces with hyphens)
         run: |
-          for f in release/khiops-visualization-desktop-*.zip; do
+          cd release
+          for f in *; do
+            if [[ "$f" == *" "* ]] && [ -f "$f" ]; then
+              newname=$(echo "$f" | tr ' ' '-')
+              mv -- "$f" "$newname"
+              echo "✅ Renamed '$f' → '$newname'"
+            fi
+          done
+        shell: bash
+        continue-on-error: true
+
+      # Remove "Setup" from Windows installer filename
+      - name: Remove Setup from Windows executable name
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd release
+          for f in *-Setup-*; do
             if [ -f "$f" ]; then
-              newname=$(echo "$f" | sed 's|release/khiops-visualization-desktop-|release/Khiops-Visualization-Desktop-|')
-              mv "$f" "$newname"
-              echo "✅ Renamed $f to $newname"
+              newname=$(echo "$f" | sed 's/-Setup-/-/')
+              mv -- "$f" "$newname"
+              echo "✅ Renamed '$f' → '$newname'"
             fi
           done
         continue-on-error: true
 
-      # Update latest-linux yml files with capitalized zip names
-      - name: Update latest-linux yml with capitalized names
+      # Capitalize lowercase Linux artifacts (zip, deb, rpm)
+      - name: Rename Linux artifacts to capitalized convention
         if: runner.os == 'Linux'
         run: |
-          for yml in release/latest-linux*.yml; do
+          for f in release/khiops-visualization-desktop[-_]*; do
+            if [ -f "$f" ]; then
+              newname=$(echo "$f" | sed 's|release/khiops-visualization-desktop|release/Khiops-Visualization-Desktop|')
+              mv "$f" "$newname"
+              echo "✅ Renamed $f → $newname"
+            fi
+          done
+        continue-on-error: true
+
+      # Fix deb naming: first underscore before version becomes hyphen
+      - name: Fix deb artifact naming convention
+        if: runner.os == 'Linux'
+        run: |
+          for f in release/Khiops-Visualization-Desktop_[0-9]*; do
+            if [ -f "$f" ]; then
+              newname=$(echo "$f" | sed 's|Khiops-Visualization-Desktop_\([0-9]\)|Khiops-Visualization-Desktop-\1|')
+              mv "$f" "$newname"
+              echo "✅ Renamed $f → $newname"
+            fi
+          done
+        continue-on-error: true
+
+      # Update all latest*.yml files with correct (hyphenated, capitalized) filenames
+      - name: Update latest yml files with correct filenames
+        run: |
+          for yml in release/latest*.yml; do
             if [ -f "$yml" ]; then
-              sed -i 's|khiops-visualization-desktop-|Khiops-Visualization-Desktop-|g' "$yml"
+              sed 's/Khiops Visualization Desktop/Khiops-Visualization-Desktop/g; s/khiops-visualization-desktop/Khiops-Visualization-Desktop/g; s/Khiops-Visualization-Desktop_\([0-9]\)/Khiops-Visualization-Desktop-\1/g; s/-Setup-/-/g' "$yml" > "${yml}.tmp" && mv "${yml}.tmp" "$yml"
               echo "✅ Updated $yml"
             fi
           done
-        continue-on-error: true
-
-      # Rename signed exe from "khiops visualization Desktop Setup X.Y.Z.exe" to "Khiops-Visualization-Desktop-Setup-X.Y.Z.exe"
-      # and blockmap from "khiops visualization Desktop Setup X.Y.Z.exe.blockmap" to "Khiops-Visualization-Desktop-Setup-X.Y.Z.exe.blockmap"
-      - name: Rename signed executable and blockmap to Khiops-Visualization-Desktop-Setup-*.exe
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Output "🔄 Renaming signed executable and blockmap..."
-          # Find the signed executable and rename it
-          $signed_exe = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe" | Select-Object -First 1
-          if (-not $signed_exe) {
-            Write-Output "❌ No signed executable found to rename"
-            exit 1
-          }
-          $version = $env:GITHUB_REF.Split('/')[-1].TrimStart('v')
-          $new_exe_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe"
-          Move-Item $signed_exe.FullName $new_exe_name
-          Write-Output "✅ Renamed signed executable to: $new_exe_name"
-
-          # Find and rename the corresponding blockmap file
-          $blockmap_file = Get-ChildItem -Path release -Filter "khiops visualization Desktop Setup *.exe.blockmap" | Select-Object -First 1
-          if ($blockmap_file) {
-            $new_blockmap_name = "release/Khiops-Visualization-Desktop-Setup-$version.exe.blockmap"
-            Move-Item $blockmap_file.FullName $new_blockmap_name
-            Write-Output "✅ Renamed blockmap file to: $new_blockmap_name"
-          } else {
-            Write-Output "⚠️ No blockmap file found to rename"
-          }
+        shell: bash
         continue-on-error: true
 
       # Update latest.yml sha, size, path, and url for the signed Windows exe
@@ -251,7 +227,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Filter "Khiops-Visualization-Desktop-Setup-*.exe" | Select-Object -First 1
+          $exe = Get-ChildItem -Path release -Filter "Khiops-Visualization-Desktop-*.exe" | Select-Object -First 1
           if (-not $exe) {
             Write-Error "No signed executable found in release directory."
             exit 1
@@ -275,39 +251,78 @@ jobs:
           Write-Output "✅ Updated latest.yml (sha512, size, path, url) for: $($exe.Name)"
         continue-on-error: true
 
-      # Now we can create the release with the signed files
-      - name: Extract version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      # Debug: list release directory contents
+      - name: List release directory contents
+        run: ls -lah release/ || true
         shell: bash
-
-      - name: Create GitHub Release with signed files
-        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Windows'
-        uses: ncipollo/release-action@v1.14.0
-        with:
-          allowUpdates: true
-          tag: ${{ github.ref_name }}
-          name: ${{ steps.version.outputs.VERSION }}
-          artifacts: |
-            release/Khiops-Visualization-Desktop-Setup-*.exe
-            release/latest.yml
-            release/Khiops-Visualization-Desktop-Setup-*.exe.blockmap
-          generateReleaseNotes: true
-          draft: true
         continue-on-error: true
 
-      - name: Create GitHub Release with Linux files
-        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Linux'
-        uses: ncipollo/release-action@v1.14.0
+      # Stage artifacts for upload to workflow artifacts
+      - name: Stage artifacts for upload
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p staging
+          cp release/Khiops-Visualization-Desktop-* staging/ 2>/dev/null || true
+          cp release/Khiops-Visualization-Desktop_* staging/ 2>/dev/null || true
+          cp release/latest*.yml staging/ 2>/dev/null || true
+          echo "📦 Staged artifacts:"
+          ls -lah staging/
+        shell: bash
+        continue-on-error: true
+
+      - name: Upload build artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
         with:
-          allowUpdates: true
-          tag: ${{ github.ref_name }}
-          name: ${{ steps.version.outputs.VERSION }}
-          artifacts: |
-            release/Khiops-Visualization-Desktop-*
-            release/Khiops-Visualization-Desktop_*
-            release/latest-linux*.yml
-          generateReleaseNotes: true
-          draft: true
+          name: release-${{ matrix.os }}-${{ matrix.arch || 'default' }}
+          path: staging/
+          if-no-files-found: warn
+          retention-days: 1
+
+  publish-release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: List all artifacts
+        run: |
+          echo "📦 All artifacts to upload:"
+          ls -lah artifacts/
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create draft release and upload artifacts
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          echo "Creating draft release $TAG..."
+          gh release create "$TAG" --repo "${{ github.repository }}" --draft --generate-notes --title "$VERSION"
+
+          echo ""
+          echo "Uploading artifacts..."
+          for f in artifacts/*; do
+            if [ -f "$f" ]; then
+              echo "⬆️ Uploading $(basename "$f") ($(du -h "$f" | cut -f1))..."
+              if ! gh release upload "$TAG" "$f" --repo "${{ github.repository }}" --clobber; then
+                echo "⚠️ Retry in 5s..."
+                sleep 5
+                gh release upload "$TAG" "$f" --repo "${{ github.repository }}" --clobber || echo "❌ Failed: $f"
+              fi
+            fi
+          done
+
+          echo ""
+          echo "✅ Release $VERSION created successfully!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true

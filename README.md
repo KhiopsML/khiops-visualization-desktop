@@ -1,6 +1,10 @@
 # Khiops Visualization Desktop
 
-![Build Releases](https://github.com/KhiopsML/khiops-visualization-desktop/actions/workflows/release.yml/badge.svg) ![Test Workflow](https://github.com/KhiopsML/khiops-visualization/actions/workflows/test.yml/badge.svg) [![Latest Stable Version](https://img.shields.io/github/v/release/KhiopsML/khiops-visualization-desktop?label=Latest%20stable%20version)](https://github.com/KhiopsML/khiops-visualization-desktop/releases) [![End-to-end tests](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml/badge.svg)](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml) ![gitleaks badge](https://img.shields.io/badge/protected%20by-gitleaks-blue)
+![Build Releases](https://github.com/KhiopsML/khiops-visualization-desktop/actions/workflows/release.yml/badge.svg)
+![Test Workflow](https://github.com/KhiopsML/khiops-visualization/actions/workflows/test.yml/badge.svg)
+[![End-to-end tests](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml/badge.svg)](https://github.com/KhiopsML/khiops-visualization/actions/workflows/e2e.yml)
+[![gitleaks](https://github.com/KhiopsML/khiops-visualization-desktop/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/KhiopsML/khiops-visualization-desktop/actions/workflows/gitleaks.yml)
+[![Latest Version](https://img.shields.io/github/v/release/KhiopsML/khiops-visualization-desktop?label=Latest%20version)](https://github.com/KhiopsML/khiops-visualization-desktop/releases)
 
 **Khiops Visualization Desktop** is a cross-platform application designed to make machine learning on structured data easier, faster, and more intuitive. It provides a native interface for exploring, analyzing, and interpreting the results of Khiops’ advanced AutoML algorithms.
 
