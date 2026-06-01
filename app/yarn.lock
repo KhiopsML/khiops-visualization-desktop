@@ -32,10 +32,10 @@ brace-expansion@^1.1.7:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
 
-builder-util-runtime@9.6.2:
-  version "9.6.2"
-  resolved "https://registry.yarnpkg.com/builder-util-runtime/-/builder-util-runtime-9.6.2.tgz#3b1fbcaa7dc797d6bf48db3a9308bcff467d3fb6"
-  integrity sha512-yxUN4XbT+SWucLKb5dVlUbydfJhQ+pmMu+XiAQWbFLA9aU9zM0uV55gUfMtJMQRIn4MCQWoDUJ6tep+dBU0DWA==
+builder-util-runtime@9.6.3:
+  version "9.6.3"
+  resolved "https://registry.yarnpkg.com/builder-util-runtime/-/builder-util-runtime-9.6.3.tgz#bf5707c6c15a5ec87495fbdd370ea0b92629b267"
+  integrity sha512-W/bhEWeAetNaSyuCG6rpbd8cd3wp+ifpwOtso1tSkJCJrcHPlmlDdkqFHj3zRAzgvyJcDp/5fWRicSQbg23jdA==
   dependencies:
     debug "^4.3.4"
     sax "^1.2.4"
@@ -97,12 +97,12 @@ electron-log@^5.4.4:
   resolved "https://registry.yarnpkg.com/electron-log/-/electron-log-5.4.4.tgz#957cb6fc43a73759bad32fadd4927f870eed0254"
   integrity sha512-istWgaXjBfURBSS8LWVW9C3jsc6+ac+tY1lXrQEOTp0lVj+a4OlO1Tmqb36GgnEUDv92DGC9VI1HNXwJinWpgA==
 
-electron-updater@^6.8.7:
-  version "6.8.7"
-  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-6.8.7.tgz#5adb89e2c33d8dc931293a7b1f940272e21c87c9"
-  integrity sha512-tFEJQy7h5DFEYFBbEviD37frXyL2XnoQUHD6THJUNoslNgcUEHO67oHhvS0iT6KxIKxaM9UuUf5P4ObnRkXtCA==
+electron-updater@^6.8.8:
+  version "6.8.8"
+  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-6.8.8.tgz#c35dac043110417d9fffbf80b3bb37113bec65ad"
+  integrity sha512-KUQeRNeRQo7KUhuuj29KCVodSVl5NF4whQn3QmXi1+L3vI9hMsgoIsmVYT1SXR5pCTD8eCCyeQboRoYP5Q7rCw==
   dependencies:
-    builder-util-runtime "9.6.2"
+    builder-util-runtime "9.6.3"
     fs-extra "^10.1.0"
     js-yaml "^4.1.0"
     lazy-val "^1.0.5"
