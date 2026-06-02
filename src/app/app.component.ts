@@ -373,48 +373,30 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   readLocalFile(input: File | any, cb: Function, tab?: Tab) {
     (async () => {
       try {
-        console.log(
-          '🚀 ~ AppComponent ~ readLocalFile ~ this.electronService.isElectron:',
-          this.electronService.isElectron,
-        );
-        console.log('🚀 ~ AppComponent ~ readLocalFile ~ input object:', input);
-        console.log('🚀 ~ AppComponent ~ readLocalFile ~ input.path:', input?.path);
-        console.log('🚀 ~ AppComponent ~ readLocalFile ~ input structure:', Object.keys(input || {}));
-        
         if (this.electronService.isElectron) {
           let path: string = '';
 
           if (input?.path) {
             // If command is called by saved json datas
             path = input?.path;
-            console.log('🚀 ~ AppComponent ~ readLocalFile ~ using input.path:', path);
           } else {
             // If command is called by user
             path = this.electronService.electron.webUtils.getPathForFile(input);
-            console.log('🚀 ~ AppComponent ~ readLocalFile ~ using getPathForFile:', path);
           }
 
-          console.log('🚀 ~ AppComponent ~ readLocalFile ~ final path:', path);
-          console.log('🚀 ~ AppComponent ~ readLocalFile ~ checking if path === END_TO_END_PATH');
           if (path === 'END_TO_END_PATH') {
-            console.log('🚀 ~ AppComponent ~ readLocalFile ~ MATCH! Converting END_TO_END_PATH to real path');
-            
             // Check if we're in CI environment (GitHub Actions)
             if (process.env.GITHUB_WORKSPACE) {
               // CI environment - use GITHUB_WORKSPACE
-              path = process.env.GITHUB_WORKSPACE + '/e2e/mocks/ExternalDataEducation.txt';
-              console.log('🚀 ~ AppComponent ~ readLocalFile ~ CI environment detected, using GITHUB_WORKSPACE');
+              path =
+                process.env.GITHUB_WORKSPACE +
+                '/e2e/mocks/ExternalDataEducation.txt';
             } else {
               // Local development environment - use process.cwd() which is the project root
               path = process.cwd() + '/e2e/mocks/ExternalDataEducation.txt';
-              console.log('🚀 ~ AppComponent ~ readLocalFile ~ Local environment detected, using process.cwd():', process.cwd());
             }
-            
-            console.log('🚀 ~ AppComponent ~ readLocalFile ~ converted path:', path);
           } else {
-            console.log('🚀 ~ AppComponent ~ readLocalFile ~ NO MATCH, path is:', path);
           }
-          console.log('🚀 ~ AppComponent ~ readLocalFile ~ path:', path);
 
           const content = await this.electronService.ipcRenderer?.invoke(
             'read-local-file',
@@ -611,21 +593,109 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   beforeQuit() {
+    const finalQuitAction = async () => {
+      await this.electronService.ipcRenderer?.invoke('app-quit');
+    };
+
     // If update is ready but not installed, mark for auto-install on quit
     if (this.updateState === 'ready' && !this.isUpdateInstalled) {
       (async () => {
         await this.electronService.ipcRenderer?.invoke(
           'set-update-auto-install-on-quit',
         );
-        this.fileSystemService.handleSaveBeforeAction(async () => {
-          await this.electronService.ipcRenderer?.invoke('app-quit');
-        });
+        this.saveAllCovisuTabsThenQuit(finalQuitAction);
       })();
     } else {
-      this.fileSystemService.handleSaveBeforeAction(async () => {
-        await this.electronService.ipcRenderer?.invoke('app-quit');
-      });
+      this.saveAllCovisuTabsThenQuit(finalQuitAction);
     }
+  }
+
+  /**
+   * Iterate over all covisualization tabs with open files,
+   * showing a save dialog for each one sequentially.
+   * Switches to each tab before displaying its dialog so the user can see it.
+   * Only quits after all tabs have been processed.
+   * If user cancels any dialog, the quit is aborted entirely.
+   */
+  private saveAllCovisuTabsThenQuit(finalAction: () => void | Promise<void>) {
+    // Collect all covisualization tabs that have an open file,
+    // starting from the currently active tab so no immediate switch occurs
+    const allCovisuTabs = this.tabs.filter(
+      (tab) => tab.componentType === 'covisualization' && tab.filePath,
+    );
+    const activeTabId = this.activeTab?.id;
+    const activeIndex = allCovisuTabs.findIndex(
+      (tab) => tab.id === activeTabId,
+    );
+    const covisuTabs =
+      activeIndex > 0
+        ? [
+            ...allCovisuTabs.slice(activeIndex),
+            ...allCovisuTabs.slice(0, activeIndex),
+          ]
+        : allCovisuTabs;
+
+    if (covisuTabs.length === 0) {
+      // No covisu tabs to save — just quit
+      this.storageService.saveAll(() => finalAction());
+      return;
+    }
+
+    // Process each covisu tab sequentially
+    const processNextTab = (index: number) => {
+      if (index >= covisuTabs.length) {
+        // All tabs processed — proceed with quit
+        this.storageService.saveAll(() => finalAction());
+        return;
+      }
+
+      const tab = covisuTabs[index];
+      const tabConfig = this.tabConfigs.get(tab.id) as any;
+
+      if (
+        !tabConfig ||
+        typeof tabConfig.openSaveBeforeQuitDialog !== 'function'
+      ) {
+        // No config or no dialog method — skip this tab
+        processNextTab(index + 1);
+        return;
+      }
+
+      // Switch to this tab so the user can see the dialog (skip for the first one — already active)
+      if (index > 0) {
+        this.tabManager.setActiveTab(tab.id);
+      }
+
+      // Wait for the tab switch to render before opening the dialog (no wait needed for first tab)
+      setTimeout(
+        () => {
+          tabConfig.openSaveBeforeQuitDialog((result: string) => {
+            if (result === 'confirm') {
+              // User chose to save — save data, close the tab, then move to next
+              if (
+                tabConfig.constructDatasToSave &&
+                typeof tabConfig.constructDatasToSave === 'function'
+              ) {
+                const datasToSave = tabConfig.constructDatasToSave();
+                this.fileSystemService.saveFile(tab.filePath!, datasToSave);
+              }
+              this.tabManager.closeTab(tab.id);
+              processNextTab(index + 1);
+            } else if (result === 'cancel') {
+              // User cancelled — abort the entire quit, stay on current tab
+              return;
+            } else {
+              // User chose "Don't save" (reject) — close the tab, move to next
+              this.tabManager.closeTab(tab.id);
+              processNextTab(index + 1);
+            }
+          });
+        },
+        index === 0 ? 0 : 200,
+      );
+    };
+
+    processNextTab(0);
   }
 
   constructMenu() {
