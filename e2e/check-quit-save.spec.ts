@@ -50,7 +50,7 @@ test.afterEach(async ({ firstWindow }, testInfo) => {
 // ─── No covisualization file open ────────────────────────────────────────────
 
 test.describe('Quit with no covisualization tab open', () => {
-  test('closing with only a visualization tab shows no save dialog', async ({
+  test('closing with only a visualization tab shows no save dialog and closes the tab', async ({
     app,
     firstWindow,
   }) => {
@@ -61,6 +61,11 @@ test.describe('Quit with no covisualization tab open', () => {
     await openFile(app, firstWindow, 'bi2.json', 'khiops-visualization', 1);
 
     await simulateWindowClose(app);
+
+    // Visualization tab must be closed (no save dialog for visualization)
+    await expect(firstWindow.locator('khiops-visualization')).toHaveCount(0, {
+      timeout: 5000,
+    });
 
     // Dialog must NOT appear
     await firstWindow.waitForTimeout(2000);
@@ -331,7 +336,7 @@ test.describe('Quit with two covisualization tabs', () => {
 // ─── Mixed tabs (visualization + covisualization) ─────────────────────────────
 
 test.describe('Quit with mixed visualization and covisualization tabs', () => {
-  test('Only the covisualization tab triggers a dialog; visualization tab is unaffected', async ({
+  test('Visualization tab is closed first, then covisualization dialog appears', async ({
     app,
     firstWindow,
   }) => {
@@ -352,6 +357,11 @@ test.describe('Quit with mixed visualization and covisualization tabs', () => {
 
     await simulateWindowClose(app);
 
+    // The visualization tab must be closed immediately (no save dialog)
+    await expect(firstWindow.locator('khiops-visualization')).toHaveCount(0, {
+      timeout: 5000,
+    });
+
     // Exactly one dialog for the covisu tab
     await waitForSaveDialog(firstWindow);
     await clickSaveDialogButton(firstWindow, 'no');
@@ -361,13 +371,47 @@ test.describe('Quit with mixed visualization and covisualization tabs', () => {
       timeout: 5000,
     });
 
-    // The visualization tab is NOT closed (quit was triggered, but mocked)
-    await expect(firstWindow.locator('khiops-visualization')).toHaveCount(1);
-
     // No second dialog
     await firstWindow.waitForTimeout(1000);
     await expect(
       firstWindow.getByText('Do you want to save the changes you made?'),
     ).toHaveCount(0);
+  });
+
+  test('With two visualization tabs and one covisualization — all visu tabs closed, covisu gets dialog', async ({
+    app,
+    firstWindow,
+  }) => {
+    await firstWindow.waitForLoadState('networkidle');
+    await mockAppQuit(app);
+
+    // Open two visualization files
+    await openFile(app, firstWindow, 'bi2.json', 'khiops-visualization', 1);
+    await openFile(app, firstWindow, 'bi3.json', 'khiops-visualization', 2);
+
+    // Then open a covisualization file
+    await openFile(
+      app,
+      firstWindow,
+      'covisu-1.khcj',
+      'khiops-covisualization',
+      1,
+    );
+
+    await simulateWindowClose(app);
+
+    // Both visualization tabs must be closed immediately
+    await expect(firstWindow.locator('khiops-visualization')).toHaveCount(0, {
+      timeout: 5000,
+    });
+
+    // Dialog for the covisu tab
+    await waitForSaveDialog(firstWindow);
+    await clickSaveDialogButton(firstWindow, 'no');
+
+    // The covisu tab is closed
+    await expect(firstWindow.locator('khiops-covisualization')).toHaveCount(0, {
+      timeout: 5000,
+    });
   });
 });

@@ -618,22 +618,18 @@ export class AppComponent implements AfterViewInit, OnDestroy {
    * If user cancels any dialog, the quit is aborted entirely.
    */
   private saveAllCovisuTabsThenQuit(finalAction: () => void | Promise<void>) {
-    // Collect all covisualization tabs that have an open file,
-    // starting from the currently active tab so no immediate switch occurs
-    const allCovisuTabs = this.tabs.filter(
+    // Close all non-covisualization tabs first — they don't need a save dialog
+    const nonCovisuTabs = this.tabs.filter(
+      (tab) => tab.componentType !== 'covisualization',
+    );
+    for (const tab of nonCovisuTabs) {
+      this.tabManager.closeTab(tab.id);
+    }
+
+    // Collect all covisualization tabs that have an open file
+    const covisuTabs = this.tabs.filter(
       (tab) => tab.componentType === 'covisualization' && tab.filePath,
     );
-    const activeTabId = this.activeTab?.id;
-    const activeIndex = allCovisuTabs.findIndex(
-      (tab) => tab.id === activeTabId,
-    );
-    const covisuTabs =
-      activeIndex > 0
-        ? [
-            ...allCovisuTabs.slice(activeIndex),
-            ...allCovisuTabs.slice(0, activeIndex),
-          ]
-        : allCovisuTabs;
 
     if (covisuTabs.length === 0) {
       // No covisu tabs to save — just quit
@@ -661,12 +657,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         return;
       }
 
-      // Switch to this tab so the user can see the dialog (skip for the first one — already active)
-      if (index > 0) {
-        this.tabManager.setActiveTab(tab.id);
-      }
+      // Always switch to this tab so the user can see the dialog
+      this.tabManager.setActiveTab(tab.id);
 
-      // Wait for the tab switch to render before opening the dialog (no wait needed for first tab)
+      // Wait for the tab switch to render before opening the dialog
       setTimeout(
         () => {
           tabConfig.openSaveBeforeQuitDialog((result: string) => {
@@ -695,7 +689,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             }
           });
         },
-        index === 0 ? 0 : 200,
+        200,
       );
     };
 

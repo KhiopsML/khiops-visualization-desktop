@@ -58,15 +58,24 @@
 				"intervals": [
 					{
 						"cluster": "]-inf;2.4]",
-						"bounds": [1,2.4]
+						"bounds": [
+							1,
+							2.4
+						]
 					},
 					{
 						"cluster": "]2.4;4.75]",
-						"bounds": [2.4,4.75]
+						"bounds": [
+							2.4,
+							4.75
+						]
 					},
 					{
 						"cluster": "]4.75;+inf[",
-						"bounds": [4.75,6.9]
+						"bounds": [
+							4.75,
+							6.9
+						]
 					}
 				]
 			},
@@ -76,15 +85,24 @@
 				"intervals": [
 					{
 						"cluster": "]-inf;0.8]",
-						"bounds": [0.1,0.8]
+						"bounds": [
+							0.1,
+							0.8
+						]
 					},
 					{
 						"cluster": "]0.8;1.75]",
-						"bounds": [0.8,1.75]
+						"bounds": [
+							0.8,
+							1.75
+						]
 					},
 					{
 						"cluster": "]1.75;+inf[",
-						"bounds": [1.75,2.5]
+						"bounds": [
+							1.75,
+							2.5
+						]
 					}
 				]
 			},
@@ -94,21 +112,39 @@
 				"valueGroups": [
 					{
 						"cluster": "{Iris-setosa}",
-						"values": ["Iris-setosa"],
-						"valueFrequencies": [50],
-						"valueTypicalities": [1]
+						"values": [
+							"Iris-setosa"
+						],
+						"valueFrequencies": [
+							50
+						],
+						"valueTypicalities": [
+							1
+						]
 					},
 					{
 						"cluster": "{Iris-versicolor}",
-						"values": ["Iris-versicolor"],
-						"valueFrequencies": [50],
-						"valueTypicalities": [1]
+						"values": [
+							"Iris-versicolor"
+						],
+						"valueFrequencies": [
+							50
+						],
+						"valueTypicalities": [
+							1
+						]
 					},
 					{
 						"cluster": "{Iris-virginica}",
-						"values": ["Iris-virginica"],
-						"valueFrequencies": [50],
-						"valueTypicalities": [1]
+						"values": [
+							"Iris-virginica"
+						],
+						"valueFrequencies": [
+							50
+						],
+						"valueTypicalities": [
+							1
+						]
 					}
 				],
 				"defaultGroupIndex": 2
@@ -407,7 +443,7 @@
 		"nodesNames": {},
 		"annotations": {},
 		"importedDatas": [],
-		"conditionalOnContext": true,
-		"isAxisInverted": true
+		"isAxisInverted": true,
+		"conditionalOnContext": true
 	}
 }
