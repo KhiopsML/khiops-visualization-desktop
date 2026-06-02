@@ -71,14 +71,39 @@ import { test, expect } from './fixtures/launch-electron';
 ## Available helpers (`./helpers/electron-menu`)
 
 ```ts
-import { clickMenuItem, mockOpenDialog } from './helpers/electron-menu';
+import {
+  clickMenuItem,
+  mockOpenDialog,
+  mockOpenDialogAbsolute,
+  mockAppQuit,
+  simulateWindowClose,
+  waitForSaveDialog,
+  clickSaveDialogButton,
+} from './helpers/electron-menu';
 
 // Click a native Electron menu item
 await clickMenuItem(app, 'File', 'Open');
 await clickMenuItem(app, 'File', 'Close');
 
-// Mock the native file open dialog to return a specific mock file
+// Mock the native file open dialog to return a file from e2e/mocks/
 await mockOpenDialog(app, 'bi2.json');
+
+// Mock the dialog with an absolute file path (useful for files outside e2e/mocks/)
+await mockOpenDialogAbsolute(app, '/absolute/path/to/file.khcj');
+
+// Prevent Electron from actually quitting during a test
+await mockAppQuit(app);
+
+// Simulate the user clicking the window close button (X)
+await simulateWindowClose(app);
+
+// Wait for the save-before-quit dialog to appear (pierces Shadow DOM)
+await waitForSaveDialog(firstWindow);
+
+// Click a button in the save-before-quit dialog
+await clickSaveDialogButton(firstWindow, 'save');   // confirm save
+await clickSaveDialogButton(firstWindow, 'no');     // discard changes
+await clickSaveDialogButton(firstWindow, 'cancel'); // abort quit
 ```
 
 ## Available mock files (`e2e/mocks/`)
@@ -90,8 +115,8 @@ await mockOpenDialog(app, 'bi2.json');
 | `adult2var.json` | `.khj` (visualization) | Adult dataset with external data |
 | `check-ext-datas-e2e.json` | `.khj` | File with saved external data |
 | `ExternalDataEducation.txt` | TXT | External data file for import |
-
-For covisualization tests, use `.khcj` files if they exist, or ask the user to provide one.
+| `covisu-1.khcj` | `.khcj` (covisualization) | Iris 3-var coclustering (small, ~6 KB) |
+| `covisu-2.khcj` | `.khcj` (covisualization) | Iris IV coclustering (medium, ~11 KB) |
 
 ## Key Angular component selectors
 

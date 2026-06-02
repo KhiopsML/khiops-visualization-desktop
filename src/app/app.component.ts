@@ -672,12 +672,16 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           tabConfig.openSaveBeforeQuitDialog((result: string) => {
             if (result === 'confirm') {
               // User chose to save — save data, close the tab, then move to next
-              if (
-                tabConfig.constructDatasToSave &&
-                typeof tabConfig.constructDatasToSave === 'function'
-              ) {
-                const datasToSave = tabConfig.constructDatasToSave();
-                this.fileSystemService.saveFile(tab.filePath!, datasToSave);
+              try {
+                if (
+                  tabConfig.constructDatasToSave &&
+                  typeof tabConfig.constructDatasToSave === 'function'
+                ) {
+                  const datasToSave = tabConfig.constructDatasToSave();
+                  this.fileSystemService.saveFile(tab.filePath!, datasToSave);
+                }
+              } catch (err) {
+                console.error('Error saving tab data before quit:', err);
               }
               this.tabManager.closeTab(tab.id);
               processNextTab(index + 1);
