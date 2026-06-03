@@ -46,16 +46,16 @@ jobs:
 
       - name: Ensure Electron path.txt exists
         run: |
-          ELECTRON_VERSION=$(node -e "require('./node_modules/electron/package.json').version |> console.log")
           ELECTRON_VERSION=$(node -p "require('./node_modules/electron/package.json').version")
           echo "Electron version: $ELECTRON_VERSION"
           ls -la node_modules/electron/
-          # If path.txt is missing, create it pointing to the cached binary
           if [ ! -f node_modules/electron/path.txt ]; then
             echo "path.txt missing — regenerating"
             node node_modules/electron/install.js
           fi
           cat node_modules/electron/path.txt
+        env:
+          ELECTRON_CACHE: ~/.cache/electron
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
