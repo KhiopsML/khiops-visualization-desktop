@@ -50,12 +50,26 @@ jobs:
           echo "Electron version: $ELECTRON_VERSION"
           ls -la node_modules/electron/
           if [ ! -f node_modules/electron/path.txt ]; then
-            echo "path.txt missing — regenerating"
-            node node_modules/electron/install.js
+            echo "path.txt missing — running install.js with verbose output"
+            node node_modules/electron/install.js || true
+            echo "--- install.js exit code: $?"
+            echo "--- ls after install attempt:"
+            ls -la node_modules/electron/
+            echo "--- checking electron cache:"
+            ls -la ~/.cache/electron/ 2>/dev/null || echo "No electron cache dir"
+            echo "--- trying npx @electron/get directly:"
+            node -e "
+              const { downloadArtifact } = require('@electron/get');
+              downloadArtifact({ version: '$ELECTRON_VERSION', artifactName: 'electron' })
+                .then(p => { console.log('Downloaded to:', p); require('fs').writeFileSync('node_modules/electron/path.txt', p); })
+                .catch(e => { console.error('Download failed:', e.message); process.exit(1); });
+            "
           fi
+          echo "--- path.txt content:"
           cat node_modules/electron/path.txt
         env:
           ELECTRON_CACHE: ~/.cache/electron
+          DEBUG: electron-download
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
