@@ -24,9 +24,7 @@ jobs:
         id: electron-cache
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/electron
-            ~/.cache/electron-builder
+          path: ~/.cache/electron
           key: electron-${{ runner.os }}-${{ hashFiles('**/package.json') }}
           restore-keys: |
             electron-${{ runner.os }}-
@@ -38,38 +36,32 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Download Electron binary
-        if: steps.electron-cache.outputs.cache-hit != 'true'
-        run: node node_modules/electron/install.js
-        env:
-          ELECTRON_CACHE: ~/.cache/electron
-
-      - name: Ensure Electron path.txt exists
+      - name: Ensure Electron binary is extracted
         run: |
           ELECTRON_VERSION=$(node -p "require('./node_modules/electron/package.json').version")
-          echo "Electron version: $ELECTRON_VERSION"
-          ls -la node_modules/electron/
-          if [ ! -f node_modules/electron/path.txt ]; then
-            echo "path.txt missing — running install.js with verbose output"
-            node node_modules/electron/install.js || true
-            echo "--- install.js exit code: $?"
-            echo "--- ls after install attempt:"
-            ls -la node_modules/electron/
-            echo "--- checking electron cache:"
-            ls -la ~/.cache/electron/ 2>/dev/null || echo "No electron cache dir"
-            echo "--- trying npx @electron/get directly:"
-            node -e "
-              const { downloadArtifact } = require('@electron/get');
-              downloadArtifact({ version: '$ELECTRON_VERSION', artifactName: 'electron' })
-                .then(p => { console.log('Downloaded to:', p); require('fs').writeFileSync('node_modules/electron/path.txt', p); })
-                .catch(e => { console.error('Download failed:', e.message); process.exit(1); });
-            "
-          fi
-          echo "--- path.txt content:"
-          cat node_modules/electron/path.txt
+
+          # Download the zip via @electron/get
+          ZIP_PATH=$(node -e "
+            const { downloadArtifact } = require('@electron/get');
+            downloadArtifact({ version: '$ELECTRON_VERSION', artifactName: 'electron' })
+              .then(p => process.stdout.write(p))
+              .catch(e => { console.error(e.message); process.exit(1); });
+          ")
+          echo "Zip path: $ZIP_PATH"
+
+          # Extract into node_modules/electron/dist/ (where Playwright expects the binary)
+          rm -rf node_modules/electron/dist
+          mkdir -p node_modules/electron/dist
+          unzip -q "$ZIP_PATH" -d node_modules/electron/dist
+          chmod +x node_modules/electron/dist/electron
+
+          # Write path.txt with just the relative filename
+          echo -n "electron" > node_modules/electron/path.txt
+
+          echo "path.txt content: $(cat node_modules/electron/path.txt)"
+          ls -la node_modules/electron/dist/electron
         env:
           ELECTRON_CACHE: ~/.cache/electron
-          DEBUG: electron-download
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
