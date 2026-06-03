@@ -21,9 +21,12 @@ jobs:
           node-version: lts/*
 
       - name: Cache Electron binary
+        id: electron-cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/electron
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
           key: electron-${{ runner.os }}-${{ hashFiles('**/package.json') }}
           restore-keys: |
             electron-${{ runner.os }}-
@@ -32,9 +35,27 @@ jobs:
         run: |
           npm install -g yarn
           yarn
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
-      - name: Install Electron binary explicitly
+      - name: Download Electron binary
+        if: steps.electron-cache.outputs.cache-hit != 'true'
         run: node node_modules/electron/install.js
+        env:
+          ELECTRON_CACHE: ~/.cache/electron
+
+      - name: Ensure Electron path.txt exists
+        run: |
+          ELECTRON_VERSION=$(node -e "require('./node_modules/electron/package.json').version |> console.log")
+          ELECTRON_VERSION=$(node -p "require('./node_modules/electron/package.json').version")
+          echo "Electron version: $ELECTRON_VERSION"
+          ls -la node_modules/electron/
+          # If path.txt is missing, create it pointing to the cached binary
+          if [ ! -f node_modules/electron/path.txt ]; then
+            echo "path.txt missing — regenerating"
+            node node_modules/electron/install.js
+          fi
+          cat node_modules/electron/path.txt
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
