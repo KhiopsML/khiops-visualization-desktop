@@ -171,7 +171,15 @@
     "@angular-devkit/core" "21.2.13"
     rxjs "7.8.2"
 
-"@angular-devkit/architect@0.2102.6", "@angular-devkit/architect@>= 0.2100.0 < 0.2200.0", "@angular-devkit/architect@>=0.2100.0 < 0.2200.0":
+"@angular-devkit/architect@0.2102.14", "@angular-devkit/architect@>= 0.2100.0 < 0.2200.0", "@angular-devkit/architect@>=0.2100.0 < 0.2200.0":
+  version "0.2102.14"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.14.tgz#84d86629472c334dcff0e752942f60d9a4dcb31c"
+  integrity sha512-0+vjVsCkMyJdVjz5XkPW+Bdf/9TI8V2voomx/+o0o+oOaqqiEhptQWFnaIlLr7HasjB0LxXK5P9L0oQ61vxj8Q==
+  dependencies:
+    "@angular-devkit/core" "21.2.14"
+    rxjs "7.8.2"
+
+"@angular-devkit/architect@0.2102.6":
   version "0.2102.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.6.tgz#65eae4f7a9e422ade7c5e9d9e5d9b811aecf12d5"
   integrity sha512-h4qybKypR7OuwcTHPQI1zRm7abXgmPiV49vI2UeMtVVY/GKzru9gMexcYmWabzEyBY8w6VSfWjV2X+eit2EhDQ==
@@ -261,7 +269,19 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/core@21.2.6", "@angular-devkit/core@>= 21.0.0 < 22.0.0", "@angular-devkit/core@^21.0.0":
+"@angular-devkit/core@21.2.14", "@angular-devkit/core@>= 21.0.0 < 22.0.0", "@angular-devkit/core@^21.0.0":
+  version "21.2.14"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.14.tgz#38701651c949871512fe90c5d181ccd46fcbd445"
+  integrity sha512-RSOWXB9bFc2nwRWMxbIT0RbSNFUrwfBo4N5MNxbyQ69Ndc0gVm3h+3ArHv0qotH4d+pJYbm5ttXu8YqR2kc0CA==
+  dependencies:
+    ajv "8.18.0"
+    ajv-formats "3.0.1"
+    jsonc-parser "3.3.1"
+    picomatch "4.0.4"
+    rxjs "7.8.2"
+    source-map "0.7.6"
+
+"@angular-devkit/core@21.2.6":
   version "21.2.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.6.tgz#96b864e5e1b7e718c0c20f45a9847fde8d1dcda2"
   integrity sha512-u5gPTAY7MC02uACQE39xxiFcm1hslF+ih/f2borMWnhER0JNTpHjLiLRXFkq7or7+VVHU30zfhK4XNAuO4WTIg==
@@ -273,23 +293,12 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/schematics@21.2.13":
-  version "21.2.13"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-21.2.13.tgz#164de3770fa55ade4b8bc5dd1b5217bc1f4e5245"
-  integrity sha512-gifpOcMNiAy49lQmQKhzpxoSfS3qJQSEdJSF5m7RVFkAcmllfcCD76GPN4dhho3wdAnbZ3qr54LtDqrGY4xNjw==
+"@angular-devkit/schematics@21.2.14", "@angular-devkit/schematics@>= 21.0.0 < 22.0.0":
+  version "21.2.14"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-21.2.14.tgz#73f13222bf9f803abf9446b482229db9221604b7"
+  integrity sha512-KMJlQSBEzI4+Cy1Zh72gmGQNN2I1vY+nj9CoRcZPBIi1si+0ZAc49XT85eYl+eQumNTVQviUG7LQqgLDAHml+g==
   dependencies:
-    "@angular-devkit/core" "21.2.13"
-    jsonc-parser "3.3.1"
-    magic-string "0.30.21"
-    ora "9.3.0"
-    rxjs "7.8.2"
-
-"@angular-devkit/schematics@>= 21.0.0 < 22.0.0":
-  version "21.2.6"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-21.2.6.tgz#9a51616f43255b5617428e9bb3b325725ee7485d"
-  integrity sha512-hk2duJlPJyiMaI9MVWA5XpmlpD9C4n8qgquV/MJ7/n+ZRSwW3w1ndL5qUmA1ki+4Da54v/Rc8Wt5tUS955+93w==
-  dependencies:
-    "@angular-devkit/core" "21.2.6"
+    "@angular-devkit/core" "21.2.14"
     jsonc-parser "3.3.1"
     magic-string "0.30.21"
     ora "9.3.0"
@@ -425,18 +434,18 @@
   optionalDependencies:
     lmdb "3.5.1"
 
-"@angular/cli@^21.2.13":
-  version "21.2.13"
-  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-21.2.13.tgz#a638e855c57ed5f334878676cf64adb9762717c3"
-  integrity sha512-j1kOV/f0og/3xCwG7Y8RyPd6V7uYfX2NuvXbvN1mzgxLLN2mu6CTsvPg5l/9Pu9SJI3KOPRgDxWyuP3k8KuzMg==
+"@angular/cli@^21.2.14":
+  version "21.2.14"
+  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-21.2.14.tgz#d781dd44aad89c62b175b64f1b2c1fda9e084250"
+  integrity sha512-S8jExTjxPJILwpg2lu3DohSASVZ8DLhSNCmOe7z0qF9VskRSjC7SIQv1rq36tsJkenxuA72gjVOHZv+uSRT8HA==
   dependencies:
-    "@angular-devkit/architect" "0.2102.13"
-    "@angular-devkit/core" "21.2.13"
-    "@angular-devkit/schematics" "21.2.13"
+    "@angular-devkit/architect" "0.2102.14"
+    "@angular-devkit/core" "21.2.14"
+    "@angular-devkit/schematics" "21.2.14"
     "@inquirer/prompts" "7.10.1"
     "@listr2/prompt-adapter-inquirer" "3.0.5"
     "@modelcontextprotocol/sdk" "1.26.0"
-    "@schematics/angular" "21.2.13"
+    "@schematics/angular" "21.2.14"
     "@yarnpkg/lockfile" "1.1.0"
     algoliasearch "5.48.1"
     ini "6.0.0"
@@ -3071,13 +3080,13 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@schematics/angular@21.2.13":
-  version "21.2.13"
-  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-21.2.13.tgz#8cb1ba887c2b63a7549c3f3fa57982afd9889782"
-  integrity sha512-e5guslSLKbb3PJ6gUuVqM+V9xgn68cJkG1IyBohho34shbpOeoWW2eYdWQQjxvn0KUdgEhYSRBluBamCHngaUA==
+"@schematics/angular@21.2.14":
+  version "21.2.14"
+  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-21.2.14.tgz#c00b17e49970ca3162491f82be4cacc9b8ea3723"
+  integrity sha512-rIEdtNTdCCTwuo7B4tMoq5qmbLXdBgmW6Ays1hyno//4OE+HFtvlWZd+hl6KceEyN00IcZ2HRaPnfd71E1JnoA==
   dependencies:
-    "@angular-devkit/core" "21.2.13"
-    "@angular-devkit/schematics" "21.2.13"
+    "@angular-devkit/core" "21.2.14"
+    "@angular-devkit/schematics" "21.2.14"
     jsonc-parser "3.3.1"
 
 "@sigstore/bundle@^4.0.0":
