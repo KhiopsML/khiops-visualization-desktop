@@ -17,7 +17,7 @@ module.exports = defineConfig({
         getLargeFileFixture() {
           const fixturePath = path.join(
             __dirname,
-            '../visualization-component/src/assets/mocks/kv/C0_AllReports.json',
+            './cypress/mocks/C0_AllReports.json',
           );
           const content = fs.readFileSync(fixturePath, 'utf-8');
           return { path: fixturePath, content };
