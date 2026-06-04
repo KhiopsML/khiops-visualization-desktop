@@ -115,22 +115,19 @@ export class ConfigService {
     filePath: string,
   ): Promise<'visualization' | 'covisualization'> {
     try {
-      const content = await new Promise<string>((resolve, reject) => {
-        this.electronService.fs.readFile(
-          filePath,
-          'utf-8',
-          (err: any, data: string) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(data);
-            }
-          },
-        );
-      });
+      // Read only the first 4 KB to find the "tool" field,
+      // avoiding crashes on very large files (> V8 string limit).
+      const fd = this.electronService.fs.openSync(filePath, 'r');
+      const buffer = Buffer.alloc(4096);
+      const bytesRead = this.electronService.fs.readSync(fd, buffer, 0, 4096, 0);
+      this.electronService.fs.closeSync(fd);
+      const head = buffer.toString('utf-8', 0, bytesRead);
 
-      const jsonData = JSON.parse(content);
-      return this.analyzeJsonData(jsonData);
+      const toolMatch = head.match(/"tool"\s*:\s*"([^"]*)"/);                                                                                                                                   
+      if (toolMatch && toolMatch[1] === 'Khiops Coclustering') {
+        return 'covisualization';
+      }
+      return 'visualization';
     } catch (error) {
       console.warn('Error reading or parsing JSON file:', error);
       return 'visualization';

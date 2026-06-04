@@ -155,13 +155,23 @@ export class FileSystemService {
     let rawContent: string | null = null;
     let componentType: 'visualization' | 'covisualization' = 'visualization';
 
-    // Single parse for all operations
+    // Check file size to avoid exceeding V8's string length limit (~512 MB)
+    const MAX_PREREAD_SIZE = 400 * 1024 * 1024; // 400 MB
+    let fileSize = 0;
+    try {
+      const stats = this.electronService.fs.statSync(filename);
+      fileSize = stats.size;
+    } catch (_) {}
+
+    // Single parse for all operations (skip for very large files – streaming will handle them)
     if (extension === 'json' || extension === 'khj' || extension === 'khcj') {
-      try {
-        rawContent = await this.readFileContent(filename);
-        jsonData = JSON.parse(rawContent);
-      } catch (error) {
-        console.warn('Error reading/parsing JSON file:', error);
+      if (fileSize <= MAX_PREREAD_SIZE) {
+        try {
+          rawContent = await this.readFileContent(filename);
+          jsonData = JSON.parse(rawContent);
+        } catch (error) {
+          console.warn('Error reading/parsing JSON file:', error);
+        }
       }
     }
 
@@ -606,7 +616,9 @@ export class FileSystemService {
   }
 
   /**
-   * Determine file type based on extension and file content
+   * Determine file type based on extension and file content.
+   * For .json files, only the first few KB are read to find the "tool" field,
+   * avoiding crashes on very large files that exceed V8's string length limit.
    */
   private getFileType(filePath: string): 'visualization' | 'covisualization' {
     const extension = filePath.toLowerCase().split('.').pop();
@@ -616,16 +628,19 @@ export class FileSystemService {
     } else if (extension === 'khj') {
       return 'visualization';
     } else if (extension === 'json') {
-      // For .json files, we need to check the content to determine the type
+      // Read only the first 4 KB to find the "tool" field
       try {
-        const content = this.electronService.fs.readFileSync(filePath, 'utf-8');
-        const jsonData = JSON.parse(content);
+        const fd = this.electronService.fs.openSync(filePath, 'r');
+        const buffer = Buffer.alloc(4096);
+        const bytesRead = this.electronService.fs.readSync(fd, buffer, 0, 4096, 0);
+        this.electronService.fs.closeSync(fd);
+        const head = buffer.toString('utf-8', 0, bytesRead);
 
-        if (jsonData.tool === 'Khiops Coclustering') {
+        const toolMatch = head.match(/"tool"\s*:\s*"([^"]*)"/);                                                                                                                                   
+        if (toolMatch && toolMatch[1] === 'Khiops Coclustering') {
           return 'covisualization';
-        } else {
-          return 'visualization';
         }
+        return 'visualization';
       } catch (error) {
         console.warn(
           'Could not read file content for type detection:',
