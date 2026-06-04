@@ -492,10 +492,10 @@
     "@standard-schema/spec" "^1.0.0"
     tslib "^2.3.0"
 
-"@angular/language-service@^21.2.16":
-  version "21.2.16"
-  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-21.2.16.tgz#a0a8ecdf169ff3d0ab204a8681fe89bdb30677b8"
-  integrity sha512-LBhoBmIVopMBfFVOoc5MDD2JWO+6+fHg7kNWc2Wy+YKhSndgsWVCo4F8MIgZh6HXxofZe3pEMXO0GfDPc0Ny3g==
+"@angular/language-service@^22.0.0":
+  version "22.0.0"
+  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-22.0.0.tgz#34451e26803b350299a3766a3cfc75dd43fd94a0"
+  integrity sha512-ZcAuY0Jnn5Suk4/QlFw/4J12htbumFA6562Up4QrVzBiaTcnSC16AeEqgGGY8Mz1Ye3pPUDV52LTuyVKlfjs+g==
 
 "@angular/platform-browser-dynamic@^21.2.16":
   version "21.2.16"
