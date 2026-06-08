@@ -18,10 +18,42 @@ let isUpdateReadyToInstall = false;
 let updateAutoInstallPending = false;
 const args = process.argv.slice(1),
   serve = args.some((val) => val === '--serve');
+const forceNewWindow = args.some((val) => val === '--new-window');
 const { Menu } = require('electron');
 const { ipcMain } = require('electron');
 if (serve) require('electron-debug');
 if (serve) require('source-map-support').install();
+
+// --- Single-instance lock ---
+// When the user double-clicks a file, redirect it to the existing instance
+// as a new tab instead of spawning a second window.
+// Passing --new-window in argv bypasses this and creates a fresh window.
+if (!forceNewWindow) {
+  const gotLock = app.requestSingleInstanceLock();
+  if (!gotLock) {
+    // Another primary instance is already running – it will handle opening the file.
+    app.quit();
+  } else {
+    app.on('second-instance', (_event, argv) => {
+      // argv from the second instance: find the file path (last non-flag arg)
+      const fileArg = argv.slice(1).find(
+        (a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a),
+      );
+
+      // Pick the most recently focused window to receive the file
+      const targetWindow =
+        openWindows[openWindows.length - 1] ?? win;
+
+      if (targetWindow) {
+        if (targetWindow.isMinimized()) targetWindow.restore();
+        targetWindow.focus();
+        if (fileArg) {
+          targetWindow.webContents.send('file-open-system', fileArg);
+        }
+      }
+    });
+  }
+}
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
@@ -369,8 +401,9 @@ ipcMain.handle('set-update-auto-install-on-quit', () => {
 });
 
 /**
- * Handle opening a file in a new window
- * Shows a file dialog and opens the selected file in a new application window.
+ * Handle opening a file in a new window.
+ * Spawns a fresh app instance with --new-window so it bypasses the
+ * single-instance lock and opens its own window.
  */
 ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string) => {
   try {
@@ -386,11 +419,13 @@ ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string)
       }
       targetPath = result.filePaths[0];
     }
-    const newWindow = createWindow();
-    newWindow.webContents.once('did-finish-load', () => {
-      log.info('New window loaded, sending file-open-system event');
-      newWindow.webContents?.send('file-open-system', targetPath);
-    });
+    // Spawn a new independent instance with --new-window so it bypasses
+    // the single-instance lock and opens in its own window.
+    const { spawn } = require('child_process');
+    spawn(process.execPath, [process.argv[1], '--new-window', ...(targetPath ? [targetPath] : [])], {
+      detached: true,
+      stdio: 'ignore',
+    }).unref();
     return { success: true };
   } catch (error) {
     log.error('Error opening file in new window:', error);
