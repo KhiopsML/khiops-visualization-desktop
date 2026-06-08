@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { TabManagerService } from '../core/services/tab-manager.service';
 import { MenuService } from '../core/services/menu.service';
 import { FileSystemService } from '../core/services/file-system.service';
+import { ElectronService } from '../core/services/electron.service';
 import { TabDragService } from '../core/services/tab-drag.service';
 import { Tab } from '../core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
@@ -31,6 +32,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
     private tabManager: TabManagerService,
     private menuService: MenuService,
     private fileSystemService: FileSystemService,
+    private electronService: ElectronService,
     private tabDrag: TabDragService,
   ) {}
 
@@ -53,6 +55,53 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    */
   onTabPointerDown(event: PointerEvent, tab: Tab, tabEl: HTMLElement): void {
     this.tabDrag.startDrag(event, tab.id, tabEl);
+  }
+
+  /**
+   * Handle right-click on tab to show context menu
+   */
+  onTabContextMenu(event: MouseEvent, tab: Tab): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const remote = this.electronService.remote;
+    if (!remote) return;
+
+    const { Menu, MenuItem } = remote;
+    const menu = new Menu();
+
+    menu.append(
+      new MenuItem({
+        label: 'Close',
+        click: () => this.closeTabWithCleanup(tab),
+      }),
+    );
+
+    menu.append(
+      new MenuItem({
+        label: 'Move into New Window',
+        enabled: !!tab.filePath,
+        click: () => this.moveTabToNewWindow(tab),
+      }),
+    );
+
+    menu.popup();
+  }
+
+  /**
+   * Move a tab into a new Electron window
+   */
+  private moveTabToNewWindow(tab: Tab): void {
+    if (!tab || !this.electronService.ipcRenderer) return;
+
+    this.electronService.ipcRenderer
+      .invoke('create-window-with-tab', { tab })
+      .then(() => {
+        this.tabManager.closeTab(tab.id);
+      })
+      .catch((error: any) => {
+        console.error('Error moving tab to new window:', error);
+      });
   }
 
   /**

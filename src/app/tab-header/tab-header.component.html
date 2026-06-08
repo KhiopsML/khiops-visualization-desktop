@@ -14,6 +14,7 @@
         [class.dirty]="tab.isDirty"
         (click)="onTabClick(tab)"
         (mouseup)="onTabMouseUp($event, tab)"
+        (contextmenu)="onTabContextMenu($event, tab)"
         (pointerdown)="onTabPointerDown($event, tab, tabEl)"
         #tabEl
         [title]="tab.title + (tab.filePath ? '\n' + tab.filePath : '')"
