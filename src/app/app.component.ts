@@ -473,6 +473,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.electronService.ipcRenderer?.on('before-quit', () => {
       this.beforeQuit();
     });
+    this.electronService.ipcRenderer?.on('before-close-window', () => {
+      this.beforeCloseWindow();
+    });
     this.electronService.ipcRenderer?.on('copy-image', () => {
       this.configService.copyImage();
     });
@@ -613,6 +616,18 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     } else {
       this.saveAllCovisuTabsThenQuit(finalQuitAction);
     }
+  }
+
+  /**
+   * Called when the user closes one window while other windows remain open.
+   * Handles save dialogs for covisualization tabs in this window,
+   * then closes only this window (not the whole app).
+   */
+  beforeCloseWindow() {
+    const finalCloseAction = async () => {
+      await this.electronService.ipcRenderer?.invoke('close-window');
+    };
+    this.saveAllCovisuTabsThenQuit(finalCloseAction);
   }
 
   /**

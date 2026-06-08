@@ -12,6 +12,8 @@ const log = require('electron-log');
 let win: BrowserWindow | null = null;
 const openWindows: BrowserWindow[] = []; // Track all open windows for multi-window support
 let isQuitting = false;
+// Windows that confirmed save dialogs and are allowed to close without interception
+const windowsAllowedToClose = new Set<number>();
 let isUpdateReadyToInstall = false;
 let updateAutoInstallPending = false;
 const args = process.argv.slice(1),
@@ -193,12 +195,18 @@ function createWindow(): BrowserWindow {
   });
 
   newWindow.on('close', (event) => {
-    if (!isQuitting) {
+    if (!isQuitting && !windowsAllowedToClose.has(newWindow.id)) {
       event.preventDefault();
       newWindow?.show(); // Show window if hidden or minimized
       newWindow?.focus(); // Focus the window to bring it to the front
-      newWindow?.webContents?.send('before-quit');
+      // If multiple windows are open, close only this window; otherwise quit the app
+      if (openWindows.length > 1) {
+        newWindow?.webContents?.send('before-close-window');
+      } else {
+        newWindow?.webContents?.send('before-quit');
+      }
     }
+    windowsAllowedToClose.delete(newWindow.id);
   });
 
   // Track the primary window
@@ -325,6 +333,19 @@ ipcMain.handle('app-quit', () => {
   log.info('app-quit requested');
   isQuitting = true;
   app.quit();
+});
+
+/**
+ * Handle close-window request from renderer process.
+ * Closes only the window that sent the request, without quitting the whole app.
+ */
+ipcMain.handle('close-window', (event: any) => {
+  log.info('close-window requested');
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  if (senderWindow) {
+    windowsAllowedToClose.add(senderWindow.id);
+    senderWindow.close();
+  }
 });
 
 /**
