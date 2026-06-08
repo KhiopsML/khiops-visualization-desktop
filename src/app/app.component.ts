@@ -100,6 +100,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
         this.cdr.detectChanges();
 
+        // Update OS window title when active tab changes
+        if (activeTabChanged) {
+          this.fileSystemService.setTitleBar(this.activeTab?.filePath || '');
+        }
+
         // Configure all tab components
         setTimeout(() => {
           this.configureAllTabComponents();
