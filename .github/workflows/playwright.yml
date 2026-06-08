@@ -20,10 +20,48 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Cache Electron binary
+        id: electron-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: electron-${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            electron-${{ runner.os }}-
+
       - name: Install dependencies
         run: |
           npm install -g yarn
           yarn
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Ensure Electron binary is extracted
+        run: |
+          ELECTRON_VERSION=$(node -p "require('./node_modules/electron/package.json').version")
+
+          # Download the zip via @electron/get
+          ZIP_PATH=$(node -e "
+            const { downloadArtifact } = require('@electron/get');
+            downloadArtifact({ version: '$ELECTRON_VERSION', artifactName: 'electron' })
+              .then(p => process.stdout.write(p))
+              .catch(e => { console.error(e.message); process.exit(1); });
+          ")
+          echo "Zip path: $ZIP_PATH"
+
+          # Extract into node_modules/electron/dist/ (where Playwright expects the binary)
+          rm -rf node_modules/electron/dist
+          mkdir -p node_modules/electron/dist
+          unzip -q "$ZIP_PATH" -d node_modules/electron/dist
+          chmod +x node_modules/electron/dist/electron
+
+          # Write path.txt with just the relative filename
+          echo -n "electron" > node_modules/electron/path.txt
+
+          echo "path.txt content: $(cat node_modules/electron/path.txt)"
+          ls -la node_modules/electron/dist/electron
+        env:
+          ELECTRON_CACHE: ~/.cache/electron
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
