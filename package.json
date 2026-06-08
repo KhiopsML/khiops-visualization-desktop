@@ -59,7 +59,7 @@
     "removeMocks": "rimraf dist/khiops-visualization-desktop/mocks",
     "electron:linux": "yarn build:prod && electron-builder build --linux -p always",
     "electron:windows": "yarn build:prod && electron-builder build --windows --x64 -p always",
-    "electron:windows:local": "yarn build:prod && electron-builder build --windows --x64 --config.win.sign=false",
+    "electron:windows:local": "yarn build:prod && electron-builder build --windows --x64 --config.win.signExecutable=false",
     "electron:windows64": "yarn build:prod && electron-builder build --windows --x64 -p always",
     "electron:publish": "yarn build:prod && electron-builder build --publish=never",
     "electron:mac": "yarn build:prod && electron-builder build --mac -p always",
