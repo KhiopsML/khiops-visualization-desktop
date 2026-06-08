@@ -50,5 +50,8 @@
   "RECENTLY_OPENED_FILES": "Recently Opened Files",
   "NO_RECENT_FILES": "No recent files",
   "OPEN_A_FILE_FROM_THE_MENU": "Open a file from the menu",
-  "START_BY_LOADING_DATASET": "Start by loading a dataset"
+  "START_BY_LOADING_DATASET": "Start by loading a dataset",
+  "TAB_CONTEXT_CLOSE": "Close",
+  "TAB_CONTEXT_MOVE_NEW_WINDOW": "Move into New Window",
+  "TAB_CONTEXT_CLOSE_ALL": "Close all tabs"
 }

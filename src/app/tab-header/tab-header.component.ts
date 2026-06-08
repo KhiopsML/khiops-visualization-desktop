@@ -6,6 +6,7 @@
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateService } from '@ngx-translate/core';
 import { TabManagerService } from '../core/services/tab-manager.service';
 import { MenuService } from '../core/services/menu.service';
 import { FileSystemService } from '../core/services/file-system.service';
@@ -34,6 +35,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
     private fileSystemService: FileSystemService,
     private electronService: ElectronService,
     private tabDrag: TabDragService,
+    private translate: TranslateService,
   ) {}
 
   ngOnInit(): void {
@@ -43,11 +45,33 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
         this.tabs = state.tabs;
         this.activeTabId = state.activeTabId;
       });
+
+    // Listen for keyboard shortcuts relayed from the main process via before-input-event
+    const ipc = this.electronService.ipcRenderer;
+    if (ipc) {
+      ipc.on('shortcut-close-tab', () => {
+        const activeTab = this.tabManager.getActiveTab();
+        if (activeTab) this.closeTabWithCleanup(activeTab);
+      });
+      ipc.on('shortcut-close-all-tabs', () => {
+        if (this.tabs.length > 1) this.closeAllTabs();
+      });
+      ipc.on('shortcut-move-tab-new-window', () => {
+        const activeTab = this.tabManager.getActiveTab();
+        if (activeTab?.filePath) this.moveTabToNewWindow(activeTab);
+      });
+    }
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    const ipc = this.electronService.ipcRenderer;
+    if (ipc) {
+      ipc.removeAllListeners('shortcut-close-tab');
+      ipc.removeAllListeners('shortcut-close-all-tabs');
+      ipc.removeAllListeners('shortcut-move-tab-new-window');
+    }
   }
 
   /**
@@ -72,20 +96,64 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
 
     menu.append(
       new MenuItem({
-        label: 'Close',
+        label: this.translate.instant('TAB_CONTEXT_CLOSE'),
+        accelerator: 'CommandOrControl+W',
         click: () => this.closeTabWithCleanup(tab),
       }),
     );
 
     menu.append(
       new MenuItem({
-        label: 'Move into New Window',
+        label: this.translate.instant('TAB_CONTEXT_MOVE_NEW_WINDOW'),
+        accelerator: 'CommandOrControl+Shift+N',
         enabled: !!tab.filePath,
         click: () => this.moveTabToNewWindow(tab),
       }),
     );
 
+    if (this.tabs.length > 1) {
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(
+        new MenuItem({
+          label: this.translate.instant('TAB_CONTEXT_CLOSE_ALL'),
+          accelerator: 'CommandOrControl+Shift+W',
+          click: () => this.closeAllTabs(),
+        }),
+      );
+    }
+
     menu.popup();
+  }
+
+  /**
+   * Close all open tabs sequentially
+   */
+  private closeAllTabs(): void {
+    const tabsCopy = [...this.tabs];
+    const closeNext = (index: number) => {
+      if (index >= tabsCopy.length) return;
+      const tab = tabsCopy[index];
+      // Only close tabs that still exist
+      if (!this.tabManager.getTab(tab.id)) {
+        closeNext(index + 1);
+        return;
+      }
+      if (tab.componentType === 'covisualization' && tab.filePath) {
+        this.tabManager.setActiveTab(tab.id);
+        this.fileSystemService.currentFilePath = tab.filePath;
+        this.fileSystemService['configService'].setActiveComponentType('covisualization');
+        setTimeout(() => {
+          this.fileSystemService.closeFile(() => closeNext(index + 1), tab.id);
+        }, 150);
+      } else {
+        this.tabManager.closeTab(tab.id);
+        if (!this.tabManager.hasOpenTabs()) {
+          this.fileSystemService.closeFile();
+        }
+        closeNext(index + 1);
+      }
+    };
+    closeNext(0);
   }
 
   /**

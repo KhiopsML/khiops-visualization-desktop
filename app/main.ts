@@ -144,6 +144,28 @@ function createWindow(): BrowserWindow {
   // Enable remote for renderer process
   require('@electron/remote/main').enable(newWindow.webContents);
 
+  // Intercept keyboard shortcuts before Electron's default handlers consume them.
+  // document:keydown in the renderer never fires for Ctrl+W because Electron
+  // processes it first at the native level.
+  newWindow.webContents.on('before-input-event', (event, input) => {
+    if (!input.control && !input.meta) return;
+    if (input.type !== 'keyDown') return;
+
+    if (input.shift && input.key === 'W') {
+      // Ctrl+Shift+W → close all tabs
+      event.preventDefault();
+      newWindow.webContents.send('shortcut-close-all-tabs');
+    } else if (input.shift && input.key === 'N') {
+      // Ctrl+Shift+N → move active tab to new window
+      event.preventDefault();
+      newWindow.webContents.send('shortcut-move-tab-new-window');
+    } else if (!input.shift && input.key === 'w') {
+      // Ctrl+W → close active tab (prevent Electron from closing the window)
+      event.preventDefault();
+      newWindow.webContents.send('shortcut-close-tab');
+    }
+  });
+
   // Custom context menu
   newWindow.webContents.on('context-menu', (_event, params) => {
     // Check if there is selected text or if clipboard has content to enable/disable menu items
