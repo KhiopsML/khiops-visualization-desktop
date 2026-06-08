@@ -10,6 +10,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostListener,
   NgZone,
   CUSTOM_ELEMENTS_SCHEMA,
   QueryList,
@@ -161,6 +162,15 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.tabManager.updateTab(activeTab.id, { componentType });
       this.configureTabComponent(activeTab);
       this.setActiveConfig(activeTab);
+    }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onWindowKeyDown(event: KeyboardEvent): void {
+    if (event.ctrlKey && event.key === 'Tab') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.tabManager.switchToNextTab(event.shiftKey ? -1 : 1);
     }
   }
 

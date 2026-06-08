@@ -160,6 +160,26 @@ export class TabManagerService {
   }
 
   /**
+   * Switch to the next or previous tab in the current tab order.
+   */
+  switchToNextTab(direction: 1 | -1 = 1): void {
+    const currentState = this.tabState.value;
+    const { tabs } = currentState;
+
+    if (tabs.length < 2) {
+      return;
+    }
+
+    const activeIndex = tabs.findIndex(
+      (tab) => tab.id === currentState.activeTabId,
+    );
+    const currentIndex = activeIndex === -1 ? 0 : activeIndex;
+    const nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
+
+    this.setActiveTab(tabs[nextIndex].id);
+  }
+
+  /**
    * Update tab data (loading state, data, etc.)
    */
   updateTab(tabId: string, updates: Partial<Tab>): void {
