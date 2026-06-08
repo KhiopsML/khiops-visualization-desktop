@@ -668,7 +668,9 @@ export class FileSystemService {
   }
 
   /**
-   * Determine file type based on extension and file content
+   * Determine file type based on extension and file content.
+   * For .json files, only reads the first few KB to find the "tool" field
+   * so that large files do not freeze the UI or exceed V8 string limits.
    */
   private getFileType(filePath: string): 'visualization' | 'covisualization' {
     const extension = filePath.toLowerCase().split('.').pop();
@@ -678,27 +680,31 @@ export class FileSystemService {
     } else if (extension === 'khj') {
       return 'visualization';
     } else if (extension === 'json') {
-      // For .json files, we need to check the content to determine the type
       try {
-        const content = this.electronService.fs.readFileSync(filePath, 'utf-8');
-        const jsonData = JSON.parse(content);
+        // Read only the first 4 KB – enough to find the "tool" field near the top
+        const bufferSize = 4096;
+        const buffer = Buffer.alloc(bufferSize);
+        const fd = this.electronService.fs.openSync(filePath, 'r');
+        const bytesRead = this.electronService.fs.readSync(fd, buffer, 0, bufferSize, 0);
+        this.electronService.fs.closeSync(fd);
 
-        if (jsonData.tool === 'Khiops Coclustering') {
+        const head = buffer.toString('utf-8', 0, bytesRead);
+        // Match "tool" : "Khiops Coclustering" with flexible whitespace
+        if (/"tool"\s*:\s*"Khiops Coclustering"/.test(head)) {
           return 'covisualization';
-        } else {
-          return 'visualization';
         }
+        return 'visualization';
       } catch (error) {
         console.warn(
           'Could not read file content for type detection:',
           filePath,
           error,
         );
-        return 'visualization'; // Default fallback
+        return 'visualization';
       }
     }
 
-    return 'visualization'; // Default
+    return 'visualization';
   }
 
   /**
