@@ -136,21 +136,21 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@angular-builders/common@5.0.3":
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/@angular-builders/common/-/common-5.0.3.tgz#e57a24d03ff051b3b14f19048f0fad3441c2cee7"
-  integrity sha512-Dro3574mu4/xqmjdA3159+TXDhgTbIJpEY/iBETSKUvHJiCgHel+R3eT105RpHN5o7NaD2rau5Zk2wuZqOk35Q==
+"@angular-builders/common@5.0.4":
+  version "5.0.4"
+  resolved "https://registry.yarnpkg.com/@angular-builders/common/-/common-5.0.4.tgz#51d2042cc2ac37949df1bc6a5a69803102ab62f1"
+  integrity sha512-eJPmi2YbEmICDndj9/7G+FxZPiYcZtqybgTZypcI3uEsZ+dBH7GHyPFjbpFqMHu7I6CxcERtbQGMw3Fmbh54gQ==
   dependencies:
     "@angular-devkit/core" "^21.0.0"
     ts-node "^10.0.0"
     tsconfig-paths "^4.2.0"
 
-"@angular-builders/custom-webpack@^21.0.3":
-  version "21.0.3"
-  resolved "https://registry.yarnpkg.com/@angular-builders/custom-webpack/-/custom-webpack-21.0.3.tgz#1ee8e3a487151fa6aac1e64b3fdb38010e30295c"
-  integrity sha512-Aq3PZoQxY4jmfDb1sT5E6ZFAdiv35PziFmgYoW5DGX8xbYsV7EoKWZN2ZIjEI3Zr/WUZWGlxmxa11XK9WOtidg==
+"@angular-builders/custom-webpack@^21.1.0":
+  version "21.1.0"
+  resolved "https://registry.yarnpkg.com/@angular-builders/custom-webpack/-/custom-webpack-21.1.0.tgz#1b520adf5124249c03065610e488665404ff8360"
+  integrity sha512-XEsFgrJKXDAgGep0sOBPSHAl5Wut72KfixAP6g9YYkEfofI/KISHaby6WaluWm0u+lwy47/jGuzPKfaMVUVESw==
   dependencies:
-    "@angular-builders/common" "5.0.3"
+    "@angular-builders/common" "5.0.4"
     "@angular-devkit/architect" ">=0.2100.0 < 0.2200.0"
     "@angular-devkit/build-angular" "^21.0.0"
     "@angular-devkit/core" "^21.0.0"
@@ -158,7 +158,7 @@
     lodash "^4.17.15"
     webpack-merge "^6.0.0"
 
-"@angular-devkit/architect@0.2102.14":
+"@angular-devkit/architect@0.2102.14", "@angular-devkit/architect@>= 0.2100.0 < 0.2200.0", "@angular-devkit/architect@>=0.2100.0 < 0.2200.0":
   version "0.2102.14"
   resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.14.tgz#84d86629472c334dcff0e752942f60d9a4dcb31c"
   integrity sha512-0+vjVsCkMyJdVjz5XkPW+Bdf/9TI8V2voomx/+o0o+oOaqqiEhptQWFnaIlLr7HasjB0LxXK5P9L0oQ61vxj8Q==
@@ -166,7 +166,7 @@
     "@angular-devkit/core" "21.2.14"
     rxjs "7.8.2"
 
-"@angular-devkit/architect@0.2102.6", "@angular-devkit/architect@>= 0.2100.0 < 0.2200.0", "@angular-devkit/architect@>=0.2100.0 < 0.2200.0":
+"@angular-devkit/architect@0.2102.6":
   version "0.2102.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2102.6.tgz#65eae4f7a9e422ade7c5e9d9e5d9b811aecf12d5"
   integrity sha512-h4qybKypR7OuwcTHPQI1zRm7abXgmPiV49vI2UeMtVVY/GKzru9gMexcYmWabzEyBY8w6VSfWjV2X+eit2EhDQ==
@@ -244,7 +244,7 @@
     "@angular-devkit/architect" "0.2102.6"
     rxjs "7.8.2"
 
-"@angular-devkit/core@21.2.14":
+"@angular-devkit/core@21.2.14", "@angular-devkit/core@>= 21.0.0 < 22.0.0", "@angular-devkit/core@^21.0.0":
   version "21.2.14"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.14.tgz#38701651c949871512fe90c5d181ccd46fcbd445"
   integrity sha512-RSOWXB9bFc2nwRWMxbIT0RbSNFUrwfBo4N5MNxbyQ69Ndc0gVm3h+3ArHv0qotH4d+pJYbm5ttXu8YqR2kc0CA==
@@ -256,7 +256,7 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/core@21.2.6", "@angular-devkit/core@>= 21.0.0 < 22.0.0", "@angular-devkit/core@^21.0.0":
+"@angular-devkit/core@21.2.6":
   version "21.2.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-21.2.6.tgz#96b864e5e1b7e718c0c20f45a9847fde8d1dcda2"
   integrity sha512-u5gPTAY7MC02uACQE39xxiFcm1hslF+ih/f2borMWnhER0JNTpHjLiLRXFkq7or7+VVHU30zfhK4XNAuO4WTIg==
@@ -350,7 +350,7 @@
   dependencies:
     "@angular-eslint/bundled-angular-compiler" "21.4.0"
 
-"@angular/build@21.2.6", "@angular/build@^21.0.0":
+"@angular/build@21.2.6":
   version "21.2.6"
   resolved "https://registry.yarnpkg.com/@angular/build/-/build-21.2.6.tgz#064df623cb1b6ee0fb7c691897eff6b9b6dd5c1a"
   integrity sha512-PJltYl9/INfz8nZ/KHf39nqlmt3c9PR0jJaZt6hhCPENyAf4PwQpm28erkJmbOYO864goIuws41lduYXyDqQ0Q==
@@ -385,7 +385,7 @@
   optionalDependencies:
     lmdb "3.5.1"
 
-"@angular/build@^21.2.14":
+"@angular/build@^21.0.0", "@angular/build@^21.2.14":
   version "21.2.14"
   resolved "https://registry.yarnpkg.com/@angular/build/-/build-21.2.14.tgz#e5614b0911a44a44474ec62e0d70415393cfcc0d"
   integrity sha512-l8JB326iIwum2WmbopUUFdiuYsbHchix6MH8o6F6FA7LJr8QLTvipwwbw+Jx31/RE50WkGmzsZ1fBDw/cMbmUw==
