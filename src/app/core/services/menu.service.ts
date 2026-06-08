@@ -210,9 +210,13 @@ export class MenuService {
             label: filename,
             accelerator: '',
             enabled: true,
-            click: () => {
-              this.openFile(filename);
-            },
+            click: ((_menuItem: any, _browserWindow: any, event: any) => {
+              if (event && event.shiftKey) {
+                this.openFileInNewWindow(filename);
+              } else {
+                this.openFile(filename);
+              }
+            }) as any,
           });
         }
       }
@@ -430,8 +434,8 @@ export class MenuService {
     })();
   }
 
-  openFileInNewWindow() {
-    this.electronService.ipcRenderer?.invoke('open-file-in-new-window');
+  openFileInNewWindow(filePath?: string) {
+    this.electronService.ipcRenderer?.invoke('open-file-in-new-window', filePath);
   }
 
   save() {

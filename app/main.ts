@@ -351,21 +351,24 @@ ipcMain.handle('set-update-auto-install-on-quit', () => {
  * Handle opening a file in a new window
  * Shows a file dialog and opens the selected file in a new application window.
  */
-ipcMain.handle('open-file-in-new-window', async () => {
+ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string) => {
   try {
     log.info('open-file-in-new-window requested');
-    const result = await electron.dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [{ name: 'Khiops Files', extensions: ['json', 'khj', 'khcj'] }],
-    });
-    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
-      return { success: false, reason: 'canceled' };
+    let targetPath = filePath;
+    if (!targetPath) {
+      const result = await electron.dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'Khiops Files', extensions: ['json', 'khj', 'khcj'] }],
+      });
+      if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+        return { success: false, reason: 'canceled' };
+      }
+      targetPath = result.filePaths[0];
     }
-    const filePath = result.filePaths[0];
     const newWindow = createWindow();
     newWindow.webContents.once('did-finish-load', () => {
       log.info('New window loaded, sending file-open-system event');
-      newWindow.webContents?.send('file-open-system', filePath);
+      newWindow.webContents?.send('file-open-system', targetPath);
     });
     return { success: true };
   } catch (error) {
