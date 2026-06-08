@@ -24,6 +24,7 @@
   "GLOBAL_MENU_LATEST": "Stable version (Default)",
   "GLOBAL_MENU_LIB_VERSION": "Library version",
   "GLOBAL_MENU_OPEN": "Open",
+  "GLOBAL_MENU_OPEN_IN_NEW_WINDOW": "Open in New Window",
   "GLOBAL_MENU_RELEASE_NOTES": "What's new ?",
   "GLOBAL_MENU_REPORT_A_BUG": "Report a bug",
   "GLOBAL_MENU_RESTART_APP": "Restart",

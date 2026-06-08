@@ -72,6 +72,13 @@ export class MenuService {
           },
         },
         {
+          label: this.translate.instant('GLOBAL_MENU_OPEN_IN_NEW_WINDOW'),
+          accelerator: 'CommandOrControl+Shift+O',
+          click: () => {
+            this.openFileInNewWindow();
+          },
+        },
+        {
           type: 'separator',
         },
         {
@@ -418,6 +425,10 @@ export class MenuService {
         console.log('error', error);
       }
     })();
+  }
+
+  openFileInNewWindow() {
+    this.electronService.ipcRenderer?.invoke('open-file-in-new-window');
   }
 
   save() {

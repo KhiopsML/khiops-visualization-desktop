@@ -299,8 +299,9 @@ function checkForUpdates(channel: string, delay: number = 10000) {
   }, delay);
 }
 
-ipcMain.handle('set-title-bar-name', async (_event: any, arg: any) => {
-  win?.setTitle(arg?.title);
+ipcMain.handle('set-title-bar-name', async (event: any, arg: any) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  senderWindow?.setTitle(arg?.title);
 });
 
 /**
@@ -344,6 +345,33 @@ ipcMain.handle('install-update-now', () => {
 ipcMain.handle('set-update-auto-install-on-quit', () => {
   log.info('set-update-auto-install-on-quit requested');
   updateAutoInstallPending = true;
+});
+
+/**
+ * Handle opening a file in a new window
+ * Shows a file dialog and opens the selected file in a new application window.
+ */
+ipcMain.handle('open-file-in-new-window', async () => {
+  try {
+    log.info('open-file-in-new-window requested');
+    const result = await electron.dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Khiops Files', extensions: ['json', 'khj', 'khcj'] }],
+    });
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return { success: false, reason: 'canceled' };
+    }
+    const filePath = result.filePaths[0];
+    const newWindow = createWindow();
+    newWindow.webContents.once('did-finish-load', () => {
+      log.info('New window loaded, sending file-open-system event');
+      newWindow.webContents?.send('file-open-system', filePath);
+    });
+    return { success: true };
+  } catch (error) {
+    log.error('Error opening file in new window:', error);
+    return { success: false, error: error };
+  }
 });
 
 /**
