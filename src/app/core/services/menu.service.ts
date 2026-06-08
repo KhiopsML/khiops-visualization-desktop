@@ -86,6 +86,7 @@ export class MenuService {
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CLOSE_FILE'),
+          accelerator: 'CommandOrControl+W',
           enabled: !!(
             this.fileSystemService.currentFilePath &&
             this.fileSystemService.currentFilePath !== ''
@@ -196,16 +197,18 @@ export class MenuService {
       ],
     };
 
-    menuFile.submenu[3].accelerator = 'CommandOrControl+W';
-
-    // insert history files
+    // insert history files after the first separator
     if (opendFiles.files.length > 0) {
+      const insertIndex = menuFile.submenu.findIndex(
+        (item: any) => item.type === 'separator',
+      );
       // in reverse order
       for (let i = opendFiles.files.length - 1; i >= 0; i--) {
         if (typeof opendFiles.files[i] === 'string') {
           const filename = opendFiles.files[i];
-          menuFile.submenu.splice(2, 0, {
+          menuFile.submenu.splice(insertIndex + 1, 0, {
             label: filename,
+            accelerator: '',
             enabled: true,
             click: () => {
               this.openFile(filename);
