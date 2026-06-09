@@ -329,13 +329,16 @@ try {
 ipcMain.on('get-input-file', async (event: any) => {
   try {
     log.info('get-input-file');
-    // In serve mode (dev/test), argv[1] is main.js itself - not a user file
-    if (serve) {
-      event.returnValue = null;
-      return;
-    }
-    // return input files on Windows
-    event.returnValue = process.argv[1];
+    // Find the first argument that looks like a data file (.json, .khj, .khcj).
+    // argv layout varies depending on how the process was started:
+    //   - normal:      electron.exe main.js [file]
+    //   - --new-window: electron.exe main.js --new-window [file]
+    //   - serve:       electron.exe main.js --serve ...
+    // Skip flags (--*) and the main script to find the actual data file.
+    const fileArg = process.argv.slice(1).find(
+      (a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a),
+    );
+    event.returnValue = fileArg || null;
   } catch (error) {
     console.log('error', error);
   }
