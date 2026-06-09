@@ -20,8 +20,8 @@
         [title]="tab.title + (tab.filePath ? '\n' + tab.filePath : '')"
       >
         <div class="tab-icon">
-          <img *ngIf="tab.componentType === 'visualization'" src="assets/icons/icon-visu.png" alt="Visualization" width="16" height="16" />
-          <img *ngIf="tab.componentType === 'covisualization'" src="assets/icons/icon-covisu.png" alt="Covisualization" width="16" height="16" />
+          <img *ngIf="tab.componentType === 'visualization'" src="assets/icons/icon-visu.png" alt="Visualization" width="24" height="20" />
+          <img *ngIf="tab.componentType === 'covisualization'" src="assets/icons/icon-covisu.png" alt="Covisualization" width="24" height="24" />
         </div>
 
         <span class="tab-title">{{ getDisplayTitle(tab) }}</span>

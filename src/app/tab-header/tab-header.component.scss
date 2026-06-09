@@ -29,6 +29,8 @@
 
 .tab-list {
   display: flex;
+  flex: 1;
+  min-width: 0; // allow shrinking below content size
   overflow: hidden;
   position: relative; // required for ghost absolute positioning
 }
@@ -36,10 +38,9 @@
 .tab {
   display: flex;
   align-items: center;
-  min-width: 200px;
   max-width: 200px;
+  min-width: 36px; // minimum tab width — tabs shrink like Chrome instead of overflowing
   flex: 1;
-  height: 100%;
   padding: 0 16px;
   background: #f1f3f4;
   border-right: 1px solid #dadce0;
