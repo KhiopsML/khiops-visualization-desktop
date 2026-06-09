@@ -495,6 +495,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.electronService.ipcRenderer?.on('copy-datas', () => {
       this.configService.copyDatas();
     });
+    // Rebuild the menu when this window regains focus so that menu actions
+    // always point to the correct (active) renderer.
+    this.electronService.ipcRenderer?.on('window-focused', () => {
+      this.constructMenu();
+    });
 
     this.constructMenu();
 
@@ -513,6 +518,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         this.fileSystemService.openFile(arg);
         // }, 100);
       }
+    });
+
+    // Sent by the main process after routing a menu-originated file open to
+    // this window so the menu (recent files, title bar, etc.) is updated.
+    this.electronService.ipcRenderer?.on('menu-rebuild-after-open', () => {
+      this.menuService.menuShouldRebuild$.next();
     });
 
     // Listen for detached tab restoration from new window
@@ -762,7 +773,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     );
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);
-    this.electronService.remote.Menu.setApplicationMenu(menu);
+    // In multi-window mode, only set the application menu when this window
+    // is focused to prevent a background window (e.g. receiving an auto-update
+    // event) from overriding the focused window's menu handlers.
+    const currentWindow = this.electronService.remote.getCurrentWindow();
+    if (currentWindow.isFocused()) {
+      this.electronService.remote.Menu.setApplicationMenu(menu);
+    }
   }
 
   ngOnDestroy() {

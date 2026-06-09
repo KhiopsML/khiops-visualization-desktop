@@ -11,6 +11,7 @@ import * as url from 'url';
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
 const openWindows: BrowserWindow[] = []; // Track all open windows for multi-window support
+let lastFocusedWindow: BrowserWindow | null = null; // Track the last focused window for correct file routing
 let isQuitting = false;
 // Windows that confirmed save dialogs and are allowed to close without interception
 const windowsAllowedToClose = new Set<number>();
@@ -40,9 +41,8 @@ if (!forceNewWindow) {
         (a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a),
       );
 
-      // Pick the most recently focused window to receive the file
       const targetWindow =
-        openWindows[openWindows.length - 1] ?? win;
+        lastFocusedWindow ?? openWindows[openWindows.length - 1] ?? win;
 
       if (targetWindow) {
         if (targetWindow.isMinimized()) targetWindow.restore();
@@ -139,6 +139,12 @@ function createWindow(): BrowserWindow {
     newWindow?.show();
   });
 
+  // Track focus so that second-instance events and menus target the correct window
+  newWindow.on('focus', () => {
+    lastFocusedWindow = newWindow;
+    newWindow.webContents.send('window-focused');
+  });
+
   // Enable remote for main process
   require('@electron/remote/main').enable(newWindow);
   // Enable remote for renderer process
@@ -163,6 +169,11 @@ function createWindow(): BrowserWindow {
       // Ctrl+W → close active tab (prevent Electron from closing the window)
       event.preventDefault();
       newWindow.webContents.send('shortcut-close-tab');
+    } else if (!input.shift && input.key === 'o') {
+      // Ctrl+O → open file dialog for THIS window (bypasses the menu handler
+      // which may be bound to a different renderer via @electron/remote)
+      event.preventDefault();
+      openFileDialogForWindow(newWindow);
     }
   });
 
@@ -245,6 +256,9 @@ function createWindow(): BrowserWindow {
     // Dereference the window object
     if (newWindow === win) {
       win = null;
+    }
+    if (lastFocusedWindow === newWindow) {
+      lastFocusedWindow = null;
     }
   });
 
@@ -378,6 +392,81 @@ ipcMain.handle('read-local-file', async (_event: any, filePath: any) => {
     console.error('Error when loading file:', err);
     return null;
   }
+});
+
+/**
+ * Show the native open-file dialog for the given window and, if the user picks
+ * a file, send it to that window's renderer for loading.
+ */
+async function openFileDialogForWindow(targetWindow: BrowserWindow) {
+  const result = await electron.dialog.showOpenDialog(targetWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'Khiops Files', extensions: ['json', 'khj', 'khcj'] }],
+  });
+
+  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+    return { success: false, reason: 'canceled' };
+  }
+
+  targetWindow.webContents.send('file-open-system', result.filePaths[0]);
+  targetWindow.webContents.send('menu-rebuild-after-open');
+  return { success: true };
+}
+
+/**
+ * Handle "Open file" action from the application menu.
+ *
+ * The menu click handler runs in whichever renderer last called
+ * setApplicationMenu (via @electron/remote).  That renderer may NOT be the
+ * window the user is looking at.  To work around this we accept an explicit
+ * windowId (the `browserWindow.id` that Electron passes to the click callback)
+ * and fall back to getFocusedWindow / lastFocusedWindow only when the id is
+ * missing.
+ */
+ipcMain.handle('menu-action-open-file', async (_event: any, windowId?: number) => {
+  log.info('menu-action-open-file requested, windowId:', windowId);
+
+  let targetWindow: BrowserWindow | null = null;
+  if (windowId != null) {
+    targetWindow = BrowserWindow.fromId(windowId);
+  }
+  if (!targetWindow) {
+    targetWindow =
+      BrowserWindow.getFocusedWindow() ??
+      lastFocusedWindow ??
+      openWindows[openWindows.length - 1] ??
+      win;
+  }
+  if (!targetWindow) return { success: false, reason: 'no-window' };
+
+  return openFileDialogForWindow(targetWindow);
+});
+
+/**
+ * Handle "Open recent file" action from the history list in the application menu.
+ * Same routing problem as menu-action-open-file: the click closure captures the
+ * renderer that last called setApplicationMenu, not necessarily the focused one.
+ * We accept the windowId from the click callback to always target the right window.
+ */
+ipcMain.handle('menu-action-open-recent-file', async (_event: any, filePath: string, windowId?: number) => {
+  log.info('menu-action-open-recent-file requested, windowId:', windowId, 'file:', filePath);
+
+  let targetWindow: BrowserWindow | null = null;
+  if (windowId != null) {
+    targetWindow = BrowserWindow.fromId(windowId);
+  }
+  if (!targetWindow) {
+    targetWindow =
+      BrowserWindow.getFocusedWindow() ??
+      lastFocusedWindow ??
+      openWindows[openWindows.length - 1] ??
+      win;
+  }
+  if (!targetWindow) return { success: false, reason: 'no-window' };
+
+  targetWindow.webContents.send('file-open-system', filePath);
+  targetWindow.webContents.send('menu-rebuild-after-open');
+  return { success: true };
 });
 
 /**

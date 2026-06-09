@@ -88,8 +88,9 @@ export class FileSystemService {
     associationFiles.push('khj');
     associationFiles.push('khcj');
 
+    const parentWindow = this.electronService.remote?.getCurrentWindow() ?? null;
     this.electronService.dialog
-      .showOpenDialog(null, {
+      .showOpenDialog(parentWindow, {
         properties: ['openFile'],
         filters: [{ extensions: associationFiles }],
       })

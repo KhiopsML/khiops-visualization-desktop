@@ -67,8 +67,15 @@ export class MenuService {
         {
           label: this.translate.instant('GLOBAL_MENU_OPEN'),
           accelerator: 'CommandOrControl+O',
-          click: () => {
-            this.openFileDialog(refreshCb);
+          click: (_menuItem: any, browserWindow: any) => {
+            // browserWindow is the window that had focus when the user clicked
+            // the menu item.  Pass its id so the main process targets the
+            // correct window even when this closure runs in a different
+            // renderer (the one that last called setApplicationMenu).
+            this.electronService.ipcRenderer?.invoke(
+              'menu-action-open-file',
+              browserWindow?.id,
+            );
           },
         },
         {
@@ -210,11 +217,18 @@ export class MenuService {
             label: filename,
             accelerator: '',
             enabled: true,
-            click: ((_menuItem: any, _browserWindow: any, event: any) => {
+            click: ((_menuItem: any, browserWindow: any, event: any) => {
               if (event && event.shiftKey) {
                 this.openFileInNewWindow(filename);
               } else {
-                this.openFile(filename);
+                // Route through the main process with the explicit browserWindow.id
+                // so the file always opens in the window the user clicked on,
+                // regardless of which renderer's closure this handler runs in.
+                this.electronService.ipcRenderer?.invoke(
+                  'menu-action-open-recent-file',
+                  filename,
+                  browserWindow?.id,
+                );
               }
             }) as any,
           });
