@@ -25,7 +25,8 @@ import { MenuService } from './core/services/menu.service';
 import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
 import { TabManagerService } from './core/services/tab-manager.service';
-import 'khiops-visualization';
+// Loaded dynamically in ngAfterViewInit to avoid blocking the initial parse/render
+// import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
 import { WelcomeComponent } from './welcome/welcome.component';
 import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
@@ -85,6 +86,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    // Load the web component library asynchronously so it doesn't block the initial render
+    // @ts-ignore
+    import('khiops-visualization');
+
     this.btnUpdateText =
       '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
 
@@ -106,8 +111,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           this.fileSystemService.setTitleBar(this.activeTab?.filePath || '');
         }
 
-        // Configure all tab components
-        setTimeout(() => {
+        // Configure all tab components after change detection has rendered them
+        // Use requestAnimationFrame instead of a fixed delay
+        requestAnimationFrame(() => {
           this.configureAllTabComponents();
 
           // If active tab changed, switch active config immediately
@@ -116,7 +122,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             // Propagate resize event when tab changes
             this.propagateResizeEvent();
           }
-        }, 100);
+        });
       });
 
     this.configService.setComponentChangeCallback((componentType, filePath) => {
@@ -702,36 +708,33 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.tabManager.setActiveTab(tab.id);
 
       // Wait for the tab switch to render before opening the dialog
-      setTimeout(
-        () => {
-          tabConfig.openSaveBeforeQuitDialog((result: string) => {
-            if (result === 'confirm') {
-              // User chose to save — save data, close the tab, then move to next
-              try {
-                if (
-                  tabConfig.constructDatasToSave &&
-                  typeof tabConfig.constructDatasToSave === 'function'
-                ) {
-                  const datasToSave = tabConfig.constructDatasToSave();
-                  this.fileSystemService.saveFile(tab.filePath!, datasToSave);
-                }
-              } catch (err) {
-                console.error('Error saving tab data before quit:', err);
+      setTimeout(() => {
+        tabConfig.openSaveBeforeQuitDialog((result: string) => {
+          if (result === 'confirm') {
+            // User chose to save — save data, close the tab, then move to next
+            try {
+              if (
+                tabConfig.constructDatasToSave &&
+                typeof tabConfig.constructDatasToSave === 'function'
+              ) {
+                const datasToSave = tabConfig.constructDatasToSave();
+                this.fileSystemService.saveFile(tab.filePath!, datasToSave);
               }
-              this.tabManager.closeTab(tab.id);
-              processNextTab(index + 1);
-            } else if (result === 'cancel') {
-              // User cancelled — abort the entire quit, stay on current tab
-              return;
-            } else {
-              // User chose "Don't save" (reject) — close the tab, move to next
-              this.tabManager.closeTab(tab.id);
-              processNextTab(index + 1);
+            } catch (err) {
+              console.error('Error saving tab data before quit:', err);
             }
-          });
-        },
-        200,
-      );
+            this.tabManager.closeTab(tab.id);
+            processNextTab(index + 1);
+          } else if (result === 'cancel') {
+            // User cancelled — abort the entire quit, stay on current tab
+            return;
+          } else {
+            // User chose "Don't save" (reject) — close the tab, move to next
+            this.tabManager.closeTab(tab.id);
+            processNextTab(index + 1);
+          }
+        });
+      }, 200);
     };
 
     processNextTab(0);

@@ -12,6 +12,7 @@ const log = require('electron-log');
 let win: BrowserWindow | null = null;
 const openWindows: BrowserWindow[] = []; // Track all open windows for multi-window support
 let lastFocusedWindow: BrowserWindow | null = null; // Track the last focused window for correct file routing
+let prewarmedWindow: BrowserWindow | null = null; // Hidden window kept ready for instant tab moves
 let isQuitting = false;
 // Windows that confirmed save dialogs and are allowed to close without interception
 const windowsAllowedToClose = new Set<number>();
@@ -288,12 +289,172 @@ function createWindow(): BrowserWindow {
   return newWindow;
 }
 
+/**
+ * Create a hidden pre-warmed window that has already loaded the Angular app.
+ * When a tab is moved to a new window we promote this window instead of
+ * creating one from scratch, which eliminates the ~2-3 s bootstrap wait.
+ */
+function createPrewarmedWindow(): BrowserWindow {
+  const size = screen.getPrimaryDisplay().workAreaSize;
+  const pw = new electron.BrowserWindow({
+    x: 0,
+    y: 0,
+    width: size.width,
+    height: size.height,
+    minWidth: 600,
+    minHeight: 300,
+    show: false,
+    webPreferences: {
+      nodeIntegration: true,
+      allowRunningInsecureContent: serve,
+      contextIsolation: false,
+    },
+    titleBarStyle: 'default',
+    darkTheme: false,
+    backgroundColor: '#ffffff',
+  });
+
+  require('@electron/remote/main').enable(pw);
+  require('@electron/remote/main').enable(pw.webContents);
+
+  if (serve) {
+    pw.loadURL('http://localhost:4200');
+  } else {
+    let pathIndex = './index.html';
+    if (fs.existsSync(path.join(__dirname, '../dist/index.html'))) {
+      pathIndex = '../dist/index.html';
+    }
+    const urlPath = url.format({
+      pathname: path.join(__dirname, pathIndex),
+      protocol: 'file:',
+      slashes: true,
+    });
+    pw.loadURL(urlPath);
+  }
+
+  // If the prewarmed window is closed before being promoted, clear the reference
+  pw.on('closed', () => {
+    if (prewarmedWindow === pw) {
+      prewarmedWindow = null;
+    }
+  });
+
+  return pw;
+}
+
+/**
+ * Schedule creation of a pre-warmed window after the main window has loaded.
+ */
+function schedulePrewarm() {
+  // Wait a few seconds so the main window start-up is not slowed down
+  setTimeout(() => {
+    if (!prewarmedWindow || prewarmedWindow.isDestroyed()) {
+      prewarmedWindow = createPrewarmedWindow();
+    }
+  }, 5000);
+}
+
+/**
+ * Promote a pre-warmed window to a fully interactive window.
+ * Wires up all the event handlers that createWindow() normally sets up,
+ * then makes the window visible.
+ */
+function promotePrewarmedWindow(): BrowserWindow {
+  const pw = prewarmedWindow!;
+  prewarmedWindow = null;
+
+  // Wire up focus tracking
+  pw.on('focus', () => {
+    lastFocusedWindow = pw;
+    pw.webContents.send('window-focused');
+  });
+
+  // Wire up keyboard shortcuts (same as createWindow)
+  pw.webContents.on('before-input-event', (event, input) => {
+    if (!input.control && !input.meta) return;
+    if (input.type !== 'keyDown') return;
+
+    if (input.shift && input.key === 'W') {
+      event.preventDefault();
+      pw.webContents.send('shortcut-close-all-tabs');
+    } else if (input.shift && input.key === 'N') {
+      event.preventDefault();
+      pw.webContents.send('shortcut-move-tab-new-window');
+    } else if (!input.shift && input.key === 'w') {
+      event.preventDefault();
+      pw.webContents.send('shortcut-close-tab');
+    } else if (!input.shift && input.key === 'o') {
+      event.preventDefault();
+      openFileDialogForWindow(pw);
+    }
+  });
+
+  // Wire up context menu (same as createWindow)
+  pw.webContents.on('context-menu', (_event, params) => {
+    const hasSelection =
+      params.selectionText && params.selectionText.trim().length > 0;
+    const hasClipboard = clipboard.readText().trim().length > 0;
+    pw.webContents?.send('right-click', params);
+    Menu.buildFromTemplate([
+      { label: 'Copy', role: 'copy', enabled: hasSelection },
+      { label: 'Paste', role: 'paste', enabled: hasClipboard },
+      { type: 'separator' },
+      {
+        label: 'Copy image',
+        click: () => { pw.webContents?.send('copy-image', params); },
+        accelerator: 'CommandOrControl+Shift+c',
+      },
+      {
+        label: 'Copy datas',
+        click: () => { pw.webContents?.send('copy-datas', params); },
+        accelerator: 'CommandOrControl+Shift+d',
+      },
+      { type: 'separator' },
+      {
+        label: 'Toggle dev tools',
+        role: 'toggleDevTools',
+        accelerator: 'CommandOrControl+Shift+I',
+      },
+    ]).popup();
+  });
+
+  // Wire up close / closed handlers (same as createWindow)
+  pw.on('closed', () => {
+    const index = openWindows.indexOf(pw);
+    if (index > -1) openWindows.splice(index, 1);
+    if (pw === win) win = null;
+    if (lastFocusedWindow === pw) lastFocusedWindow = null;
+  });
+
+  pw.on('close', (event) => {
+    if (!isQuitting && !windowsAllowedToClose.has(pw.id)) {
+      event.preventDefault();
+      pw.show();
+      pw.focus();
+      if (openWindows.length > 1) {
+        pw.webContents?.send('before-close-window');
+      } else {
+        pw.webContents?.send('before-quit');
+      }
+    }
+    windowsAllowedToClose.delete(pw.id);
+  });
+
+  if (!win) win = pw;
+  openWindows.push(pw);
+
+  return pw;
+}
+
 try {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  // Added 400 ms to fix the black background issue while using transparent window. More detais at https://github.com/electron/electron/issues/15947
-  app.on('ready', () => setTimeout(createWindow, 400));
+  app.on('ready', () => {
+    createWindow();
+    // Pre-warm a hidden window so tab-move is near-instant
+    schedulePrewarm();
+  });
 
   // Handle before-quit event to allow window closing
   app.on('before-quit', () => {
@@ -555,18 +716,39 @@ ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string)
 ipcMain.handle('create-window-with-tab', async (_event: any, data: any) => {
   try {
     log.info('create-window-with-tab requested with tab:', data?.tab?.title);
-    const newWindow = createWindow();
 
-    // Store the tab data to be passed to the new window once it's ready
-    if (data && data.tab) {
-      // Wait for the window to be fully loaded before sending the tab data
-      newWindow.webContents.once('did-finish-load', () => {
-        log.info('New window loaded, sending restore-tab event');
-        newWindow.webContents?.send('restore-tab', {
-          tab: data.tab,
-        });
-      });
+    // Use pre-warmed window if available (near-instant), otherwise fall back to createWindow
+    let newWindow: BrowserWindow;
+    let alreadyLoaded = false;
+
+    if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
+      log.info('Using pre-warmed window for instant tab move');
+      newWindow = promotePrewarmedWindow();
+      alreadyLoaded = true;
+      // Start creating the next pre-warmed window for future use
+      schedulePrewarm();
+    } else {
+      newWindow = createWindow();
     }
+
+    if (data && data.tab) {
+      const sendTabData = () => {
+        log.info('Sending restore-tab event to new window');
+        newWindow.webContents?.send('restore-tab', { tab: data.tab });
+      };
+
+      if (alreadyLoaded) {
+        // Pre-warmed window is already loaded — send tab data immediately
+        sendTabData();
+      } else {
+        // Wait for the window to be fully loaded before sending the tab data
+        newWindow.webContents.once('did-finish-load', sendTabData);
+      }
+    }
+
+    // Show and focus the new window
+    newWindow.show();
+    newWindow.focus();
 
     return { success: true };
   } catch (error) {
