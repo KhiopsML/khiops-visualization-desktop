@@ -126,25 +126,82 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Close all open tabs sequentially
+   * Close all open tabs sequentially.
+   * For covisualization tabs with unsaved changes, shows a save dialog.
+   * When multiple covisualization tabs require a decision, "Yes to All" and
+   * "No to All" buttons are displayed so the user can apply one choice to all
+   * remaining tabs (mirroring Notepad++ behaviour).
    */
   private closeAllTabs(): void {
     const tabsCopy = [...this.tabs];
+    let saveAll = false;
+    let rejectAll = false;
+
+    const countRemainingCovisu = (fromIndex: number): number =>
+      tabsCopy
+        .slice(fromIndex)
+        .filter(
+          (t) =>
+            t.componentType === 'covisualization' &&
+            t.filePath &&
+            this.tabManager.getTab(t.id),
+        ).length;
+
     const closeNext = (index: number) => {
       if (index >= tabsCopy.length) return;
       const tab = tabsCopy[index];
-      // Only close tabs that still exist
+      // Skip tabs that were already closed
       if (!this.tabManager.getTab(tab.id)) {
         closeNext(index + 1);
         return;
       }
+
       if (tab.componentType === 'covisualization' && tab.filePath) {
         this.tabManager.setActiveTab(tab.id);
         this.fileSystemService.currentFilePath = tab.filePath;
-        this.fileSystemService['configService'].setActiveComponentType('covisualization');
-        setTimeout(() => {
-          this.fileSystemService.closeFile(() => closeNext(index + 1), tab.id);
-        }, 150);
+        this.fileSystemService['configService'].setActiveComponentType(
+          'covisualization',
+        );
+
+        if (saveAll) {
+          // "Yes to All" was chosen: auto-save without showing the dialog
+          setTimeout(() => {
+            this.fileSystemService.closeFile(
+              () => closeNext(index + 1),
+              tab.id,
+              { showBatchButtons: false, autoSave: true },
+            );
+          }, 150);
+        } else if (rejectAll) {
+          // "No to All" was chosen: auto-close without saving
+          setTimeout(() => {
+            this.fileSystemService.closeFile(
+              () => closeNext(index + 1),
+              tab.id,
+              { showBatchButtons: false, autoClose: true },
+            );
+          }, 150);
+        } else {
+          // Show the dialog; add batch buttons when more covisu tabs remain
+          const showBatchButtons = countRemainingCovisu(index + 1) > 0;
+          setTimeout(() => {
+            this.fileSystemService.closeFile(
+              () => closeNext(index + 1),
+              tab.id,
+              showBatchButtons
+                ? {
+                    showBatchButtons: true,
+                    onConfirmAll: () => {
+                      saveAll = true;
+                    },
+                    onRejectAll: () => {
+                      rejectAll = true;
+                    },
+                  }
+                : undefined,
+            );
+          }, 150);
+        }
       } else {
         this.tabManager.closeTab(tab.id);
         if (!this.tabManager.hasOpenTabs()) {

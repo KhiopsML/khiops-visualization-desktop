@@ -197,9 +197,9 @@ export class ConfigService {
     }
   }
 
-  openSaveBeforeQuitDialog(cb: Function) {
+  openSaveBeforeQuitDialog(cb: Function, options?: { showBatchButtons?: boolean }) {
     if (this.config && this.config.openSaveBeforeQuitDialog) {
-      this.config.openSaveBeforeQuitDialog(cb);
+      this.config.openSaveBeforeQuitDialog(cb, options);
     }
   }
 

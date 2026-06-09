@@ -471,30 +471,71 @@ export class FileSystemService {
    * @param finalAction The action to execute after save/cancel operations
    * @param skipStorageSave If true, skip the storage save (useful for file open where we manage history separately)
    * @param tabIdToClose Optional tab ID to close after the action completes
+   * @param batchOptions Optional batch options for "Yes to All" / "No to All" support
    */
   handleSaveBeforeAction(
     finalAction: () => void | Promise<void>,
     skipStorageSave: boolean = false,
     tabIdToClose?: string,
+    batchOptions?: {
+      showBatchButtons: boolean;
+      autoSave?: boolean;
+      autoClose?: boolean;
+      onConfirmAll?: () => void;
+      onRejectAll?: () => void;
+    },
   ) {
     const activeComponentType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
     if (activeComponentType === 'covisualization' && hasCurrentFile) {
-      this.configService.openSaveBeforeQuitDialog((e: string) => {
-        if (e === 'confirm') {
-          const config = this.configService.getConfig();
-          if (config && config.constructDatasToSave) {
-            const datasToSave = config.constructDatasToSave();
-            this.saveFile(this.currentFilePath, datasToSave);
+      // Auto-save path (triggered by "Yes to All" on a previous tab)
+      if (batchOptions?.autoSave) {
+        const config = this.configService.getConfig();
+        if (config && config.constructDatasToSave) {
+          const datasToSave = config.constructDatasToSave();
+          this.saveFile(this.currentFilePath, datasToSave);
+        }
+        this.storageService.saveAll(() => finalAction());
+        return;
+      }
+
+      // Auto-close path (triggered by "No to All" on a previous tab)
+      if (batchOptions?.autoClose) {
+        this.storageService.saveAll(() => finalAction());
+        return;
+      }
+
+      this.configService.openSaveBeforeQuitDialog(
+        (e: string) => {
+          if (e === 'confirm') {
+            const config = this.configService.getConfig();
+            if (config && config.constructDatasToSave) {
+              const datasToSave = config.constructDatasToSave();
+              this.saveFile(this.currentFilePath, datasToSave);
+              this.storageService.saveAll(() => finalAction());
+            }
+          } else if (e === 'confirmAll') {
+            const config = this.configService.getConfig();
+            if (config && config.constructDatasToSave) {
+              const datasToSave = config.constructDatasToSave();
+              this.saveFile(this.currentFilePath, datasToSave);
+              // Notify batch controller before finalAction so state is set for next tabs
+              batchOptions?.onConfirmAll?.();
+              this.storageService.saveAll(() => finalAction());
+            }
+          } else if (e === 'cancel') {
+            return;
+          } else if (e === 'reject') {
+            this.storageService.saveAll(() => finalAction());
+          } else if (e === 'rejectAll') {
+            // Notify batch controller before finalAction so state is set for next tabs
+            batchOptions?.onRejectAll?.();
             this.storageService.saveAll(() => finalAction());
           }
-        } else if (e === 'cancel') {
-          return;
-        } else if (e === 'reject') {
-          this.storageService.saveAll(() => finalAction());
-        }
-      });
+        },
+        { showBatchButtons: batchOptions?.showBatchButtons ?? false },
+      );
     } else {
       // For file open, skip storage restore to avoid overwriting history changes
       if (skipStorageSave) {
@@ -505,7 +546,17 @@ export class FileSystemService {
     }
   }
 
-  closeFile(callbackDone?: Function, tabIdToClose?: string) {
+  closeFile(
+    callbackDone?: Function,
+    tabIdToClose?: string,
+    batchOptions?: {
+      showBatchButtons: boolean;
+      autoSave?: boolean;
+      autoClose?: boolean;
+      onConfirmAll?: () => void;
+      onRejectAll?: () => void;
+    },
+  ) {
     // Check if the tab being closed is a covisualization
     const tabToClose = tabIdToClose
       ? this.tabManagerService.getTab(tabIdToClose)
@@ -522,6 +573,7 @@ export class FileSystemService {
         },
         false,
         tabIdToClose,
+        batchOptions,
       );
     } else {
       // For other tabs (visualization or no file), just close without dialog
