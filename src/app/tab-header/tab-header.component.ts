@@ -223,6 +223,10 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
       .invoke('create-window-with-tab', { tab })
       .then(() => {
         this.tabManager.closeTab(tab.id);
+        // If no tabs remain, show the welcome screen
+        if (!this.tabManager.hasOpenTabs()) {
+          this.fileSystemService.closeFile();
+        }
       })
       .catch((error: any) => {
         console.error('Error moving tab to new window:', error);
