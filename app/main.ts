@@ -694,8 +694,8 @@ ipcMain.handle('set-update-auto-install-on-quit', () => {
 
 /**
  * Handle opening a file in a new window.
- * Spawns a fresh app instance with --new-window so it bypasses the
- * single-instance lock and opens its own window.
+ * Uses a pre-warmed window (if available) for near-instant startup,
+ * falling back to createWindow otherwise.
  */
 ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string) => {
   try {
@@ -711,13 +711,34 @@ ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string)
       }
       targetPath = result.filePaths[0];
     }
-    // Spawn a new independent instance with --new-window so it bypasses
-    // the single-instance lock and opens in its own window.
-    const { spawn } = require('child_process');
-    spawn(process.execPath, [process.argv[1], '--new-window', ...(targetPath ? [targetPath] : [])], {
-      detached: true,
-      stdio: 'ignore',
-    }).unref();
+
+    // Use pre-warmed window if available (near-instant), otherwise fall back to createWindow
+    let newWindow: BrowserWindow;
+    let alreadyLoaded = false;
+
+    if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
+      log.info('Using pre-warmed window for instant file open in new window');
+      newWindow = promotePrewarmedWindow();
+      alreadyLoaded = true;
+      schedulePrewarm();
+    } else {
+      newWindow = createWindow();
+    }
+
+    const sendFileOpen = () => {
+      newWindow.webContents.send('file-open-system', targetPath);
+      newWindow.webContents.send('menu-rebuild-after-open');
+    };
+
+    if (alreadyLoaded) {
+      sendFileOpen();
+    } else {
+      newWindow.webContents.once('did-finish-load', sendFileOpen);
+    }
+
+    newWindow.show();
+    newWindow.focus();
+
     return { success: true };
   } catch (error) {
     log.error('Error opening file in new window:', error);
