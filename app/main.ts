@@ -4,8 +4,30 @@ import * as remoteMain from '@electron/remote/main';
 remoteMain.initialize();
 import * as path from 'path';
 import * as fs from 'fs';
-import { machineIdSync } from 'node-machine-id';
-const { autoUpdater } = require('electron-updater');
+// Lazy-loaded on first use to avoid blocking startup
+let _machineIdSync: typeof import('node-machine-id').machineIdSync | null = null;
+function getMachineId(): string {
+  if (!_machineIdSync) {
+    _machineIdSync = require('node-machine-id').machineIdSync;
+  }
+  try {
+    return _machineIdSync!();
+  } catch {
+    return '';
+  }
+}
+
+// Lazy-loaded: electron-updater is heavy and not needed until after the window is visible
+let _autoUpdater: any = null;
+function getAutoUpdater() {
+  if (!_autoUpdater) {
+    _autoUpdater = require('electron-updater').autoUpdater;
+    _autoUpdater.autoInstallOnAppQuit = false;
+    _autoUpdater.autoDownload = false;
+    _autoUpdater.allowDowngrade = false;
+  }
+  return _autoUpdater;
+}
 import * as url from 'url';
 
 const log = require('electron-log');
@@ -62,9 +84,6 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 // log.transports.file.file = __dirname + '/electron.log';
 // const storage = require('electron-json-storage');
 log.warn('App Desktop starting...');
-autoUpdater.autoInstallOnAppQuit = false;
-autoUpdater.autoDownload = false;
-autoUpdater.allowDowngrade = false;
 
 // Try to fix ERR_HTTP2_PROTOCOL_ERROR
 // https://github.com/electron-userland/electron-builder/issues/4987
@@ -75,12 +94,7 @@ autoUpdater.allowDowngrade = false;
 // };
 
 ipcMain.handle('get-machine-id', async () => {
-  try {
-    return machineIdSync();
-  } catch (error) {
-    console.error('Error getting machine ID:', error);
-    return '';
-  }
+  return getMachineId();
 });
 
 // return input files on Mac and Linux
@@ -451,9 +465,11 @@ try {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   app.on('ready', () => {
-    createWindow();
-    // Pre-warm a hidden window so tab-move is near-instant
-    schedulePrewarm();
+    const mainWin = createWindow();
+    // Pre-warm a hidden window only after the main window finishes loading
+    // mainWin.webContents.once('did-finish-load', () => {
+      schedulePrewarm();
+    // });
   });
 
   // Handle before-quit event to allow window closing
@@ -462,7 +478,7 @@ try {
     // If update is ready and pending auto-install on quit, install it silently
     if (isUpdateReadyToInstall && updateAutoInstallPending) {
       log.info('Installing update silently on app quit');
-      autoUpdater.quitAndInstall(true, true);
+      getAutoUpdater().quitAndInstall(true, true);
     }
   });
 
@@ -508,7 +524,7 @@ ipcMain.on('get-input-file', async (event: any) => {
 ipcMain.handle('launch-update-available', async () => {
   try {
     log.info('launch-update-available');
-    autoUpdater.downloadUpdate();
+    getAutoUpdater().downloadUpdate();
     return;
   } catch (error) {
     console.log('error', error);
@@ -528,10 +544,11 @@ ipcMain.handle(
 );
 
 function checkForUpdates(channel: string, delay: number = 10000) {
-  autoUpdater.allowPrerelease = channel === 'beta';
+  setupAutoUpdaterEvents();
+  getAutoUpdater().allowPrerelease = channel === 'beta';
   log.info('checkForUpdates');
   setTimeout(() => {
-    autoUpdater.checkForUpdates().catch((err: Error) => {
+    getAutoUpdater().checkForUpdates().catch((err: Error) => {
       // Silently ignore network errors during update check
       log.warn('checkForUpdates failed (non-blocking):', err.message);
       win?.webContents?.send('update-error', err);
@@ -667,7 +684,7 @@ ipcMain.handle('app-relaunch', () => {
 ipcMain.handle('install-update-now', () => {
   log.info('install-update-now requested');
   // Install silently and restart - isSilent:true, isForceRunAfter:true
-  autoUpdater.quitAndInstall(true, true);
+  getAutoUpdater().quitAndInstall(true, true);
 });
 
 ipcMain.handle('set-update-auto-install-on-quit', () => {
@@ -757,52 +774,64 @@ ipcMain.handle('create-window-with-tab', async (_event: any, data: any) => {
   }
 });
 
-autoUpdater.on('checking-for-update', () => {
-  log.info('checking-for-update');
-});
-autoUpdater.on('update-available', (info: any) => {
-  log.info('update-available', info);
-  setTimeout(function () {
-    win?.webContents?.send('update-available', info);
-  }, 2000);
-  // Auto-download after 5 seconds
-  setTimeout(function () {
-    log.info('Auto-starting download of available update');
-    autoUpdater.downloadUpdate();
-  }, 5000);
-});
+/**
+ * Register autoUpdater event listeners.
+ * Called lazily so that electron-updater is not loaded at startup.
+ */
+let _autoUpdaterEventsRegistered = false;
+function setupAutoUpdaterEvents() {
+  if (_autoUpdaterEventsRegistered) return;
+  _autoUpdaterEventsRegistered = true;
 
-autoUpdater.on('update-not-available', (info: any) => {
-  log.info('update-not-available', info);
-  setTimeout(function () {
-    win?.webContents?.send('update-not-available', info);
-  }, 2000);
-});
+  const au = getAutoUpdater();
 
-autoUpdater.on('download-progress', (progressObj: any) => {
-  log.info('download-progress', progressObj);
-  win?.webContents?.send('download-progress-info', progressObj);
-});
+  au.on('checking-for-update', () => {
+    log.info('checking-for-update');
+  });
+  au.on('update-available', (info: any) => {
+    log.info('update-available', info);
+    setTimeout(function () {
+      win?.webContents?.send('update-available', info);
+    }, 2000);
+    // Auto-download after 5 seconds
+    setTimeout(function () {
+      log.info('Auto-starting download of available update');
+      getAutoUpdater().downloadUpdate();
+    }, 5000);
+  });
 
-autoUpdater.on(
-  'update-downloaded',
-  (event: any, releaseNotes: any, releaseName: any) => {
-    log.info('update-downloaded', event);
-    isUpdateReadyToInstall = true;
-    // Automatically flag update for silent installation on quit
-    // This ensures the update will be installed even if user closes app without clicking "Install"
-    updateAutoInstallPending = true;
-    win?.webContents?.send('update-ready', {
-      releaseNotes,
-      releaseName,
-    });
-  },
-);
+  au.on('update-not-available', (info: any) => {
+    log.info('update-not-available', info);
+    setTimeout(function () {
+      win?.webContents?.send('update-not-available', info);
+    }, 2000);
+  });
 
-autoUpdater.on('error', (message: any) => {
-  log.info('error', message);
+  au.on('download-progress', (progressObj: any) => {
+    log.info('download-progress', progressObj);
+    win?.webContents?.send('download-progress-info', progressObj);
+  });
 
-  setTimeout(function () {
-    win?.webContents?.send('update-error', message);
-  }, 2000);
-});
+  au.on(
+    'update-downloaded',
+    (event: any, releaseNotes: any, releaseName: any) => {
+      log.info('update-downloaded', event);
+      isUpdateReadyToInstall = true;
+      // Automatically flag update for silent installation on quit
+      // This ensures the update will be installed even if user closes app without clicking "Install"
+      updateAutoInstallPending = true;
+      win?.webContents?.send('update-ready', {
+        releaseNotes,
+        releaseName,
+      });
+    },
+  );
+
+  au.on('error', (message: any) => {
+    log.info('error', message);
+
+    setTimeout(function () {
+      win?.webContents?.send('update-error', message);
+    }, 2000);
+  });
+}
