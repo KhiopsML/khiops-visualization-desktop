@@ -310,11 +310,16 @@ function createWindow(): BrowserWindow {
  */
 function createPrewarmedWindow(): BrowserWindow {
   const size = screen.getPrimaryDisplay().workAreaSize;
+  // Use ~80% of the work area, centered — same feel as VS Code's secondary windows
+  const width = Math.round(size.width * 0.8);
+  const height = Math.round(size.height * 0.8);
+  const x = Math.round((size.width - width) / 2);
+  const y = Math.round((size.height - height) / 2);
   const pw = new electron.BrowserWindow({
-    x: 0,
-    y: 0,
-    width: size.width,
-    height: size.height,
+    x,
+    y,
+    width,
+    height,
     minWidth: 600,
     minHeight: 300,
     show: false,
