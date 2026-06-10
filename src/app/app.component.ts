@@ -25,8 +25,6 @@ import { MenuService } from './core/services/menu.service';
 import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
 import { TabManagerService } from './core/services/tab-manager.service';
-// Loaded dynamically in ngAfterViewInit to avoid blocking the initial parse/render
-// import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
 import { WelcomeComponent } from './welcome/welcome.component';
 import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
@@ -88,7 +86,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     // Load the web component library asynchronously so it doesn't block the initial render
     // @ts-ignore
-    import('khiops-visualization');
+    // import('khiops-visualization');
 
     this.btnUpdateText =
       '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
