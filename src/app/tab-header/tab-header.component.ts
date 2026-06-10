@@ -133,7 +133,10 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
    * remaining tabs (mirroring Notepad++ behaviour).
    */
   private closeAllTabs(): void {
-    const tabsCopy = [...this.tabs];
+    // Process the active tab first, then the others in their existing order
+    const activeTab = this.tabManager.getActiveTab();
+    const rest = this.tabs.filter((t) => t.id !== activeTab?.id);
+    const tabsCopy = activeTab ? [activeTab, ...rest] : [...this.tabs];
     let saveAll = false;
     let rejectAll = false;
 
