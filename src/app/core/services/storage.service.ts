@@ -89,6 +89,14 @@ export class StorageService {
     this.saveAll();
   }
 
+  /**
+   * Update one key in the in-memory cache without writing to disk.
+   * Used when receiving data that another window already persisted.
+   */
+  updateOneLocal(elt: string, value: any) {
+    this._storage[elt] = value;
+  }
+
   getStorageKey() {
     return this._storageKey;
   }

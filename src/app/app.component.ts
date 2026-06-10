@@ -514,33 +514,36 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
     this.electronService.ipcRenderer?.on('file-open-system', (event, arg) => {
       if (arg) {
-        // Add delay to ensure component is fully loaded before opening file
-        // setTimeout(() => {
-        this.fileSystemService.openFile(arg);
-        // }, 100);
+        this.fileSystemService.openFile(arg, () => {
+          this.menuService.menuShouldRebuild$.next();
+        });
       }
     });
 
-    // Sent by the main process after routing a menu-originated file open to
-    // this window so the menu (recent files, title bar, etc.) is updated.
-    this.electronService.ipcRenderer?.on('menu-rebuild-after-open', () => {
-      this.menuService.menuShouldRebuild$.next();
+    // Listen for file history updates from other windows.
+    // Receive the actual data to avoid disk read race conditions.
+    // Only update the OPEN_FILE key in memory — the sender already persisted it.
+    // The menu will be rebuilt when this window gains focus (window-focused handler).
+    this.electronService.ipcRenderer?.on('file-history-updated', (_event: any, filesHistory: any) => {
+      if (filesHistory) {
+        this.storageService.updateOneLocal('OPEN_FILE', filesHistory);
+        this.fileSystemService.notifyRecentFilesChanged();
+      }
     });
 
     // Listen for detached tab restoration from new window
     this.electronService.ipcRenderer?.on('restore-tab', (event, data) => {
       if (data && data.tab) {
         const tab = data.tab;
-        // Add delay to ensure component is fully loaded before restoring tab
-        // setTimeout(() => {
         if (tab.filePath) {
           // If the tab has a file path, open the file which will load the data
-          this.fileSystemService.openFile(tab.filePath);
+          this.fileSystemService.openFile(tab.filePath, () => {
+            this.menuService.menuShouldRebuild$.next();
+          });
         } else {
           // If no file path, just restore the tab with existing data
           this.tabManager.restoreTab(tab);
         }
-        // }, 100);
       }
     });
   }

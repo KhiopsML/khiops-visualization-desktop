@@ -629,13 +629,28 @@ export class FileSystemService {
       filesHistory.files.unshift(filename);
       this.storageService.setOne('OPEN_FILE', filesHistory);
       this._recentFilesChanged.next();
-      resolve();
+      // Wait for disk write to complete, then notify other windows with the actual data
+      this.storageService.saveAll(() => {
+        this.electronService.ipcRenderer?.invoke(
+          'broadcast-file-history-updated',
+          filesHistory,
+        );
+        resolve();
+      });
     });
   }
 
   getFileHistory() {
     const history = this.storageService.getOne('OPEN_FILE') || { files: [] };
     return history;
+  }
+
+  /**
+   * Notify subscribers that the recent files list was updated externally
+   * (e.g. by another window).
+   */
+  notifyRecentFilesChanged() {
+    this._recentFilesChanged.next();
   }
 
   /**

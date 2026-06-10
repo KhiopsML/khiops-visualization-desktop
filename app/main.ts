@@ -590,7 +590,6 @@ async function openFileDialogForWindow(targetWindow: BrowserWindow) {
   }
 
   targetWindow.webContents.send('file-open-system', result.filePaths[0]);
-  targetWindow.webContents.send('menu-rebuild-after-open');
   return { success: true };
 }
 
@@ -646,7 +645,6 @@ ipcMain.handle('menu-action-open-recent-file', async (_event: any, filePath: str
   if (!targetWindow) return { success: false, reason: 'no-window' };
 
   targetWindow.webContents.send('file-open-system', filePath);
-  targetWindow.webContents.send('menu-rebuild-after-open');
   return { success: true };
 });
 
@@ -693,6 +691,25 @@ ipcMain.handle('set-update-auto-install-on-quit', () => {
 });
 
 /**
+ * Broadcast file history updates to all windows except the sender
+ * so that every window's recent-files menu stays in sync.
+ * Also includes the pre-warmed window so it stays up-to-date
+ * before being promoted.
+ */
+ipcMain.handle('broadcast-file-history-updated', (event: any, filesHistory: any) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  openWindows.forEach((w) => {
+    if (!w.isDestroyed() && w !== senderWindow) {
+      w.webContents.send('file-history-updated', filesHistory);
+    }
+  });
+  // Keep the pre-warmed window in sync too (it is not in openWindows yet)
+  if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
+    prewarmedWindow.webContents.send('file-history-updated', filesHistory);
+  }
+});
+
+/**
  * Handle opening a file in a new window.
  * Uses a pre-warmed window (if available) for near-instant startup,
  * falling back to createWindow otherwise.
@@ -727,7 +744,6 @@ ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string)
 
     const sendFileOpen = () => {
       newWindow.webContents.send('file-open-system', targetPath);
-      newWindow.webContents.send('menu-rebuild-after-open');
     };
 
     if (alreadyLoaded) {
