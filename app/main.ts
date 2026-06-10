@@ -508,9 +508,17 @@ try {
   // throw e;
 }
 
+// Track whether the input file from argv has already been consumed by a window.
+// Only the very first window should auto-open the CLI-provided file.
+let inputFileConsumed = false;
+
 ipcMain.on('get-input-file', async (event: any) => {
   try {
     log.info('get-input-file');
+    if (inputFileConsumed) {
+      event.returnValue = null;
+      return;
+    }
     // Find the first argument that looks like a data file (.json, .khj, .khcj).
     // argv layout varies depending on how the process was started:
     //   - normal:      electron.exe main.js [file]
@@ -520,6 +528,9 @@ ipcMain.on('get-input-file', async (event: any) => {
     const fileArg = process.argv.slice(1).find(
       (a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a),
     );
+    if (fileArg) {
+      inputFileConsumed = true;
+    }
     event.returnValue = fileArg || null;
   } catch (error) {
     console.log('error', error);
