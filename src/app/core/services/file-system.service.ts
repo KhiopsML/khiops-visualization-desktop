@@ -88,7 +88,8 @@ export class FileSystemService {
     associationFiles.push('khj');
     associationFiles.push('khcj');
 
-    const parentWindow = this.electronService.remote?.getCurrentWindow() ?? null;
+    const parentWindow =
+      this.electronService.remote?.getCurrentWindow() ?? null;
     this.electronService.dialog
       .showOpenDialog(parentWindow, {
         properties: ['openFile'],
@@ -207,7 +208,7 @@ export class FileSystemService {
 
         if (callbackDone) callbackDone();
         // Wait for the web component to be registered, then deliver data
-        this.waitForComponentReady(tabId).then(() => {
+        setTimeout(() => {
           if (tabId) {
             // Send data to specific tab - use compatible data format
             const dataWithFilename = { ...datas, filename: filename };
@@ -218,7 +219,7 @@ export class FileSystemService {
             // Fallback to global setDatas
             this.configService.setDatas(datas);
           }
-        });
+        }, 750); // Longer delay for Shadow DOM components
       })
       .catch((error: any) => {
         this.closeFile();
@@ -250,37 +251,6 @@ export class FileSystemService {
         },
       );
     });
-  }
-
-  /**
-   * Wait until the web component for the given tab is registered and has setDatas.
-   * Uses customElements.whenDefined to avoid hard-coded delays, with a safety timeout.
-   */
-  private async waitForComponentReady(tabId?: string): Promise<void> {
-    // Determine which custom element tag we need
-    const componentType = this.configService.getActiveComponentType();
-    const tagName =
-      componentType === 'covisualization'
-        ? 'khiops-covisualization'
-        : 'khiops-visualization';
-
-    // Ensure the custom element is registered
-    await Promise.race([
-      customElements.whenDefined(tagName),
-      new Promise<void>((resolve) => setTimeout(resolve, 2000)), // Safety cap
-    ]);
-
-    // If a specific tab is targeted, wait until its DOM element has setDatas
-    if (tabId) {
-      const start = Date.now();
-      while (Date.now() - start < 2000) {
-        const el = document.querySelector(
-          `${tagName}[data-tab-id="${tabId}"]`,
-        ) as any;
-        if (el && typeof el.setDatas === 'function') return;
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      }
-    }
   }
 
   /**
@@ -770,7 +740,13 @@ export class FileSystemService {
         const bufferSize = 4096;
         const buffer = Buffer.alloc(bufferSize);
         const fd = this.electronService.fs.openSync(filePath, 'r');
-        const bytesRead = this.electronService.fs.readSync(fd, buffer, 0, bufferSize, 0);
+        const bytesRead = this.electronService.fs.readSync(
+          fd,
+          buffer,
+          0,
+          bufferSize,
+          0,
+        );
         this.electronService.fs.closeSync(fd);
 
         const head = buffer.toString('utf-8', 0, bytesRead);
