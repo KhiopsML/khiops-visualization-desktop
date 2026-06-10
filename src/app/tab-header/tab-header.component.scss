@@ -39,6 +39,7 @@
   display: flex;
   align-items: center;
   max-width: 200px;
+  height: 100%; // important during dnd
   min-width: 36px; // minimum tab width — tabs shrink like Chrome instead of overflowing
   flex: 1;
   padding: 0 16px;
