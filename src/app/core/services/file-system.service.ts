@@ -10,7 +10,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from './config.service';
 import { TabManagerService } from './tab-manager.service';
 import { BehaviorSubject, Observable } from 'rxjs';
-import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
 import { FileLoaderI } from '../../interfaces/file-system.interface';
 import {
@@ -222,17 +221,15 @@ export class FileSystemService {
         }, 750); // Longer delay for Shadow DOM components
       })
       .catch((error: any) => {
-        this.closeFile();
-        // Mark tab as finished loading (even on error)
-        if (tabId) {
-          this.tabManagerService.updateTab(tabId, { isLoading: false });
-        }
-        // Toastify({
-        //   text: this.translate.instant('OPEN_FILE_ERROR'),
-        //   gravity: 'bottom',
-        //   position: 'center',
-        //   duration: 3000,
-        // }).showToast();
+        this.performCloseFile(tabId);
+        const basename = filename.split(/[\/]/).pop() ?? filename;
+        setTimeout(() => {
+          this.configService.snack(
+            `File ${basename}: invalid or unreadable file`,
+            5000,
+            'error',
+          );
+        }, 50);
         this._fileLoaderSub.next(this.fileLoaderDatas);
       });
   }
@@ -373,17 +370,8 @@ export class FileSystemService {
                 resolve(this.fileLoaderDatas?.datas);
               } catch (e) {
                 console.error('JSON parsing error:', e);
-                Toastify({
-                  text:
-                    this.translate.instant('OPEN_FILE_ERROR') +
-                    this.translate.instant('INVALID_FILE_ERROR'),
-
-                  gravity: 'bottom',
-                  position: 'center',
-                  duration: 3000,
-                }).showToast();
+                this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
-                this.closeFile();
                 reject(e);
               }
             }
@@ -451,14 +439,6 @@ export class FileSystemService {
                 console.error('JSON parsing error in covisualization file:', e);
                 this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
-                Toastify({
-                  text:
-                    this.translate.instant('OPEN_FILE_ERROR') +
-                    this.translate.instant('INVALID_FILE_ERROR'),
-                  gravity: 'bottom',
-                  position: 'center',
-                  duration: 3000,
-                }).showToast();
                 reject(e);
               }
             }
