@@ -510,7 +510,6 @@ export class FileSystemService {
 
       this.configService.openSaveBeforeQuitDialog(
         (e: string) => {
-
           if (e === 'confirm') {
             const config = this.configService.getConfig();
             if (config && config.constructDatasToSave) {
@@ -832,8 +831,11 @@ export class FileSystemService {
       : JSON.stringify(datas, null, 2);
 
     this.electronService.fs.writeFileSync(filename, serialized, 'utf-8');
+    const basename = filename.split(/[\\/]/).pop() ?? filename;
     this.configService.snack(
-      this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS'),
+      `${this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS', {
+        filename: basename,
+      })}`,
       4000,
       'success',
     );
