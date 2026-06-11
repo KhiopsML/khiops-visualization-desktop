@@ -163,7 +163,7 @@ export class MenuService {
                     );
                   });
                 }
-              });
+              }, { filename: this.fileSystemService.currentFilePath });
             } else {
               this.storageService.saveAll(async () => {
                 await this.electronService.ipcRenderer?.invoke('app-relaunch');
@@ -193,7 +193,7 @@ export class MenuService {
                     await this.electronService.ipcRenderer?.invoke('app-quit');
                   });
                 }
-              });
+              }, { filename: this.fileSystemService.currentFilePath });
             } else {
               this.storageService.saveAll(async () => {
                 await this.electronService.ipcRenderer?.invoke('app-quit');

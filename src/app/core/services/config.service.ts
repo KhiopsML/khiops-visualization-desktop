@@ -197,7 +197,7 @@ export class ConfigService {
     }
   }
 
-  openSaveBeforeQuitDialog(cb: Function, options?: { showBatchButtons?: boolean }) {
+  openSaveBeforeQuitDialog(cb: Function, options?: { showBatchButtons?: boolean; filename?: string }) {
     if (this.config && this.config.openSaveBeforeQuitDialog) {
       this.config.openSaveBeforeQuitDialog(cb, options);
     }

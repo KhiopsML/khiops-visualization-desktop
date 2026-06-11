@@ -510,6 +510,7 @@ export class FileSystemService {
 
       this.configService.openSaveBeforeQuitDialog(
         (e: string) => {
+
           if (e === 'confirm') {
             const config = this.configService.getConfig();
             if (config && config.constructDatasToSave) {
@@ -536,7 +537,10 @@ export class FileSystemService {
             this.storageService.saveAll(() => finalAction());
           }
         },
-        { showBatchButtons: batchOptions?.showBatchButtons ?? false },
+        {
+          showBatchButtons: batchOptions?.showBatchButtons ?? false,
+          filename: this.currentFilePath,
+        },
       );
     } else {
       // For file open, skip storage restore to avoid overwriting history changes
