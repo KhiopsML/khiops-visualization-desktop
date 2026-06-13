@@ -303,6 +303,11 @@
   resolved "https://registry.yarnpkg.com/@angular-eslint/bundled-angular-compiler/-/bundled-angular-compiler-21.4.0.tgz#15a86e7110d4aebee47c0326b9d3d5e96010759c"
   integrity sha512-/3H4BPbQ1BHJkkrUsfusZtmHc+qiFWBBZ9UDPWah4xZMjflexOK9U4GYeH7nMjcuyqFnIlMMeJJNwNLGt/hmdg==
 
+"@angular-eslint/bundled-angular-compiler@22.0.0":
+  version "22.0.0"
+  resolved "https://registry.yarnpkg.com/@angular-eslint/bundled-angular-compiler/-/bundled-angular-compiler-22.0.0.tgz#195cafbbf32799c16cc52d56492d672b9712e471"
+  integrity sha512-rv15vGDpGW8zZFaLdhQ+iIO1f0bZds/xvuxoX277hFisXp5Kt6FumJNNIb4g/qxq3xsY46a7fD6R7KvGY3smHg==
+
 "@angular-eslint/eslint-plugin-template@21.4.0", "@angular-eslint/eslint-plugin-template@^21.4.0":
   version "21.4.0"
   resolved "https://registry.yarnpkg.com/@angular-eslint/eslint-plugin-template/-/eslint-plugin-template-21.4.0.tgz#e1f02d9b31a94b2d4cfee497e5472becc389785c"
@@ -313,13 +318,22 @@
     aria-query "5.3.2"
     axobject-query "4.1.0"
 
-"@angular-eslint/eslint-plugin@21.4.0", "@angular-eslint/eslint-plugin@^21.4.0":
+"@angular-eslint/eslint-plugin@21.4.0":
   version "21.4.0"
   resolved "https://registry.yarnpkg.com/@angular-eslint/eslint-plugin/-/eslint-plugin-21.4.0.tgz#012abaaf163ffbf0a06fac66e4914b80ca68c77b"
   integrity sha512-mow2DMj+xBvGl5t7jzC34R8YfbHbaGNyCNFzpovtl9qc0JbuqLyg6htmt8xb05f8ZjATOr4nz0ESt6HV4c51hw==
   dependencies:
     "@angular-eslint/bundled-angular-compiler" "21.4.0"
     "@angular-eslint/utils" "21.4.0"
+    ts-api-utils "^2.1.0"
+
+"@angular-eslint/eslint-plugin@^22.0.0":
+  version "22.0.0"
+  resolved "https://registry.yarnpkg.com/@angular-eslint/eslint-plugin/-/eslint-plugin-22.0.0.tgz#2845b6e3d886989997406cad5662925100f33fb9"
+  integrity sha512-mKLScPZhqG64ic0KIQoxqSqCdkPwtEZuTOuunvc9lYTw05MJSHRUM2yVFODlCGq97c6BN1F6KBk2I+a+KFnr1g==
+  dependencies:
+    "@angular-eslint/bundled-angular-compiler" "22.0.0"
+    "@angular-eslint/utils" "22.0.0"
     ts-api-utils "^2.1.0"
 
 "@angular-eslint/schematics@^21.4.0":
@@ -349,6 +363,13 @@
   integrity sha512-7pi+Ga7QmdH5Ig/diau6fR5L4yubgKr9TOjdCg7OeuE/zo0O3osTCNT6JOodzS/iQM1kSCJFDoIBKFeUOttiNw==
   dependencies:
     "@angular-eslint/bundled-angular-compiler" "21.4.0"
+
+"@angular-eslint/utils@22.0.0":
+  version "22.0.0"
+  resolved "https://registry.yarnpkg.com/@angular-eslint/utils/-/utils-22.0.0.tgz#1525b4fb8b7b1b838c8dc47fa557e3fcecc096ae"
+  integrity sha512-VFodMojghnPYm+B3U+HRYrqebPMj8NyobNjVzDdY8V5XIBW+4ivOSEINIz81G48rmm/NZKwj56+bJ88bVX4KIw==
+  dependencies:
+    "@angular-eslint/bundled-angular-compiler" "22.0.0"
 
 "@angular/build@21.2.6", "@angular/build@^21.0.0":
   version "21.2.6"
