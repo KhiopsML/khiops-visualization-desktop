@@ -200,6 +200,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.config = tabConfig;
       this.configService.setActiveComponentType(tab.componentType);
       this.configService.setConfig(this.config);
+      // Restore per-tab Ls context and apply this tab's settings to AppConfig
+      if (typeof tabConfig.activate === 'function') {
+        tabConfig.activate();
+      }
     }
   }
 
@@ -326,6 +330,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.config = componentElement;
       this.configService.setActiveComponentType(tab.componentType);
       this.configService.setConfig(this.config);
+      // Restore per-tab Ls context and apply this tab's settings to AppConfig
+      if (typeof tabConfig.activate === 'function') {
+        tabConfig.activate();
+      }
     }
   }
 
