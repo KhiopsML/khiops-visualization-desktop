@@ -144,4 +144,40 @@ export class StorageService {
     const tabStorage = this._tabStorages.get(instanceId);
     return tabStorage ? tabStorage[key] : undefined;
   }
+
+  /**
+   * Save per-file settings to persistent Electron storage.
+   * Settings are stored under a single key, indexed by file path.
+   * @param filePath - The absolute path of the file.
+   * @param settings - The settings object to save for this file.
+   */
+  saveFileSettings(filePath: string, settings: any) {
+    const allFileSettings = this.getOne('FILE_SETTINGS') || {};
+    allFileSettings[filePath] = settings;
+    this.setOne('FILE_SETTINGS', allFileSettings);
+  }
+
+  /**
+   * Load per-file settings from persistent Electron storage.
+   * Always reads fresh from disk to handle pre-warmed windows whose
+   * in-memory cache may be stale.
+   * @param filePath - The absolute path of the file.
+   * @returns The settings object for this file, or undefined if none saved.
+   */
+  getFileSettings(filePath: string): any {
+    try {
+      // Always read fresh from disk so pre-warmed windows get the latest data
+      const freshStorage =
+        this.electronService.storage?.getSync(this._storageKey) || {};
+      const allFileSettings = freshStorage['FILE_SETTINGS'] || {};
+      // Also sync the in-memory cache
+      if (freshStorage['FILE_SETTINGS']) {
+        this._storage['FILE_SETTINGS'] = freshStorage['FILE_SETTINGS'];
+      }
+      return allFileSettings[filePath];
+    } catch {
+      const allFileSettings = this.getOne('FILE_SETTINGS') || {};
+      return allFileSettings[filePath];
+    }
+  }
 }

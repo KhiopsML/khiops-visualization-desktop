@@ -7,6 +7,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { TabManagerService } from './tab-manager.service';
 import { ElectronService } from './electron.service';
+import { ConfigService } from './config.service';
 
 interface DragContext {
   tabId: string;
@@ -40,6 +41,7 @@ export class TabDragService {
     private tabManager: TabManagerService,
     private ngZone: NgZone,
     private electronService: ElectronService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -260,10 +262,29 @@ export class TabDragService {
       return;
     }
 
+    // Capture the current component state before detaching
+    let currentDatas: any = undefined;
+    const config = this.configService.getConfig() as any;
+    if (config && typeof config.constructDatasToSave === 'function') {
+      try {
+        currentDatas = config.constructDatasToSave();
+      } catch (e) {
+        console.warn('[TabDragService] Could not capture tab state:', e);
+      }
+    } else if (config && typeof config.getDatas === 'function') {
+      try {
+        currentDatas = config.getDatas();
+      } catch (e) {
+        console.warn('[TabDragService] Could not capture tab state:', e);
+      }
+    }
+
+    const tabToTransfer = { ...tab, datas: currentDatas };
+
     // Send IPC to create new window with this tab
     console.log('[TabDragService] Sending create-window-with-tab IPC');
     this.electronService.ipcRenderer.invoke('create-window-with-tab', {
-      tab: tab,
+      tab: tabToTransfer,
     }).then(() => {
       console.log('[TabDragService] Successfully created new window, closing tab in current window');
       // Close the tab in the current window

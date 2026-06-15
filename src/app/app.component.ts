@@ -286,7 +286,17 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             this.trackerService.trackEvent(event.data);
           } else if (event.message === 'ls.getAll') {
             // Return isolated storage for this specific tab instance
-            cb && cb(this.storageService.getTabStorage(compatibleInstanceId));
+            const tabStorage = this.storageService.getTabStorage(compatibleInstanceId);
+
+            // Merge per-file settings into tab storage so settings are restored on load
+            if (tab.filePath) {
+              const fileSettings = this.storageService.getFileSettings(tab.filePath);
+              if (fileSettings) {
+                Object.assign(tabStorage, fileSettings);
+              }
+            }
+
+            cb && cb(tabStorage);
           } else if (event.message === 'ls.saveAll') {
             this.storageService.saveTabStorage(compatibleInstanceId);
           } else if (event.message === 'ls.delAll') {
@@ -297,6 +307,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
       // Store the compatible instance ID
       this.tabInstances.set(tab.id, compatibleInstanceId);
+
+      // Listen for save-file-requested events from the component (e.g. from settings)
+      componentElement.addEventListener('save-file-requested', (event: any) => {
+        if (tab.filePath && event.detail) {
+          this.storageService.saveFileSettings(tab.filePath, event.detail);
+        }
+      });
     } else {
       console.warn(
         'setConfig method not available on component for tab:',
@@ -542,9 +559,20 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       if (data && data.tab) {
         const tab = data.tab;
         if (tab.filePath) {
-          // If the tab has a file path, open the file which will load the data
+          // Open the file — but if we have captured live state, use it
           this.fileSystemService.openFile(tab.filePath, () => {
             this.menuService.menuShouldRebuild$.next();
+
+            // If we have captured component state, inject it after the file is loaded
+            if (tab.datas) {
+              const restoredTab = this.tabManager.getTabByFilePath(tab.filePath);
+              if (restoredTab) {
+                // Wait for the component to be fully configured and data delivered
+                setTimeout(() => {
+                  this.setDataForTab(restoredTab.id, tab.datas);
+                }, 1000);
+              }
+            }
           });
         } else {
           // If no file path, just restore the tab with existing data

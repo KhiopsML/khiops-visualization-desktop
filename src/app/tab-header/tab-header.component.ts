@@ -12,6 +12,7 @@ import { MenuService } from '../core/services/menu.service';
 import { FileSystemService } from '../core/services/file-system.service';
 import { ElectronService } from '../core/services/electron.service';
 import { TabDragService } from '../core/services/tab-drag.service';
+import { ConfigService } from '../core/services/config.service';
 import { Tab } from '../core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -35,6 +36,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
     private fileSystemService: FileSystemService,
     private electronService: ElectronService,
     private tabDrag: TabDragService,
+    private configService: ConfigService,
     private translate: TranslateService,
   ) {}
 
@@ -222,8 +224,27 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
   private moveTabToNewWindow(tab: Tab): void {
     if (!tab || !this.electronService.ipcRenderer) return;
 
+    // Capture the current component state before moving
+    let currentDatas: any = undefined;
+    const config = this.configService.getConfig() as any;
+    if (config && typeof config.constructDatasToSave === 'function') {
+      try {
+        currentDatas = config.constructDatasToSave();
+      } catch (e) {
+        console.warn('Could not capture tab state before move:', e);
+      }
+    } else if (config && typeof config.getDatas === 'function') {
+      try {
+        currentDatas = config.getDatas();
+      } catch (e) {
+        console.warn('Could not capture tab state before move:', e);
+      }
+    }
+
+    const tabToTransfer = { ...tab, datas: currentDatas };
+
     this.electronService.ipcRenderer
-      .invoke('create-window-with-tab', { tab })
+      .invoke('create-window-with-tab', { tab: tabToTransfer })
       .then(() => {
         this.tabManager.closeTab(tab.id);
         // If no tabs remain, show the welcome screen
