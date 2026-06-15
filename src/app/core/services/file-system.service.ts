@@ -821,5 +821,11 @@ export class FileSystemService {
       4000,
       'success',
     );
+    // Update the dirty-state baseline in the component and clear the tab indicator
+    this.configService.markSaved();
+    const activeTab = this.tabManagerService.getActiveTab();
+    if (activeTab) {
+      this.tabManagerService.markTabDirty(activeTab.id, false);
+    }
   }
 }

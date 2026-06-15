@@ -318,6 +318,14 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           this.storageService.saveFileSettings(tab.filePath, event.detail);
         }
       });
+
+      // Listen for dirty-state-changed events from covisualization component
+      componentElement.addEventListener(
+        'dirty-state-changed',
+        (event: any) => {
+          this.tabManager.markTabDirty(tab.id, event.detail?.isDirty ?? false);
+        },
+      );
     } else {
       console.warn(
         'setConfig method not available on component for tab:',

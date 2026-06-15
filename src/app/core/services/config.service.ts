@@ -203,6 +203,12 @@ export class ConfigService {
     }
   }
 
+  markSaved() {
+    if (this.config && this.config.markSaved) {
+      this.config.markSaved();
+    }
+  }
+
   snack(text: string, duration: number, panelClass: string) {
     if (this.config && this.config.snack) {
       this.config.snack(text, duration, panelClass);
