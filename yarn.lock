@@ -2471,10 +2471,10 @@
   resolved "https://registry.yarnpkg.com/@ngtools/webpack/-/webpack-21.2.6.tgz#d54dbfda1f5da851173f86faf9a99a680d5f2aed"
   integrity sha512-SU6aMvFz/0uM2WhIGrZ/QexEIqT/VdLfcmy7OYAxOd3w7u2wqQao/1uSOEJo+BR+B48QYf7Z5LLpS8t1mWZYKQ==
 
-"@ngx-translate/core@^17.0.0":
-  version "17.0.0"
-  resolved "https://registry.yarnpkg.com/@ngx-translate/core/-/core-17.0.0.tgz#d6c0738c5004b53273bc97e6ca5488f6a6816f25"
-  integrity sha512-Rft2D5ns2pq4orLZjEtx1uhNuEBerUdpFUG1IcqtGuipj6SavgB8SkxtNQALNDA+EVlvsNCCjC2ewZVtUeN6rg==
+"@ngx-translate/core@^18.0.0":
+  version "18.0.0"
+  resolved "https://registry.yarnpkg.com/@ngx-translate/core/-/core-18.0.0.tgz#55b0bad702b110d5fcf8c50a6779e6102fdb523c"
+  integrity sha512-Z9u9AXaeuyeHHimivvJQvhal/LJNB+5tlH+FimSU4QQ61FrtRDqgyn6nfFbc6Cb+59NDZdsh4QeTJyPCldFUwA==
   dependencies:
     tslib "^2.3.0"
 
