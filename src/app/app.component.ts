@@ -262,6 +262,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             this.constructMenu();
           });
         },
+        onFileError: (filePath: string) => {
+          this.fileSystemService.closeFile(undefined, tab.id);
+        },
         onCopyImage: (base64data: any) => {
           const natImage =
             this.electronService.nativeImage.createFromDataURL(base64data);
@@ -524,12 +527,15 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     // Receive the actual data to avoid disk read race conditions.
     // Only update the OPEN_FILE key in memory — the sender already persisted it.
     // The menu will be rebuilt when this window gains focus (window-focused handler).
-    this.electronService.ipcRenderer?.on('file-history-updated', (_event: any, filesHistory: any) => {
-      if (filesHistory) {
-        this.storageService.updateOneLocal('OPEN_FILE', filesHistory);
-        this.fileSystemService.notifyRecentFilesChanged();
-      }
-    });
+    this.electronService.ipcRenderer?.on(
+      'file-history-updated',
+      (_event: any, filesHistory: any) => {
+        if (filesHistory) {
+          this.storageService.updateOneLocal('OPEN_FILE', filesHistory);
+          this.fileSystemService.notifyRecentFilesChanged();
+        }
+      },
+    );
 
     // Listen for detached tab restoration from new window
     this.electronService.ipcRenderer?.on('restore-tab', (event, data) => {

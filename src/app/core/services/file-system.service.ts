@@ -225,7 +225,9 @@ export class FileSystemService {
         const basename = filename.split(/[\/]/).pop() ?? filename;
         setTimeout(() => {
           this.configService.snack(
-            `File ${basename}: invalid or unreadable file`,
+            `${this.translate.instant('GLOBAL_SNACKS_OPEN_FILE_ERROR', {
+              filename: basename,
+            })}`,
             5000,
             'error',
           );
