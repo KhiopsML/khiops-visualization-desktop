@@ -158,7 +158,7 @@
 }
 
 .tab-dirty {
-  color: #ea4335;
+  color: #f57c00;
   font-size: 16px;
   line-height: 1;
   margin-right: 8px;
@@ -293,6 +293,10 @@
 
   .tab-title {
     color: #e8eaed;
+  }
+
+  .tab-dirty {
+    color: #ffb74d;
   }
 
   .spinner {
