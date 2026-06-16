@@ -125,7 +125,7 @@ export class FileSystemService {
     })();
   }
 
-  async openFile(filename: string, callbackDone?: Function, tabId?: string) {
+  async openFile(filename: string, callbackDone?: Function, tabId?: string, overrideData?: any) {
     if (!filename) return;
 
     // Determine component type from filename
@@ -152,7 +152,7 @@ export class FileSystemService {
       );
     }
 
-    await this.performOpenFile(filename, callbackDone, finalTabId, false);
+    await this.performOpenFile(filename, callbackDone, finalTabId, false, overrideData);
   }
 
   private async performOpenFile(
@@ -160,6 +160,7 @@ export class FileSystemService {
     callbackDone?: Function,
     tabId?: string,
     skipStorageSave: boolean = false,
+    overrideData?: any,
   ) {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
@@ -209,9 +210,13 @@ export class FileSystemService {
         // Wait for the web component to be registered, then deliver data
         setTimeout(() => {
           if (tabId) {
-            // Send data to specific tab - use compatible data format
-            const dataWithFilename = { ...datas, filename: filename };
-            this.configService.notifyTabData(tabId, dataWithFilename);
+            // If overrideData is provided (e.g. from a detached tab with captured state),
+            // use it instead of the freshly-read file data so that savedDatas
+            // (selected variable ranks, active tab, etc.) are preserved.
+            const dataToDeliver = overrideData
+              ? { ...overrideData, filename: filename }
+              : { ...datas, filename: filename };
+            this.configService.notifyTabData(tabId, dataToDeliver);
             // Mark tab as loaded
             this.tabManagerService.updateTab(tabId, { isLoading: false });
           } else {

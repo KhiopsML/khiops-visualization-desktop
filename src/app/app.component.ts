@@ -575,21 +575,17 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       if (data && data.tab) {
         const tab = data.tab;
         if (tab.filePath) {
-          // Open the file — but if we have captured live state, use it
-          this.fileSystemService.openFile(tab.filePath, () => {
-            this.menuService.menuShouldRebuild$.next();
-
-            // If we have captured component state, inject it after the file is loaded
-            if (tab.datas) {
-              const restoredTab = this.tabManager.getTabByFilePath(tab.filePath);
-              if (restoredTab) {
-                // Wait for the component to be fully configured and data delivered
-                setTimeout(() => {
-                  this.setDataForTab(restoredTab.id, tab.datas);
-                }, 1000);
-              }
-            }
-          });
+          // Open the file and pass captured state as overrideData so it is
+          // delivered instead of the raw file content (which would overwrite
+          // selectedRank, activeTabIndex, etc. stored in savedDatas).
+          this.fileSystemService.openFile(
+            tab.filePath,
+            () => {
+              this.menuService.menuShouldRebuild$.next();
+            },
+            undefined,
+            tab.datas || undefined,
+          );
         } else {
           // If no file path, just restore the tab with existing data
           this.tabManager.restoreTab(tab);
