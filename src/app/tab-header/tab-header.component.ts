@@ -241,7 +241,7 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
       }
     }
 
-    const tabToTransfer = { ...tab, datas: currentDatas };
+    const tabToTransfer = { ...tab, datas: currentDatas, isDirty: tab.isDirty };
 
     this.electronService.ipcRenderer
       .invoke('create-window-with-tab', { tab: tabToTransfer })

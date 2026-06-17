@@ -290,11 +290,14 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             this.trackerService.trackEvent(event.data);
           } else if (event.message === 'ls.getAll') {
             // Return isolated storage for this specific tab instance
-            const tabStorage = this.storageService.getTabStorage(compatibleInstanceId);
+            const tabStorage =
+              this.storageService.getTabStorage(compatibleInstanceId);
 
             // Merge per-file settings into tab storage so settings are restored on load
             if (tab.filePath) {
-              const fileSettings = this.storageService.getFileSettings(tab.filePath);
+              const fileSettings = this.storageService.getFileSettings(
+                tab.filePath,
+              );
               if (fileSettings) {
                 Object.assign(tabStorage, fileSettings);
               }
@@ -320,12 +323,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       });
 
       // Listen for dirty-state-changed events from covisualization component
-      componentElement.addEventListener(
-        'dirty-state-changed',
-        (event: any) => {
-          this.tabManager.markTabDirty(tab.id, event.detail?.isDirty ?? false);
-        },
-      );
+      componentElement.addEventListener('dirty-state-changed', (event: any) => {
+        this.tabManager.markTabDirty(tab.id, event.detail?.isDirty ?? false);
+      });
     } else {
       console.warn(
         'setConfig method not available on component for tab:',
@@ -469,6 +469,35 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   addIpcRendererEvents() {
+    this.electronService.ipcRenderer?.on('restore-tab', (event, data) => {
+      if (data && data.tab) {
+        const tab = data.tab;
+        if (tab.filePath) {
+          // Inject _isDirty into overrideData so setDatas can restore dirty state
+          // after setInitialDirtyState has been called
+          const overrideData = tab.datas
+            ? { ...tab.datas, _isDirty: tab.isDirty ?? false }
+            : undefined;
+
+          this.fileSystemService.openFile(
+            tab.filePath,
+            () => {
+              this.menuService.menuShouldRebuild$.next();
+              if (tab.isDirty) {
+                const activeTab = this.tabManager.getActiveTab();
+                if (activeTab) {
+                  this.tabManager.markTabDirty(activeTab.id, true);
+                }
+              }
+            },
+            undefined,
+            overrideData,
+          );
+        } else {
+          this.tabManager.restoreTab(tab);
+        }
+      }
+    });
     this.electronService.ipcRenderer?.on('update-available', (event, arg) => {
       console.info('update-available', event, arg);
       this.updateState = 'available';
@@ -582,6 +611,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             tab.filePath,
             () => {
               this.menuService.menuShouldRebuild$.next();
+              // Restore the dirty state after the file is opened
+              if (tab.isDirty) {
+                const activeTab = this.tabManager.getActiveTab();
+                if (activeTab) {
+                  this.tabManager.markTabDirty(activeTab.id, true);
+                }
+              }
             },
             undefined,
             tab.datas || undefined,
