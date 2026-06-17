@@ -3896,10 +3896,10 @@ anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-app-builder-lib@26.15.3:
-  version "26.15.3"
-  resolved "https://registry.yarnpkg.com/app-builder-lib/-/app-builder-lib-26.15.3.tgz#0fa6c965e307bb6d86226407c750a45b3fd6b1bf"
-  integrity sha512-2VnyWkqsP5v5XbBhL3tD5Syx8iNPBYsoU7kY4S2fz7wg8Rj/nztWKCUzGKaFRTv0Xwf3/H058CR1Kvtd/3lRow==
+app-builder-lib@26.15.4:
+  version "26.15.4"
+  resolved "https://registry.yarnpkg.com/app-builder-lib/-/app-builder-lib-26.15.4.tgz#01fde24125a645e7b778b92039840e0d532d7268"
+  integrity sha512-GQdy7Cc5Vx2QnWP+JL5nEDqGXyeoJlqa5gtdXM6JPtb4yL5iffQhC5bbMZqxEcg0i8nRxPh3ltBPy6uZpW4uRg==
   dependencies:
     "@electron/asar" "3.4.1"
     "@electron/fuses" "^1.8.0"
@@ -5388,12 +5388,12 @@ dir-compare@^4.2.0:
     minimatch "^3.0.5"
     p-limit "^3.1.0 "
 
-dmg-builder@26.15.3:
-  version "26.15.3"
-  resolved "https://registry.yarnpkg.com/dmg-builder/-/dmg-builder-26.15.3.tgz#d884362e223551ee0dbc96bbb7187b42905378f8"
-  integrity sha512-O3zJUFUYHJKgzPqioHxfxzBzlSC1eXCSr79gMSBKBP5AgjjpmrydMsMLotEg9fAJF36vdUncb+4ndRNxoPdlSQ==
+dmg-builder@26.15.4:
+  version "26.15.4"
+  resolved "https://registry.yarnpkg.com/dmg-builder/-/dmg-builder-26.15.4.tgz#126e6729e7e15a026e8df100660994675cde7e28"
+  integrity sha512-YARkRSxB9tqKETexq2sU7uVvDcIBqiOTMSmjnE2dzZ3m1ynbPUSMBawmZTd6OUQ8mYW4UtbBwaBz9ydJpa1A6w==
   dependencies:
-    app-builder-lib "26.15.3"
+    app-builder-lib "26.15.4"
     builder-util "26.15.3"
     fs-extra "^10.1.0"
     js-yaml "^4.1.0"
@@ -5530,17 +5530,17 @@ electron-builder-notarize@^1.5.2:
     js-yaml "^3.14.0"
     read-pkg-up "^7.0.0"
 
-electron-builder@^26.15.3:
-  version "26.15.3"
-  resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.15.3.tgz#0e82828f6829c0b2596338365209170ac0acbcd5"
-  integrity sha512-a1KM5heqS3gQCZzizXEI8RjJy3QVogULPdeSknt76uLDpBIW/HDGsMg/XgP0riP6PI9COsRvFITKKGDqA8fJxA==
+electron-builder@^26.15.4:
+  version "26.15.4"
+  resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.15.4.tgz#7d4f4e03b5f1270b052076c060ca58dc5660d715"
+  integrity sha512-b1wugxc5lj9HO1SKxDUeMj9JPim/7CKB3hqqhwy5iH6ctu8SdIyf98qnKaPiu2rmgq37Zg+r4PlFQRtDUE4XeA==
   dependencies:
-    app-builder-lib "26.15.3"
+    app-builder-lib "26.15.4"
     builder-util "26.15.3"
     builder-util-runtime "9.7.0"
     chalk "^4.1.2"
     ci-info "^4.2.0"
-    dmg-builder "26.15.3"
+    dmg-builder "26.15.4"
     fs-extra "^10.1.0"
     lazy-val "^1.0.5"
     simple-update-notifier "2.0.0"
@@ -5656,10 +5656,10 @@ electron-updater@^6.8.9:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^42.4.0:
-  version "42.4.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-42.4.0.tgz#921e266705600ba499f24d233db57f2cf935e516"
-  integrity sha512-OXXqh9LD9KxXPv2Fe25EfU9N9AvWTuV6V81sfhQaNvTAXCd9ONA+Q4OWvMe+CmYD6xIwjFxGGtG/ZphDYYC5OQ==
+electron@^42.4.1:
+  version "42.4.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-42.4.1.tgz#61a2b9b07830b5650215e0560b7c374849e4fd75"
+  integrity sha512-8CYHJP5O4wFO+ycoJR98yy907MmPeo+vWXrzjxmGGgRNKqv8pOjjm+wphO0CCgQJnBU7+QUPSJS4QXhbKrO50w==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
@@ -10858,10 +10858,10 @@ ts-api-utils@^2.1.0, ts-api-utils@^2.5.0:
   resolved "https://registry.yarnpkg.com/ts-api-utils/-/ts-api-utils-2.5.0.tgz#4acd4a155e22734990a5ed1fe9e97f113bcb37c1"
   integrity sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==
 
-ts-loader@9.6.0:
-  version "9.6.0"
-  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-9.6.0.tgz#50dfdea9c63ff9c5f4e89b04c1e3ce0d5d2946a1"
-  integrity sha512-dsJO0S+T7grTDWTc4a0nTygXGjKncVUpx8Y+af8EvI/D5WgTJby5UEk5eoMCB9EcLQmnvitqh99MqtjtHgAwFQ==
+ts-loader@9.6.1:
+  version "9.6.1"
+  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-9.6.1.tgz#4a5e87a24c2f9f0e6f1fee3e844e4591f2628e55"
+  integrity sha512-8FMHnmxtpncUAu0ZjkqpXnOTlwc9eY95esH8WVN94guTPPdkg2ofVdiVM5j8L2lmjiGerXd56zXb/D2JyVQPLg==
   dependencies:
     chalk "^4.1.0"
     enhanced-resolve "^5.0.0"
