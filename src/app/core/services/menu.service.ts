@@ -449,6 +449,15 @@ export class MenuService {
   }
 
   openFileInNewWindow(filePath?: string) {
+    // If a specific file is requested, check if it's already open in an existing tab
+    if (filePath) {
+      const existingTab = this.tabManager.getTabByFilePath(filePath);
+      if (existingTab) {
+        this.tabManager.setActiveTab(existingTab.id);
+        return;
+      }
+    }
+
     this.electronService.ipcRenderer?.invoke('open-file-in-new-window', filePath);
   }
 
