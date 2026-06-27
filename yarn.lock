@@ -508,10 +508,10 @@
     "@standard-schema/spec" "^1.0.0"
     tslib "^2.3.0"
 
-"@angular/language-service@^22.0.3":
-  version "22.0.3"
-  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-22.0.3.tgz#ef6504c338324cc640bf0f53b7b62fd08224051a"
-  integrity sha512-2PFFw0WVJ75RjmgT1BzFUOC2HOA6VK/Il0LozxLKxKc2UWIEv+Fw42T2Yo798UaarpZSYh91mcFu5+v7I5YWGg==
+"@angular/language-service@^22.0.4":
+  version "22.0.4"
+  resolved "https://registry.yarnpkg.com/@angular/language-service/-/language-service-22.0.4.tgz#3d7c149cab281a77c2098c153a6e83e67f78099e"
+  integrity sha512-os/30s+drTMnKa4sc8O5iK9WI02z6Lg8gMu5Ob1KwjOctB1Be+BLvuDC0JLM5SbJSd/yld1/jbxGfcYoHcqHbw==
 
 "@angular/platform-browser-dynamic@^21.2.17":
   version "21.2.17"
@@ -4165,10 +4165,10 @@ anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-app-builder-lib@26.15.5:
-  version "26.15.5"
-  resolved "https://registry.yarnpkg.com/app-builder-lib/-/app-builder-lib-26.15.5.tgz#7fbeea12a99a3e18cb1d3f7558600f73651022bd"
-  integrity sha512-CJdzqy4YXQQdn+ivw1ssuY4yBTgVaBtniB2Dnjc6JsM9mbXoZ4shbuuysjenZloMOEIKEqkuRxltNQyG/NP/pA==
+app-builder-lib@26.15.6:
+  version "26.15.6"
+  resolved "https://registry.yarnpkg.com/app-builder-lib/-/app-builder-lib-26.15.6.tgz#4a552174a0272a1e8ce5ed108eaf3a6559e8b771"
+  integrity sha512-lN6BliNJLnS2ruBdYd1j1rzd2yl4ZwKqyTtAwVznIkkadOR9cFvRz/tNQ6nd824AobnFZKhcdFrpIGDnr0PRSg==
   dependencies:
     "@electron/asar" "3.4.1"
     "@electron/fuses" "^1.8.0"
@@ -5673,12 +5673,12 @@ dir-compare@^4.2.0:
     minimatch "^3.0.5"
     p-limit "^3.1.0 "
 
-dmg-builder@26.15.5:
-  version "26.15.5"
-  resolved "https://registry.yarnpkg.com/dmg-builder/-/dmg-builder-26.15.5.tgz#89b2c780bc93217607efab70f9e840561021b369"
-  integrity sha512-Ts58Bs9QVCPhkhvkz9V1JwVoIwmbA06szZTM7W/ihzoDjHlf7KJo1Ci9nFknoFUC8uDeYgtbu5HW8eAeZ5qeSA==
+dmg-builder@26.15.6:
+  version "26.15.6"
+  resolved "https://registry.yarnpkg.com/dmg-builder/-/dmg-builder-26.15.6.tgz#3d0cbf1d3dc6ba6bf198368e5bdacf1a734b60fc"
+  integrity sha512-nr5vQxEhM0REomp1qiHbc6V99yrfBZy+wUU56VXADfSOlLj8PdLqsHiRe7b+FbqKesiyv4ax+k1GVwGonYKuCg==
   dependencies:
-    app-builder-lib "26.15.5"
+    app-builder-lib "26.15.6"
     builder-util "26.15.3"
     fs-extra "^10.1.0"
     js-yaml "^4.1.0"
@@ -5815,17 +5815,17 @@ electron-builder-notarize@^1.5.2:
     js-yaml "^3.14.0"
     read-pkg-up "^7.0.0"
 
-electron-builder@^26.15.5:
-  version "26.15.5"
-  resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.15.5.tgz#0f14a335f1ec732dc06d9f1179e5e2d0290e1c6f"
-  integrity sha512-ii+Befxc8diyoQv9iUchEzBAvFef4vrY/l2NID1wdZL2WCTLe80sYQz7Alc+yswWPpgowUdpsI5HtomE2Lj/Mg==
+electron-builder@^26.15.6:
+  version "26.15.6"
+  resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.15.6.tgz#2f197e2874697ebbf8929195116f7fb58ad4ba0a"
+  integrity sha512-jxlHRjqYrlTgLVo/aoACGpiki3QFYv8s4f2djsqaEbwTBZ9PcTBK03Tj/HMa65kiE0hdZxxbZdmVFo22eou2wA==
   dependencies:
-    app-builder-lib "26.15.5"
+    app-builder-lib "26.15.6"
     builder-util "26.15.3"
     builder-util-runtime "9.7.0"
     chalk "^4.1.2"
     ci-info "^4.2.0"
-    dmg-builder "26.15.5"
+    dmg-builder "26.15.6"
     fs-extra "^10.1.0"
     lazy-val "^1.0.5"
     simple-update-notifier "2.0.0"
@@ -6396,10 +6396,10 @@ eslint-visitor-keys@^5.0.0, eslint-visitor-keys@^5.0.1:
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-5.0.1.tgz#9e3c9489697824d2d4ce3a8ad12628f91e9f59be"
   integrity sha512-tD40eHxA35h0PEIZNeIjkHoDR4YjjJp34biM0mDvplBe//mB+IHCqHDGV7pxF+7MklTvighcCPPZC7ynWyjdTA==
 
-eslint@^10.5.0:
-  version "10.5.0"
-  resolved "https://registry.yarnpkg.com/eslint/-/eslint-10.5.0.tgz#5fca69d6b41fe7e00ba22d4100b2e44efe439ad5"
-  integrity sha512-1y+7C+vi12bUK1IpZeaV3gsH9fHLBmPvYmPx42pvT/E9yG0IC8g3PUZZgp0+JLJl7ZDK0flc2gc+Aw9dpCvIsQ==
+eslint@^10.6.0:
+  version "10.6.0"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-10.6.0.tgz#e1b4059c582be950c7088c9b55f984738b243c27"
+  integrity sha512-6lVbcqSodALYo+4ELD0heG6lFiFxnLMuLkiMi2qV8LMp54N8tE8FT1GMH+ev4Ti00nFjNze2+Su6DsV5OQW3Dg==
   dependencies:
     "@eslint-community/eslint-utils" "^4.8.0"
     "@eslint-community/regexpp" "^4.12.2"
