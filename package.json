@@ -113,7 +113,7 @@
     "@types/jasmine": "^6.0.0",
     "@types/jasminewd2": "^2.0.13",
     "@typescript-eslint/eslint-plugin": "^8.62.0",
-    "@typescript-eslint/parser": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.1",
     "cypress": "^15.18.0",
     "cypress-shadow-dom": "^1.4.1",
     "electron": "^42.5.0",
