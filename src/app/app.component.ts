@@ -96,6 +96,16 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         this.tabs = state.tabs;
         this.activeTab = state.tabs.find((tab) => tab.isActive) || null;
 
+        if (this.electronService.isElectron) {
+          const openFilePaths = state.tabs
+            .map((tab) => tab.filePath)
+            .filter((filePath): filePath is string => !!filePath);
+          this.electronService.ipcRenderer?.invoke(
+            'window-open-files-updated',
+            openFilePaths,
+          );
+        }
+
         // Check if active tab has changed
         const activeTabChanged = previousActiveTab?.id !== this.activeTab?.id;
 

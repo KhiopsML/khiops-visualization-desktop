@@ -33,6 +33,7 @@ import * as url from 'url';
 const log = require('electron-log');
 let win: BrowserWindow | null = null;
 const openWindows: BrowserWindow[] = []; // Track all open windows for multi-window support
+const openFilesByWindow = new Map<number, Set<string>>(); // Track opened files per window
 let lastFocusedWindow: BrowserWindow | null = null; // Track the last focused window for correct file routing
 let prewarmedWindow: BrowserWindow | null = null; // Hidden window kept ready for instant tab moves
 let isQuitting = false;
@@ -275,6 +276,7 @@ function createWindow(): BrowserWindow {
     if (lastFocusedWindow === newWindow) {
       lastFocusedWindow = null;
     }
+    openFilesByWindow.delete(newWindow.id);
   });
 
   newWindow.on('close', (event) => {
@@ -301,6 +303,23 @@ function createWindow(): BrowserWindow {
   openWindows.push(newWindow);
 
   return newWindow;
+}
+
+function normalizeFilePath(filePath?: string): string {
+  if (!filePath) return '';
+  return path.normalize(filePath).toLowerCase();
+}
+
+function isFileOpenInAnyWindow(filePath?: string): boolean {
+  const normalized = normalizeFilePath(filePath);
+  if (!normalized) return false;
+
+  for (const files of openFilesByWindow.values()) {
+    if (files.has(normalized)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -443,6 +462,7 @@ function promotePrewarmedWindow(): BrowserWindow {
     if (index > -1) openWindows.splice(index, 1);
     if (pw === win) win = null;
     if (lastFocusedWindow === pw) lastFocusedWindow = null;
+    openFilesByWindow.delete(pw.id);
   });
 
   pw.on('close', (event) => {
@@ -726,6 +746,28 @@ ipcMain.handle('broadcast-file-history-updated', (event: any, filesHistory: any)
 });
 
 /**
+ * Keep a main-process view of opened files in each window.
+ * Renderer sends the full list whenever tab state changes.
+ */
+ipcMain.handle('window-open-files-updated', (event: any, filePaths: string[]) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  if (!senderWindow) {
+    return { success: false, reason: 'no-window' };
+  }
+
+  const normalized = new Set<string>();
+  for (const filePath of filePaths || []) {
+    const normalizedPath = normalizeFilePath(filePath);
+    if (normalizedPath) {
+      normalized.add(normalizedPath);
+    }
+  }
+
+  openFilesByWindow.set(senderWindow.id, normalized);
+  return { success: true };
+});
+
+/**
  * Handle opening a file in a new window.
  * Uses a pre-warmed window (if available) for near-instant startup,
  * falling back to createWindow otherwise.
@@ -743,6 +785,11 @@ ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string)
         return { success: false, reason: 'canceled' };
       }
       targetPath = result.filePaths[0];
+    }
+
+    if (isFileOpenInAnyWindow(targetPath)) {
+      log.info('open-file-in-new-window ignored (already open):', targetPath);
+      return { success: false, reason: 'already-open' };
     }
 
     // Use pre-warmed window if available (near-instant), otherwise fall back to createWindow

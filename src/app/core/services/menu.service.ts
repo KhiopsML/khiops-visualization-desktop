@@ -449,13 +449,34 @@ export class MenuService {
   }
 
   openFileInNewWindow(filePath?: string) {
-    // If a specific file is requested, check if it's already open in an existing tab
-    if (filePath) {
-      const existingTab = this.tabManager.getTabByFilePath(filePath);
-      if (existingTab) {
-        this.tabManager.setActiveTab(existingTab.id);
-        return;
-      }
+    // If called from menu without a path, show picker first, then check duplicates.
+    if (!filePath) {
+      const associationFiles = ['json', 'khj', 'khcj'];
+      const parentWindow =
+        this.electronService.remote?.getCurrentWindow() ?? null;
+
+      this.electronService.dialog
+        .showOpenDialog(parentWindow, {
+          properties: ['openFile'],
+          filters: [{ extensions: associationFiles }],
+        })
+        .then((result: Electron.OpenDialogReturnValue) => {
+          if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+            return;
+          }
+
+          this.openFileInNewWindow(result.filePaths[0]);
+        })
+        .catch((err: any) => console.error(err?.message || err));
+
+      return;
+    }
+
+    // If a specific file is requested, check if it's already open in this window.
+    const existingTab = this.tabManager.getTabByFilePath(filePath);
+    if (existingTab) {
+      this.tabManager.setActiveTab(existingTab.id);
+      return;
     }
 
     this.electronService.ipcRenderer?.invoke('open-file-in-new-window', filePath);
