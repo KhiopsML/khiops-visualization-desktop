@@ -5946,10 +5946,10 @@ electron-updater@^6.8.9:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^42.5.2:
-  version "42.5.2"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-42.5.2.tgz#912831f660dbb7f2d0ccd99ed24d65a8fafba5b8"
-  integrity sha512-nEoyciv2iC6gTvCbkQ3eP5tjAOo28wfm0adZaMYTns92MyODHeD1TlrGt4E35d4tJfDlmv+BHOuz0QIkJ63c6w==
+electron@^42.6.0:
+  version "42.6.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-42.6.0.tgz#3d2e16ca2c65d2c5960c2ea3687e93e91c0bc42d"
+  integrity sha512-axGNgd+yCTg+vi1VEGrQqAj9WVWkePKwbICSAvMiT2eTaxhij9a/xhBHD6rXV8wrlW9ZfJzE5+xg752ImxrmTw==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
