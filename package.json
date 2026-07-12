@@ -116,7 +116,7 @@
     "@typescript-eslint/parser": "^8.63.0",
     "cypress": "^15.18.1",
     "cypress-shadow-dom": "^1.4.1",
-    "electron": "^42.6.1",
+    "electron": "^43.1.0",
     "electron-builder": "^26.15.6",
     "electron-builder-notarize": "^1.5.2",
     "electron-debug": "^4.1.0",
