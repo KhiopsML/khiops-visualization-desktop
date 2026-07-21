@@ -2768,10 +2768,10 @@
   dependencies:
     tslib "^2.3.0"
 
-"@ngx-translate/http-loader@^17.0.0":
-  version "17.0.0"
-  resolved "https://registry.yarnpkg.com/@ngx-translate/http-loader/-/http-loader-17.0.0.tgz#6ab727e780189a9a5e80059c758dc95de93608ea"
-  integrity sha512-hgS8sa0ARjH9ll3PhkLTufeVXNI2DNR2uFKDhBgq13siUXzzVr/a31M6zgecrtwbA34iaBV01hsTMbMS8V7iIw==
+"@ngx-translate/http-loader@^18.0.0":
+  version "18.0.0"
+  resolved "https://registry.yarnpkg.com/@ngx-translate/http-loader/-/http-loader-18.0.0.tgz#3ab2c3d6db0ab0a74bba15ff6e568ea02f4ae500"
+  integrity sha512-p6QpNcU3rkCYjHbKVIadcYtml/Njpr0aLp8neJ4uJWQ4Xm9f09bIePhOjdjAFHupTptKqKrG1J2gSi3RSwgYeA==
   dependencies:
     tslib "^2.3.0"
 
