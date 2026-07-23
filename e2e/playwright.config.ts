@@ -1,6 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
+  testDir: '.',
+  testMatch: '*.spec.ts',
   // Limit to 1 worker in CI to avoid resource contention (SIGBUS) from
   // multiple Electron+webpack-dev-server instances running in parallel.
   workers: process.env['CI'] ? 1 : undefined,
