@@ -47,6 +47,10 @@ test.describe('Check loading external datas', () => {
     await mockOpenDialog(app, 'adult2var.json');
     await clickMenuItem(app, 'File', 'Open');
 
+    await firstWindow.waitForSelector('khiops-visualization', {
+      timeout: 30_000,
+    });
+
     const uploadBtn = firstWindow.locator('button', { hasText: 'file_upload' });
     await expect(uploadBtn).toBeVisible({ timeout: 10000 });
     await uploadBtn.click();
@@ -92,11 +96,12 @@ test.describe('Check loading external datas', () => {
     await expect(loadBtn).toBeVisible();
     await loadBtn.click();
 
-    // await firstWindow.waitForTimeout(1000);
-
-    // Dialog closes automatically after loading data
-    const extDatas = firstWindow.locator('app-external-datas').first();
-    await expect(extDatas).toBeVisible({ timeout: 10000 });
+    const extDatas = firstWindow
+      .locator('app-external-datas', {
+        hasText: 'External data of Bachelors',
+      })
+      .first();
+    await expect(extDatas).toBeVisible({ timeout: 30_000 });
 
     await expect(extDatas).toContainText('External data of Bachelors');
     await expect(extDatas).toContainText('This text is standard');

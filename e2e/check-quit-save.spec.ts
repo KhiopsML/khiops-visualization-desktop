@@ -29,17 +29,36 @@ async function openFile(
   await mockOpenDialog(app, mockFileName);
   await clickMenuItem(app, 'File', 'Open');
   await expect(firstWindow.locator(selector)).toHaveCount(expectedCount, {
+    timeout: 30_000,
+  });
+
+  const activeTab = firstWindow.locator('.tab.active');
+  const escapedFileName = mockFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  await expect(activeTab).toContainText(new RegExp(escapedFileName), {
     timeout: 15_000,
   });
-  // Wait for Angular to fully initialize the component (ngAfterViewInit)
-  // so that openSaveBeforeQuitDialog is set on the native element
-  await firstWindow.waitForTimeout(3000);
+
+  await expect(activeTab.locator('.tab-spinner')).toHaveCount(0, {
+    timeout: 30_000,
+  });
 }
 
 async function markActiveTabDirty(
   firstWindow: Parameters<typeof waitForSaveDialog>[0],
 ) {
-  await firstWindow.locator('.tree-expando:visible').first().click();
+  const activeTab = firstWindow.locator('.tab.active');
+  await expect(activeTab.locator('.tab-spinner')).toHaveCount(0, {
+    timeout: 30_000,
+  });
+
+  const expando = firstWindow.locator('.tree-expando:visible').first();
+  await expect(expando).toBeVisible({ timeout: 15_000 });
+  await expando.click();
+
+  await expect(activeTab.locator('.tab-dirty')).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 // ─── afterEach screenshot on failure ─────────────────────────────────────────

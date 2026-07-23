@@ -108,9 +108,10 @@ export async function waitForSaveDialog(
   firstWindow: Page,
   timeout = 15_000,
 ): Promise<void> {
-  await firstWindow
-    .getByText('Do you want to save the changes you made?')
-    .waitFor({ timeout });
+  const dialogContent = firstWindow.locator('mat-dialog-content:visible', {
+    hasText: 'Do you want to save the changes you made?',
+  });
+  await dialogContent.waitFor({ timeout });
 }
 
 /**
@@ -128,7 +129,10 @@ export async function clickSaveDialogButton(
     no: 'No',
     cancel: 'Cancel',
   };
-  const btn = firstWindow.getByRole('button', {
+  const dialog = firstWindow.locator('mat-dialog-container:visible').filter({
+    hasText: 'Do you want to save the changes you made?',
+  });
+  const btn = dialog.getByRole('button', {
     name: labels[button],
     exact: true,
   });
