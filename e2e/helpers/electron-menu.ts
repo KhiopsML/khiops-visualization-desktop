@@ -83,13 +83,17 @@ export async function mockAppQuit(app: ElectronApplication): Promise<void> {
 /**
  * Simulates the user clicking the window close button (the X).
  * This triggers the Electron 'close' event which sends 'before-quit' to the renderer.
+ * Targets the focused or first visible window to avoid hitting the hidden prewarmed window.
  * @param app - The Electron application instance
  */
 export async function simulateWindowClose(
   app: ElectronApplication,
 ): Promise<void> {
   await app.evaluate(({ BrowserWindow }) => {
-    const win = BrowserWindow.getAllWindows()[0];
+    const win =
+      BrowserWindow.getFocusedWindow() ??
+      BrowserWindow.getAllWindows().find((w) => w.isVisible()) ??
+      BrowserWindow.getAllWindows()[0];
     win?.close();
   });
 }

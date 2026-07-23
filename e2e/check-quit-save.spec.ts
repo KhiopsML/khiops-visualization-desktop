@@ -36,6 +36,12 @@ async function openFile(
   await firstWindow.waitForTimeout(3000);
 }
 
+async function markActiveTabDirty(
+  firstWindow: Parameters<typeof waitForSaveDialog>[0],
+) {
+  await firstWindow.locator('.tree-expando:visible').first().click();
+}
+
 // ─── afterEach screenshot on failure ─────────────────────────────────────────
 
 test.afterEach(async ({ firstWindow }, testInfo) => {
@@ -93,6 +99,9 @@ test.describe('Quit with a single covisualization tab', () => {
       1,
     );
 
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
+
     await simulateWindowClose(app);
     await waitForSaveDialog(firstWindow);
 
@@ -108,7 +117,9 @@ test.describe('Quit with a single covisualization tab', () => {
 
     // Window is still visible
     const windowState = await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0];
+      const win =
+        BrowserWindow.getFocusedWindow() ??
+        BrowserWindow.getAllWindows().find((w) => w.isVisible());
       return { isVisible: win?.isVisible() };
     });
     expect(windowState.isVisible).toBeTruthy();
@@ -129,6 +140,9 @@ test.describe('Quit with a single covisualization tab', () => {
       1,
     );
 
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
+
     await simulateWindowClose(app);
     await waitForSaveDialog(firstWindow);
 
@@ -140,7 +154,10 @@ test.describe('Quit with a single covisualization tab', () => {
     });
   });
 
-  test('Save closes the tab and triggers quit', async ({ app, firstWindow }) => {
+  test('Save closes the tab and triggers quit', async ({
+    app,
+    firstWindow,
+  }) => {
     await firstWindow.waitForLoadState('networkidle');
     await mockAppQuit(app);
 
@@ -151,6 +168,9 @@ test.describe('Quit with a single covisualization tab', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
 
     await simulateWindowClose(app);
     await waitForSaveDialog(firstWindow);
@@ -182,6 +202,10 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
+
     await openFile(
       app,
       firstWindow,
@@ -220,6 +244,10 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
+
     await openFile(
       app,
       firstWindow,
@@ -227,6 +255,9 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       2,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
 
     await simulateWindowClose(app);
 
@@ -258,6 +289,10 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
+
     await openFile(
       app,
       firstWindow,
@@ -265,6 +300,9 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       2,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
 
     await simulateWindowClose(app);
 
@@ -301,6 +339,10 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
+
     await openFile(
       app,
       firstWindow,
@@ -308,6 +350,9 @@ test.describe('Quit with two covisualization tabs', () => {
       'khiops-covisualization',
       2,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
 
     await simulateWindowClose(app);
 
@@ -326,7 +371,9 @@ test.describe('Quit with two covisualization tabs', () => {
 
     // Window still visible
     const windowState = await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0];
+      const win =
+        BrowserWindow.getFocusedWindow() ??
+        BrowserWindow.getAllWindows().find((w) => w.isVisible());
       return { isVisible: win?.isVisible() };
     });
     expect(windowState.isVisible).toBeTruthy();
@@ -354,6 +401,9 @@ test.describe('Quit with mixed visualization and covisualization tabs', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
 
     await simulateWindowClose(app);
 
@@ -397,6 +447,9 @@ test.describe('Quit with mixed visualization and covisualization tabs', () => {
       'khiops-covisualization',
       1,
     );
+
+    // Make the page dirty by interacting with the UI
+    await markActiveTabDirty(firstWindow);
 
     await simulateWindowClose(app);
 
