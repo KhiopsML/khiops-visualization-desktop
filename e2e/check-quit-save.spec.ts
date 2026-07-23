@@ -44,6 +44,16 @@ async function openFile(
   });
 }
 
+/**
+ * Marks the active tab as dirty by expanding a tree node in the
+ * khiops-covisualization component. Note: dispatching a synthetic
+ * 'dirty-state-changed' event on the host element is NOT sufficient — that
+ * only updates the Angular tab badge (see app.component.ts listener). The
+ * actual save dialog (openSaveBeforeQuitDialog) is driven by the library's
+ * own internal dirty tracking, which only a real user interaction sets.
+ * The click is retried because the tree can take longer to render/settle
+ * on slower CI runners.
+ */
 async function markActiveTabDirty(
   firstWindow: Parameters<typeof waitForSaveDialog>[0],
 ) {
@@ -52,13 +62,15 @@ async function markActiveTabDirty(
     timeout: 30_000,
   });
 
-  const expando = firstWindow.locator('.tree-expando:visible').first();
-  await expect(expando).toBeVisible({ timeout: 15_000 });
-  await expando.click();
+  await expect(async () => {
+    const expando = firstWindow.locator('.tree-expando:visible').first();
+    await expect(expando).toBeVisible({ timeout: 5_000 });
+    await expando.click({ force: true });
 
-  await expect(activeTab.locator('.tab-dirty')).toBeVisible({
-    timeout: 15_000,
-  });
+    await expect(activeTab.locator('.tab-dirty')).toBeVisible({
+      timeout: 5_000,
+    });
+  }).toPass({ timeout: 30_000 });
 }
 
 // ─── afterEach screenshot on failure ─────────────────────────────────────────

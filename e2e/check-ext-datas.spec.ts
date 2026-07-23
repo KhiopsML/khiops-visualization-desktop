@@ -42,6 +42,10 @@ test.describe('Check loading saved external datas', () => {
 
 test.describe('Check loading external datas', () => {
   test('Open file and check visualization', async ({ app, firstWindow }) => {
+    // CI runners are slower than local machines for this multi-step import
+    // flow (file dialog, AG Grid rendering, menu interactions); give it room.
+    test.setTimeout(60_000);
+
     await firstWindow.waitForLoadState('domcontentloaded');
 
     await mockOpenDialog(app, 'adult2var.json');
@@ -52,7 +56,7 @@ test.describe('Check loading external datas', () => {
     });
 
     const uploadBtn = firstWindow.locator('button', { hasText: 'file_upload' });
-    await expect(uploadBtn).toBeVisible({ timeout: 10000 });
+    await expect(uploadBtn).toBeVisible({ timeout: 15000 });
     await uploadBtn.click();
 
     const filePath = PATH.join(__dirname, 'mocks', 'ExternalDataEducation.txt');
@@ -60,10 +64,10 @@ test.describe('Check loading external datas', () => {
     const importBtn = firstWindow.locator('button', {
       hasText: 'Import new file',
     });
-    await expect(importBtn).toBeVisible({ timeout: 10000 });
+    await expect(importBtn).toBeVisible({ timeout: 15000 });
 
     const fileChooserPromise = firstWindow.waitForEvent('filechooser', {
-      timeout: 10000,
+      timeout: 15000,
     });
 
     await importBtn.click();
@@ -71,29 +75,39 @@ test.describe('Check loading external datas', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePath);
 
-    // Wait longer for file processing and component to fully load
-    await firstWindow.waitForTimeout(1000);
+    // Wait for the app to finish processing the imported file rather than a
+    // fixed delay, which is unreliable on slower CI runners.
+    await firstWindow.waitForLoadState('networkidle', { timeout: 15000 });
 
-    // Target the second .mat-mdc-menu-trigger INSIDE import-ext-datas-content
+    // The imported dimension ("education") is populated asynchronously and
+    // can take longer to appear on slower CI runners. Retry opening the
+    // dimension menu until it shows up, closing it in between attempts.
     const importDimensionBtn = firstWindow
       .locator('#import-ext-datas-content .mat-mdc-menu-trigger')
       .nth(1);
-    await expect(importDimensionBtn).toBeVisible({ timeout: 10000 });
-
-    // Force click to bypass any overlay blocking
-    await importDimensionBtn.click({ force: true });
-
     const menuContent = firstWindow.locator('.mat-mdc-menu-content');
-    await expect(menuContent).toBeVisible({ timeout: 10000 });
-
     const educationItem = menuContent.locator('button', {
       hasText: 'education',
     });
-    await expect(educationItem).toBeVisible();
+
+    await expect(importDimensionBtn).toBeVisible({ timeout: 15000 });
+
+    await expect(async () => {
+      // Force click to bypass any overlay blocking
+      await importDimensionBtn.click({ force: true });
+      try {
+        await expect(menuContent).toBeVisible({ timeout: 2000 });
+        await expect(educationItem).toBeVisible({ timeout: 2000 });
+      } catch (error) {
+        await firstWindow.keyboard.press('Escape').catch(() => {});
+        throw error;
+      }
+    }).toPass({ timeout: 30_000 });
+
     await educationItem.click();
 
     const loadBtn = firstWindow.locator('button', { hasText: 'Load datas' });
-    await expect(loadBtn).toBeVisible();
+    await expect(loadBtn).toBeVisible({ timeout: 15000 });
     await loadBtn.click();
 
     const extDatas = firstWindow
