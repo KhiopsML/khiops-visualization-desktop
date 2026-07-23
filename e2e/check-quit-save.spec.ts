@@ -14,6 +14,14 @@ import {
   clickSaveDialogButton,
 } from './helpers/electron-menu';
 
+// These tests open one or two covisualization files, interact with the tree
+// to mark them dirty, then go through the quit/save dialog flow — several
+// sequential slow steps that can exceed Playwright's default 30s test
+// timeout on slower machines/CI runners.
+test.beforeEach(async ({}, testInfo) => {
+  testInfo.setTimeout(90_000);
+});
+
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
 /**
