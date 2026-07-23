@@ -101,20 +101,16 @@ export async function simulateWindowClose(
 /**
  * Waits for the save-before-quit confirm dialog to appear in the renderer.
  * Playwright's getByText auto-pierces open Shadow DOM boundaries.
- * Rendering this dialog involves an active-tab switch plus the
- * covisualization component re-rendering its charts, which can take longer
- * than 30 seconds on slower machines/CI runners.
  * @param firstWindow - The renderer page
- * @param timeout - Maximum time to wait in ms (default 45 000)
+ * @param timeout - Maximum time to wait in ms (default 15 000)
  */
 export async function waitForSaveDialog(
   firstWindow: Page,
-  timeout = 45_000,
+  timeout = 15_000,
 ): Promise<void> {
-  const dialogContent = firstWindow.locator('mat-dialog-content:visible', {
-    hasText: 'Do you want to save the changes you made?',
-  });
-  await dialogContent.waitFor({ timeout });
+  await firstWindow
+    .getByText('Do you want to save the changes you made?')
+    .waitFor({ timeout });
 }
 
 /**
@@ -132,10 +128,7 @@ export async function clickSaveDialogButton(
     no: 'No',
     cancel: 'Cancel',
   };
-  const dialog = firstWindow.locator('mat-dialog-container:visible').filter({
-    hasText: 'Do you want to save the changes you made?',
-  });
-  const btn = dialog.getByRole('button', {
+  const btn = firstWindow.getByRole('button', {
     name: labels[button],
     exact: true,
   });

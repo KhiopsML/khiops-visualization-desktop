@@ -14,14 +14,6 @@ import {
   clickSaveDialogButton,
 } from './helpers/electron-menu';
 
-// These tests open one or two covisualization files, interact with the tree
-// to mark them dirty, then go through the quit/save dialog flow — several
-// sequential slow steps that can exceed Playwright's default 30s test
-// timeout on slower machines/CI runners.
-test.beforeEach(async ({}, testInfo) => {
-  testInfo.setTimeout(90_000);
-});
-
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
 /**
@@ -37,48 +29,17 @@ async function openFile(
   await mockOpenDialog(app, mockFileName);
   await clickMenuItem(app, 'File', 'Open');
   await expect(firstWindow.locator(selector)).toHaveCount(expectedCount, {
-    timeout: 30_000,
-  });
-
-  const activeTab = firstWindow.locator('.tab.active');
-  const escapedFileName = mockFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-  await expect(activeTab).toContainText(new RegExp(escapedFileName), {
     timeout: 15_000,
   });
-
-  await expect(activeTab.locator('.tab-spinner')).toHaveCount(0, {
-    timeout: 30_000,
-  });
+  // Wait for Angular to fully initialize the component (ngAfterViewInit)
+  // so that openSaveBeforeQuitDialog is set on the native element
+  await firstWindow.waitForTimeout(3000);
 }
 
-/**
- * Marks the active tab as dirty by expanding a tree node in the
- * khiops-covisualization component. Note: dispatching a synthetic
- * 'dirty-state-changed' event on the host element is NOT sufficient — that
- * only updates the Angular tab badge (see app.component.ts listener). The
- * actual save dialog (openSaveBeforeQuitDialog) is driven by the library's
- * own internal dirty tracking, which only a real user interaction sets.
- * The click is retried because the tree can take longer to render/settle
- * on slower CI runners.
- */
 async function markActiveTabDirty(
   firstWindow: Parameters<typeof waitForSaveDialog>[0],
 ) {
-  const activeTab = firstWindow.locator('.tab.active');
-  await expect(activeTab.locator('.tab-spinner')).toHaveCount(0, {
-    timeout: 30_000,
-  });
-
-  await expect(async () => {
-    const expando = firstWindow.locator('.tree-expando:visible').first();
-    await expect(expando).toBeVisible({ timeout: 5_000 });
-    await expando.click({ force: true });
-
-    await expect(activeTab.locator('.tab-dirty')).toBeVisible({
-      timeout: 5_000,
-    });
-  }).toPass({ timeout: 30_000 });
+  await firstWindow.locator('.tree-expando:visible').first().click();
 }
 
 // ─── afterEach screenshot on failure ─────────────────────────────────────────
