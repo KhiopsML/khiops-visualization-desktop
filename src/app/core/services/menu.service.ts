@@ -11,6 +11,7 @@ import { FileSystemService } from './file-system.service';
 import { LibVersionService } from './lib-version.service';
 import { ConfigService } from './config.service';
 import { StorageService } from './storage.service';
+import { TabManagerService } from './tab-manager.service';
 import { Subject } from 'rxjs';
 
 @Injectable({
@@ -29,6 +30,7 @@ export class MenuService {
     private translate: TranslateService,
     private fileSystemService: FileSystemService,
     private storageService: StorageService,
+    private tabManager: TabManagerService,
   ) {
     this.currentChannel = this.storageService.getOne('CHANNEL') || 'latest';
 
@@ -65,8 +67,22 @@ export class MenuService {
         {
           label: this.translate.instant('GLOBAL_MENU_OPEN'),
           accelerator: 'CommandOrControl+O',
+          click: (_menuItem: any, browserWindow: any) => {
+            // browserWindow is the window that had focus when the user clicked
+            // the menu item.  Pass its id so the main process targets the
+            // correct window even when this closure runs in a different
+            // renderer (the one that last called setApplicationMenu).
+            this.electronService.ipcRenderer?.invoke(
+              'menu-action-open-file',
+              browserWindow?.id,
+            );
+          },
+        },
+        {
+          label: this.translate.instant('GLOBAL_MENU_OPEN_IN_NEW_WINDOW'),
+          accelerator: 'CommandOrControl+Shift+O',
           click: () => {
-            this.openFileDialog(refreshCb);
+            this.openFileInNewWindow();
           },
         },
         {
@@ -77,6 +93,7 @@ export class MenuService {
         },
         {
           label: this.translate.instant('GLOBAL_MENU_CLOSE_FILE'),
+          accelerator: 'CommandOrControl+W',
           enabled: !!(
             this.fileSystemService.currentFilePath &&
             this.fileSystemService.currentFilePath !== ''
@@ -146,7 +163,7 @@ export class MenuService {
                     );
                   });
                 }
-              });
+              }, { filename: this.fileSystemService.currentFilePath });
             } else {
               this.storageService.saveAll(async () => {
                 await this.electronService.ipcRenderer?.invoke('app-relaunch');
@@ -176,7 +193,7 @@ export class MenuService {
                     await this.electronService.ipcRenderer?.invoke('app-quit');
                   });
                 }
-              });
+              }, { filename: this.fileSystemService.currentFilePath });
             } else {
               this.storageService.saveAll(async () => {
                 await this.electronService.ipcRenderer?.invoke('app-quit');
@@ -187,20 +204,33 @@ export class MenuService {
       ],
     };
 
-    menuFile.submenu[3].accelerator = 'CommandOrControl+W';
-
-    // insert history files
+    // insert history files after the first separator
     if (opendFiles.files.length > 0) {
+      const insertIndex = menuFile.submenu.findIndex(
+        (item: any) => item.type === 'separator',
+      );
       // in reverse order
       for (let i = opendFiles.files.length - 1; i >= 0; i--) {
         if (typeof opendFiles.files[i] === 'string') {
           const filename = opendFiles.files[i];
-          menuFile.submenu.splice(2, 0, {
+          menuFile.submenu.splice(insertIndex + 1, 0, {
             label: filename,
+            accelerator: '',
             enabled: true,
-            click: () => {
-              this.openFile(filename);
-            },
+            click: ((_menuItem: any, browserWindow: any, event: any) => {
+              if (event && event.shiftKey) {
+                this.openFileInNewWindow(filename);
+              } else {
+                // Route through the main process with the explicit browserWindow.id
+                // so the file always opens in the window the user clicked on,
+                // regardless of which renderer's closure this handler runs in.
+                this.electronService.ipcRenderer?.invoke(
+                  'menu-action-open-recent-file',
+                  filename,
+                  browserWindow?.id,
+                );
+              }
+            }) as any,
           });
         }
       }
@@ -391,9 +421,12 @@ export class MenuService {
   }
 
   closeFile(callbackDone?: Function) {
+    // Get the currently active tab
+    const activeTab = this.tabManager.getActiveTab();
+    const tabIdToClose = activeTab ? activeTab.id : undefined;
     this.fileSystemService.closeFile(() => {
       callbackDone && callbackDone();
-    });
+    }, tabIdToClose);
   }
 
   setChannel(channel: string, refreshCb?: Function) {
@@ -413,6 +446,40 @@ export class MenuService {
         console.log('error', error);
       }
     })();
+  }
+
+  openFileInNewWindow(filePath?: string) {
+    // If called from menu without a path, show picker first, then check duplicates.
+    if (!filePath) {
+      const associationFiles = ['json', 'khj', 'khcj'];
+      const parentWindow =
+        this.electronService.remote?.getCurrentWindow() ?? null;
+
+      this.electronService.dialog
+        .showOpenDialog(parentWindow, {
+          properties: ['openFile'],
+          filters: [{ extensions: associationFiles }],
+        })
+        .then((result: Electron.OpenDialogReturnValue) => {
+          if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+            return;
+          }
+
+          this.openFileInNewWindow(result.filePaths[0]);
+        })
+        .catch((err: any) => console.error(err?.message || err));
+
+      return;
+    }
+
+    // If a specific file is requested, check if it's already open in this window.
+    const existingTab = this.tabManager.getTabByFilePath(filePath);
+    if (existingTab) {
+      this.tabManager.setActiveTab(existingTab.id);
+      return;
+    }
+
+    this.electronService.ipcRenderer?.invoke('open-file-in-new-window', filePath);
   }
 
   save() {

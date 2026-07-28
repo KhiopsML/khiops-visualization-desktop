@@ -59,3 +59,18 @@ electron-builder.env
 
 package-lock.json
 /app/package-lock.json
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Playwright
+playwright-report/
+test-results/
+.auth/
+/e2e/screenshots/
+/e2e/tracing/

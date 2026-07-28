@@ -14,6 +14,9 @@ export class StorageService {
   private _storage: any = {};
   private _storageKey: string = 'KHIOPS_VISUALIZATION_DESKTOP';
 
+  // Storage for individual tab instances
+  private _tabStorages: Map<string, any> = new Map();
+
   constructor(private electronService: ElectronService) {
     try {
       // Use userData directory instead of temp directory to persist data across updates
@@ -86,7 +89,95 @@ export class StorageService {
     this.saveAll();
   }
 
+  /**
+   * Update one key in the in-memory cache without writing to disk.
+   * Used when receiving data that another window already persisted.
+   */
+  updateOneLocal(elt: string, value: any) {
+    this._storage[elt] = value;
+  }
+
   getStorageKey() {
     return this._storageKey;
+  }
+
+  // Tab-specific storage methods for isolated instances
+  getTabStorage(instanceId: string): any {
+    if (!this._tabStorages.has(instanceId)) {
+      // Initialize with empty storage for this tab instance
+      this._tabStorages.set(instanceId, {});
+    }
+    return this._tabStorages.get(instanceId);
+  }
+
+  saveTabStorage(instanceId: string, cb?: Function) {
+    const tabStorage = this._tabStorages.get(instanceId);
+    if (tabStorage) {
+      const tabStorageKey = `${this._storageKey}_tab_${instanceId}`;
+      this.electronService.storage?.set(tabStorageKey, tabStorage, () => {
+        console.log('Saved tab storage for instance:', instanceId);
+        cb && cb();
+      });
+    }
+  }
+
+  delTabStorage(instanceId: string) {
+    this._tabStorages.delete(instanceId);
+    const tabStorageKey = `${this._storageKey}_tab_${instanceId}`;
+    this.electronService.storage?.remove(tabStorageKey, (error: any) => {
+      if (error) console.error('Error deleting tab storage:', error);
+      else console.log('Deleted tab storage for instance:', instanceId);
+    });
+  }
+
+  setTabStorageItem(instanceId: string, key: string, value: any) {
+    if (!this._tabStorages.has(instanceId)) {
+      this._tabStorages.set(instanceId, {});
+    }
+    const tabStorage = this._tabStorages.get(instanceId)!;
+    tabStorage[key] = value;
+    // Auto-save tab storage
+    this.saveTabStorage(instanceId);
+  }
+
+  getTabStorageItem(instanceId: string, key: string): any {
+    const tabStorage = this._tabStorages.get(instanceId);
+    return tabStorage ? tabStorage[key] : undefined;
+  }
+
+  /**
+   * Save per-file settings to persistent Electron storage.
+   * Settings are stored under a single key, indexed by file path.
+   * @param filePath - The absolute path of the file.
+   * @param settings - The settings object to save for this file.
+   */
+  saveFileSettings(filePath: string, settings: any) {
+    const allFileSettings = this.getOne('FILE_SETTINGS') || {};
+    allFileSettings[filePath] = settings;
+    this.setOne('FILE_SETTINGS', allFileSettings);
+  }
+
+  /**
+   * Load per-file settings from persistent Electron storage.
+   * Always reads fresh from disk to handle pre-warmed windows whose
+   * in-memory cache may be stale.
+   * @param filePath - The absolute path of the file.
+   * @returns The settings object for this file, or undefined if none saved.
+   */
+  getFileSettings(filePath: string): any {
+    try {
+      // Always read fresh from disk so pre-warmed windows get the latest data
+      const freshStorage =
+        this.electronService.storage?.getSync(this._storageKey) || {};
+      const allFileSettings = freshStorage['FILE_SETTINGS'] || {};
+      // Also sync the in-memory cache
+      if (freshStorage['FILE_SETTINGS']) {
+        this._storage['FILE_SETTINGS'] = freshStorage['FILE_SETTINGS'];
+      }
+      return allFileSettings[filePath];
+    } catch {
+      const allFileSettings = this.getOne('FILE_SETTINGS') || {};
+      return allFileSettings[filePath];
+    }
   }
 }

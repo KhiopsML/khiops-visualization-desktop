@@ -1,6 +1,10 @@
 ---
-applyTo: "**"
+applyTo: '**'
 ---
+
+## Project Overview
+
+This is the Khiops Visualization Desktop Electron Application - an Angular application that includes the Khiops Visualization NPM Component for data visualization of Khiops machine learning analysis. The project builds a desktop application that integrates the web component library.
 
 **Never use NPM - always use Yarn:**
 
@@ -29,31 +33,18 @@ applyTo: "**"
 
 **commit messages**:
 feat: Addition of a new feature.
-Ex: feat: add the date filter for search
-
 fix: Bug fix.
-Ex: fix: fix pagination on the product list
-
 chore: Miscellaneous tasks without functional changes (maintenance).
-Ex: chore: update dependencies
-
 refactor: Code modification without behavior change (improvement, reorganization).
-Ex: refactor: simplify validation logic
-
 docs: Changes related to documentation.
-Ex: docs: add installation procedure
-
 style: Changes that do not impact the code (formatting, indentation, prettier).
-Ex: style: fix formatting
-
 test: Addition or modification of tests.
-Ex: test: add unit tests for the Button component
-
 perf: Performance improvement.
-Ex: perf: optimize the SQL query
-
 build: Changes affecting the build system or dependencies.
-Ex: build: update webpack
-
 ci: Changes related to CI/CD.
-Ex: ci: add GitHub Actions workflow for testing
+
+## Notations
+
+kv means khiops-visualization
+kc means khiops-covisualization
+kvd means khiops-visualization-desktop

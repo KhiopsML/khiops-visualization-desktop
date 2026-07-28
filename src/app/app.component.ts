@@ -10,9 +10,12 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostListener,
   NgZone,
-  ViewChild,
   CUSTOM_ELEMENTS_SCHEMA,
+  QueryList,
+  ViewChildren,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
@@ -21,39 +24,48 @@ import { ConfigService } from './core/services/config.service';
 import { MenuService } from './core/services/menu.service';
 import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
+import { TabManagerService } from './core/services/tab-manager.service';
 import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
 import { WelcomeComponent } from './welcome/welcome.component';
 import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
+import { TabHeaderComponent } from './tab-header/tab-header.component';
+import { Tab } from './core/interfaces/tab.interface';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [CommonModule, WelcomeComponent, BigFileLoadingComponent],
+  imports: [
+    CommonModule,
+    WelcomeComponent,
+    BigFileLoadingComponent,
+    TabHeaderComponent,
+  ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class AppComponent implements AfterViewInit {
-  @ViewChild('visualizationComponent', {
-    static: false,
-  })
-  visualizationComponent?: ElementRef<HTMLElement>;
-  @ViewChild('covisualizationComponent', {
-    static: false,
-  })
-  covisualizationComponent?: ElementRef<HTMLElement>;
+export class AppComponent implements AfterViewInit, OnDestroy {
+  @ViewChildren('khiopsComponent')
+  khiopsComponents!: QueryList<ElementRef<HTMLElement>>;
 
   config: any;
-  activeComponent: 'visualization' | 'covisualization' = 'visualization';
-  currentFileType?: string;
+  tabs: Tab[] = [];
+  activeTab: Tab | null = null;
   isDragOver: boolean = false;
+  private destroy$ = new Subject<void>();
   private dragCounter: number = 0;
   btnUpdateText: string = '';
   btnUpdate?: string;
   updateState: 'idle' | 'available' | 'downloading' | 'ready' = 'idle';
   updateAvailableTimer?: any;
   isUpdateInstalled = false;
+
+  // Map to store each tab's component configuration and instance data
+  private tabConfigs = new Map<string, any>();
+  private tabInstances = new Map<string, string>(); // Map tab ID to instance ID
 
   constructor(
     public ngzone: NgZone,
@@ -65,6 +77,7 @@ export class AppComponent implements AfterViewInit {
     private translate: TranslateService,
     private menuService: MenuService,
     private trackerService: TrackerService,
+    private tabManager: TabManagerService,
   ) {
     this.translate.setFallbackLang('en');
 
@@ -75,8 +88,55 @@ export class AppComponent implements AfterViewInit {
     this.btnUpdateText =
       '✅ ' + this.translate.instant('GLOBAL_UPDATE_UP_TO_DATE');
 
-    this.configService.setComponentChangeCallback((componentType) => {
-      this.setActiveComponent(componentType);
+    // Subscribe to tab changes
+    this.tabManager.tabState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((state) => {
+        const previousActiveTab = this.activeTab;
+        this.tabs = state.tabs;
+        this.activeTab = state.tabs.find((tab) => tab.isActive) || null;
+
+        if (this.electronService.isElectron) {
+          const openFilePaths = state.tabs
+            .map((tab) => tab.filePath)
+            .filter((filePath): filePath is string => !!filePath);
+          this.electronService.ipcRenderer?.invoke(
+            'window-open-files-updated',
+            openFilePaths,
+          );
+        }
+
+        // Check if active tab has changed
+        const activeTabChanged = previousActiveTab?.id !== this.activeTab?.id;
+
+        this.cdr.detectChanges();
+
+        // Update OS window title when active tab changes
+        if (activeTabChanged) {
+          this.fileSystemService.setTitleBar(this.activeTab?.filePath || '');
+        }
+
+        // Configure all tab components after change detection has rendered them
+        // Use requestAnimationFrame instead of a fixed delay
+        requestAnimationFrame(() => {
+          this.configureAllTabComponents();
+
+          // If active tab changed, switch active config immediately
+          if (activeTabChanged && this.activeTab) {
+            this.setActiveConfig(this.activeTab);
+            // Propagate resize event when tab changes
+            this.propagateResizeEvent();
+          }
+        });
+      });
+
+    this.configService.setComponentChangeCallback((componentType, filePath) => {
+      this.handleComponentChange(componentType, filePath);
+    });
+
+    // Set up tab-specific data callback
+    this.configService.setTabDataCallback((tabId, data) => {
+      this.setDataForTab(tabId, data);
     });
 
     this.setAppConfig();
@@ -92,84 +152,263 @@ export class AppComponent implements AfterViewInit {
   }
 
   setAppConfig() {
-    // Initialiser avec le composant visualization par défaut
-    this.setActiveComponent('visualization');
+    // Initialize with empty tab - TabManagerService already creates one
   }
 
-  setActiveComponent(componentType: 'visualization' | 'covisualization') {
-    this.activeComponent = componentType;
-    // Update synchronously so that fileSystemService.readFile can use the correct type
-    // immediately without waiting for the 50ms timeout in continueSetActiveComponent
-    this.configService.setActiveComponentType(componentType);
-    this.cdr.detectChanges();
-
-    setTimeout(() => {
-      if (componentType === 'visualization') {
-        this.config = this.visualizationComponent?.nativeElement;
-      } else {
-        this.config = this.covisualizationComponent?.nativeElement;
-      }
-
-      if (!this.config) {
-        setTimeout(() => {
-          this.continueSetActiveComponent(componentType);
-        }, 100);
-        return;
-      }
-
-      this.continueSetActiveComponent(componentType);
-    }, 50);
-  }
-
-  continueSetActiveComponent(
+  handleComponentChange(
     componentType: 'visualization' | 'covisualization',
+    filePath?: string,
   ) {
-    if (componentType === 'visualization') {
-      this.config = this.visualizationComponent?.nativeElement;
-    } else {
-      this.config = this.covisualizationComponent?.nativeElement;
-    }
+    const activeTab = this.tabManager.getActiveTab();
+    if (activeTab && filePath) {
+      // Create a new tab for this file
+      const tabId = this.tabManager.openFileInTab(filePath, componentType);
+      const tab = this.tabManager.getTab(tabId)!;
 
-    if (!this.config) {
+      // Configure component and set as active
+      this.configureTabComponent(tab);
+      this.setActiveConfig(tab);
+    } else if (activeTab) {
+      // Just change component type for active tab
+      this.tabManager.updateTab(activeTab.id, { componentType });
+      this.configureTabComponent(activeTab);
+      this.setActiveConfig(activeTab);
+    }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onWindowKeyDown(event: KeyboardEvent): void {
+    if (event.ctrlKey && event.key === 'Tab') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.tabManager.switchToNextTab(event.shiftKey ? -1 : 1);
+    }
+  }
+
+  /**
+   * Configure all tab components
+   */
+  private configureAllTabComponents() {
+    this.tabs.forEach((tab) => {
+      if (!this.tabConfigs.has(tab.id)) {
+        this.configureTabComponent(tab);
+      }
+    });
+
+    // Set active tab config
+    if (this.activeTab) {
+      this.setActiveConfig(this.activeTab);
+    }
+  }
+
+  /**
+   * Set the active configuration for the config service
+   */
+  private setActiveConfig(tab: Tab) {
+    const tabConfig = this.tabConfigs.get(tab.id) as any; // Cast to any for khiops methods
+    if (tabConfig) {
+      this.config = tabConfig;
+      this.configService.setActiveComponentType(tab.componentType);
+      this.configService.setConfig(this.config);
+      // Restore per-tab Ls context and apply this tab's settings to AppConfig
+      if (typeof tabConfig.activate === 'function') {
+        tabConfig.activate();
+      }
+    }
+  }
+
+  /**
+   * Send data directly to a specific tab's component
+   */
+  setDataForTab(tabId: string, data: any) {
+    const tabConfig = this.tabConfigs.get(tabId) as any; // Cast to any for khiops methods
+    if (
+      tabConfig &&
+      tabConfig.setDatas &&
+      typeof tabConfig.setDatas === 'function'
+    ) {
+      tabConfig.setDatas(data);
+    } else {
+      // Fallback to global setDatas
+      if (this.config && this.config.setDatas) {
+        this.config.setDatas(data);
+      }
+    }
+  }
+
+  private configureTabComponent(tab: Tab, retryCount = 0) {
+    const maxRetries = 10;
+    const componentElement = this.getComponentElementForTab(tab);
+
+    if (!componentElement && retryCount < maxRetries) {
+      // Component not ready yet, retry
+      setTimeout(() => {
+        this.configureTabComponent(tab, retryCount + 1);
+      }, 100);
       return;
     }
 
-    this.config.setConfig({
-      appSource: 'ELECTRON',
-      storage: 'ELECTRON',
-      lsId: this.storageService.getStorageKey(),
-      onFileOpen: () => {
-        console.log('fileOpen');
-        this.menuService.openFileDialog();
-      },
-      onCopyImage: (base64data: any) => {
-        const natImage =
-          this.electronService.nativeImage.createFromDataURL(base64data);
-        this.electronService.clipboard.writeImage(natImage);
-      },
-      readLocalFile: (file: File | any, cb: Function) => {
-        return this.readLocalFile(file, cb);
-      },
-      onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
-        if (event.message === 'forgetConsentGiven') {
-          this.trackerService.forgetConsentGiven();
-        } else if (event.message === 'setConsentGiven') {
-          this.trackerService.setConsentGiven();
-        } else if (event.message === 'trackEvent') {
-          this.trackerService.trackEvent(event.data);
-        } else if (event.message === 'ls.getAll') {
-          cb && cb(this.storageService.getAll());
-        } else if (event.message === 'ls.saveAll') {
-          this.storageService.saveAll();
-        } else if (event.message === 'ls.delAll') {
-          this.storageService.delAll();
-        }
-      },
-    });
+    if (!componentElement) {
+      console.warn('Could not find component element for tab:', tab);
+      return;
+    }
 
-    // Mettre à jour le service de configuration
-    this.configService.setConfig(this.config);
-    this.configService.setActiveComponentType(componentType);
+    // Store this tab's configuration
+    const tabConfig = componentElement as any;
+    this.tabConfigs.set(tab.id, tabConfig);
+
+    // Configure component with unique instance configuration compatible with Shadow DOM
+    if (tabConfig.setConfig && typeof tabConfig.setConfig === 'function') {
+      // Generate timestamp-based instance ID like visualization-component expects
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 9);
+      const compatibleInstanceId = `${timestamp}_${random}_tab_${tab.id}`;
+
+      tabConfig.setConfig({
+        appSource: 'ELECTRON',
+        storage: 'ELECTRON',
+        // Compatible instanceId format for Shadow DOM isolation
+        instanceId: compatibleInstanceId,
+        lsId: `${this.storageService.getStorageKey()}_${compatibleInstanceId}`,
+        onFileOpen: () => {
+          console.log('fileOpen from tab:', tab.id);
+          this.menuService.openFileDialog(() => {
+            this.constructMenu();
+          });
+        },
+        onFileError: (filePath: string) => {
+          this.fileSystemService.closeFile(undefined, tab.id);
+        },
+        onCopyImage: (base64data: any) => {
+          const natImage =
+            this.electronService.nativeImage.createFromDataURL(base64data);
+          this.electronService.clipboard.writeImage(natImage);
+        },
+        readLocalFile: (file: File | any, cb: Function) => {
+          console.log(
+            '🚀 ~ AppComponent ~ configureTabComponent ~ file:',
+            file,
+          );
+          return this.readLocalFile(file, cb, tab);
+        },
+        onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
+          if (event.message === 'forgetConsentGiven') {
+            this.trackerService.forgetConsentGiven();
+          } else if (event.message === 'setConsentGiven') {
+            this.trackerService.setConsentGiven();
+          } else if (event.message === 'trackEvent') {
+            this.trackerService.trackEvent(event.data);
+          } else if (event.message === 'ls.getAll') {
+            // Return isolated storage for this specific tab instance
+            const tabStorage =
+              this.storageService.getTabStorage(compatibleInstanceId);
+
+            // Merge per-file settings into tab storage so settings are restored on load
+            if (tab.filePath) {
+              const fileSettings = this.storageService.getFileSettings(
+                tab.filePath,
+              );
+              if (fileSettings) {
+                Object.assign(tabStorage, fileSettings);
+              }
+            }
+
+            cb && cb(tabStorage);
+          } else if (event.message === 'ls.saveAll') {
+            this.storageService.saveTabStorage(compatibleInstanceId);
+          } else if (event.message === 'ls.delAll') {
+            this.storageService.delTabStorage(compatibleInstanceId);
+          }
+        },
+      });
+
+      // Store the compatible instance ID
+      this.tabInstances.set(tab.id, compatibleInstanceId);
+
+      // Listen for save-file-requested events from the component (e.g. from settings)
+      componentElement.addEventListener('save-file-requested', (event: any) => {
+        if (tab.filePath && event.detail) {
+          this.storageService.saveFileSettings(tab.filePath, event.detail);
+        }
+      });
+
+      // Listen for dirty-state-changed events from covisualization component
+      componentElement.addEventListener('dirty-state-changed', (event: any) => {
+        this.tabManager.markTabDirty(tab.id, event.detail?.isDirty ?? false);
+      });
+    } else {
+      console.warn(
+        'setConfig method not available on component for tab:',
+        tab.id,
+      );
+    }
+
+    // Update global config only for active tab
+    if (tab.isActive) {
+      this.config = componentElement;
+      this.configService.setActiveComponentType(tab.componentType);
+      this.configService.setConfig(this.config);
+      // Restore per-tab Ls context and apply this tab's settings to AppConfig
+      if (typeof tabConfig.activate === 'function') {
+        tabConfig.activate();
+      }
+    }
+  }
+
+  /**
+   * Get the active component element from the DOM
+   */
+  private getActiveComponentElement(): HTMLElement | undefined {
+    if (!this.activeTab) {
+      return undefined;
+    }
+
+    const element = this.getComponentElementForTab(this.activeTab);
+    return element || undefined;
+  }
+
+  /**
+   * Propagate resize event to the active visualization component
+   */
+  private propagateResizeEvent(): void {
+    const component = this.getActiveComponentElement();
+    if (!component) {
+      return;
+    }
+
+    try {
+      // Try calling onResize method if available
+      if (typeof (component as any).onResize === 'function') {
+        (component as any).onResize();
+      }
+
+      // Dispatch a native resize event
+      const resizeEvent = new Event('resize', {
+        bubbles: true,
+        cancelable: true,
+      });
+      component.dispatchEvent(resizeEvent);
+
+      // Dispatch a window resize event
+      window.dispatchEvent(new Event('resize'));
+    } catch (error) {
+      console.error('Error propagating resize event:', error);
+    }
+  }
+
+  private getComponentElementForTab(tab: Tab): HTMLElement | null {
+    if (!this.khiopsComponents) return null;
+
+    // Find component by data-tab-id attribute
+    const components = this.khiopsComponents.toArray();
+    for (const component of components) {
+      const element = component.nativeElement;
+      if (element.getAttribute('data-tab-id') === tab.id) {
+        return element;
+      }
+    }
+
+    return null;
   }
 
   determineComponentFromFile(
@@ -193,7 +432,7 @@ export class AppComponent implements AfterViewInit {
     }
   }
 
-  readLocalFile(input: File | any, cb: Function) {
+  readLocalFile(input: File | any, cb: Function, tab?: Tab) {
     (async () => {
       try {
         if (this.electronService.isElectron) {
@@ -207,13 +446,31 @@ export class AppComponent implements AfterViewInit {
             path = this.electronService.electron.webUtils.getPathForFile(input);
           }
 
-          this.currentFileType = path;
+          if (path === 'END_TO_END_PATH') {
+            // Check if we're in CI environment (GitHub Actions)
+            if (process.env.GITHUB_WORKSPACE) {
+              // CI environment - use GITHUB_WORKSPACE
+              path =
+                process.env.GITHUB_WORKSPACE +
+                '/e2e/mocks/ExternalDataEducation.txt';
+            } else {
+              // Local development environment - use process.cwd() which is the project root
+              path = process.cwd() + '/e2e/mocks/ExternalDataEducation.txt';
+            }
+          } else {
+          }
 
           const content = await this.electronService.ipcRenderer?.invoke(
             'read-local-file',
             path,
           );
-          cb(content, path);
+
+          // Pass tab info to callback if available
+          if (tab) {
+            cb(content, path, tab);
+          } else {
+            cb(content, path);
+          }
         }
       } catch (error) {
         console.log('error', error);
@@ -222,6 +479,35 @@ export class AppComponent implements AfterViewInit {
   }
 
   addIpcRendererEvents() {
+    this.electronService.ipcRenderer?.on('restore-tab', (event, data) => {
+      if (data && data.tab) {
+        const tab = data.tab;
+        if (tab.filePath) {
+          // Inject _isDirty into overrideData so setDatas can restore dirty state
+          // after setInitialDirtyState has been called
+          const overrideData = tab.datas
+            ? { ...tab.datas, _isDirty: tab.isDirty ?? false }
+            : undefined;
+
+          this.fileSystemService.openFile(
+            tab.filePath,
+            () => {
+              this.menuService.menuShouldRebuild$.next();
+              if (tab.isDirty) {
+                const activeTab = this.tabManager.getActiveTab();
+                if (activeTab) {
+                  this.tabManager.markTabDirty(activeTab.id, true);
+                }
+              }
+            },
+            undefined,
+            overrideData,
+          );
+        } else {
+          this.tabManager.restoreTab(tab);
+        }
+      }
+    });
     this.electronService.ipcRenderer?.on('update-available', (event, arg) => {
       console.info('update-available', event, arg);
       this.updateState = 'available';
@@ -273,6 +559,9 @@ export class AppComponent implements AfterViewInit {
     this.electronService.ipcRenderer?.on('before-quit', () => {
       this.beforeQuit();
     });
+    this.electronService.ipcRenderer?.on('before-close-window', () => {
+      this.beforeCloseWindow();
+    });
     this.electronService.ipcRenderer?.on('copy-image', () => {
       this.configService.copyImage();
     });
@@ -282,6 +571,11 @@ export class AppComponent implements AfterViewInit {
     this.electronService.ipcRenderer?.on('copy-datas', () => {
       this.configService.copyDatas();
     });
+    // Rebuild the menu when this window regains focus so that menu actions
+    // always point to the correct (active) renderer.
+    this.electronService.ipcRenderer?.on('window-focused', () => {
+      this.constructMenu();
+    });
 
     this.constructMenu();
 
@@ -290,17 +584,58 @@ export class AppComponent implements AfterViewInit {
       this.electronService.ipcRenderer?.sendSync('get-input-file');
     if (inputFile && inputFile !== '.') {
       setTimeout(() => {
-        this.currentFileType = inputFile;
-        this.menuService.openFile(inputFile);
+        this.fileSystemService.openFile(inputFile);
       });
     }
     this.electronService.ipcRenderer?.on('file-open-system', (event, arg) => {
       if (arg) {
-        // Add delay to ensure component is fully loaded before opening file
-        // setTimeout(() => {
-        this.currentFileType = arg;
-        this.menuService.openFile(arg);
-        // }, 750); // 500ms delay to ensure component initialization
+        this.fileSystemService.openFile(arg, () => {
+          this.menuService.menuShouldRebuild$.next();
+        });
+      }
+    });
+
+    // Listen for file history updates from other windows.
+    // Receive the actual data to avoid disk read race conditions.
+    // Only update the OPEN_FILE key in memory — the sender already persisted it.
+    // The menu will be rebuilt when this window gains focus (window-focused handler).
+    this.electronService.ipcRenderer?.on(
+      'file-history-updated',
+      (_event: any, filesHistory: any) => {
+        if (filesHistory) {
+          this.storageService.updateOneLocal('OPEN_FILE', filesHistory);
+          this.fileSystemService.notifyRecentFilesChanged();
+        }
+      },
+    );
+
+    // Listen for detached tab restoration from new window
+    this.electronService.ipcRenderer?.on('restore-tab', (event, data) => {
+      if (data && data.tab) {
+        const tab = data.tab;
+        if (tab.filePath) {
+          // Open the file and pass captured state as overrideData so it is
+          // delivered instead of the raw file content (which would overwrite
+          // selectedRank, activeTabIndex, etc. stored in savedDatas).
+          this.fileSystemService.openFile(
+            tab.filePath,
+            () => {
+              this.menuService.menuShouldRebuild$.next();
+              // Restore the dirty state after the file is opened
+              if (tab.isDirty) {
+                const activeTab = this.tabManager.getActiveTab();
+                if (activeTab) {
+                  this.tabManager.markTabDirty(activeTab.id, true);
+                }
+              }
+            },
+            undefined,
+            tab.datas || undefined,
+          );
+        } else {
+          // If no file path, just restore the tab with existing data
+          this.tabManager.restoreTab(tab);
+        }
       }
     });
   }
@@ -354,8 +689,7 @@ export class AppComponent implements AfterViewInit {
 
   /**
    * Processes the dropped file if it has a valid extension.
-   * Web components (BaseDragDropComponent) are disabled in Electron mode,
-   * so all DnD drops are handled exclusively here.
+   * Opens file in the active tab or creates a new tab if needed.
    */
   private processDroppedFile(file: File): void {
     const validExtensions = ['.json', '.khj', '.khcj'];
@@ -374,37 +708,132 @@ export class AppComponent implements AfterViewInit {
       return;
     }
 
-    // The file was dropped on a non-web-component area (welcome screen, etc.).
-    // Handle it directly through fileSystemService.openFile which manages
-    // component switching, welcome screen, and data loading.
     const path = this.electronService.electron.webUtils.getPathForFile(file);
     if (!path) {
       return;
     }
 
-    this.currentFileType = path;
-    this.menuService.openFile(path);
+    // Open the file - openFile will create the tab
+    this.fileSystemService.openFile(path);
   }
 
   beforeQuit() {
+    const finalQuitAction = async () => {
+      await this.electronService.ipcRenderer?.invoke('app-quit');
+    };
+
     // If update is ready but not installed, mark for auto-install on quit
     if (this.updateState === 'ready' && !this.isUpdateInstalled) {
       (async () => {
         await this.electronService.ipcRenderer?.invoke(
           'set-update-auto-install-on-quit',
         );
-        this.fileSystemService.handleSaveBeforeAction(async () => {
-          await this.electronService.ipcRenderer?.invoke('app-quit');
-        });
+        this.saveAllCovisuTabsThenQuit(finalQuitAction);
       })();
     } else {
-      this.fileSystemService.handleSaveBeforeAction(async () => {
-        await this.electronService.ipcRenderer?.invoke('app-quit');
-      });
+      this.saveAllCovisuTabsThenQuit(finalQuitAction);
     }
   }
 
+  /**
+   * Called when the user closes one window while other windows remain open.
+   * Handles save dialogs for covisualization tabs in this window,
+   * then closes only this window (not the whole app).
+   */
+  beforeCloseWindow() {
+    const finalCloseAction = async () => {
+      await this.electronService.ipcRenderer?.invoke('close-window');
+    };
+    this.saveAllCovisuTabsThenQuit(finalCloseAction);
+  }
+
+  /**
+   * Iterate over all covisualization tabs with open files,
+   * showing a save dialog for each one sequentially.
+   * Switches to each tab before displaying its dialog so the user can see it.
+   * Only quits after all tabs have been processed.
+   * If user cancels any dialog, the quit is aborted entirely.
+   */
+  private saveAllCovisuTabsThenQuit(finalAction: () => void | Promise<void>) {
+    // Close all non-covisualization tabs first — they don't need a save dialog
+    const nonCovisuTabs = this.tabs.filter(
+      (tab) => tab.componentType !== 'covisualization',
+    );
+    for (const tab of nonCovisuTabs) {
+      this.tabManager.closeTab(tab.id);
+    }
+
+    // Collect all covisualization tabs that have an open file
+    const covisuTabs = this.tabs.filter(
+      (tab) => tab.componentType === 'covisualization' && tab.filePath,
+    );
+
+    if (covisuTabs.length === 0) {
+      // No covisu tabs to save — just quit
+      this.storageService.saveAll(() => finalAction());
+      return;
+    }
+
+    // Process each covisu tab sequentially
+    const processNextTab = (index: number) => {
+      if (index >= covisuTabs.length) {
+        // All tabs processed — proceed with quit
+        this.storageService.saveAll(() => finalAction());
+        return;
+      }
+
+      const tab = covisuTabs[index];
+      const tabConfig = this.tabConfigs.get(tab.id) as any;
+
+      if (
+        !tabConfig ||
+        typeof tabConfig.openSaveBeforeQuitDialog !== 'function'
+      ) {
+        // No config or no dialog method — skip this tab
+        processNextTab(index + 1);
+        return;
+      }
+
+      // Always switch to this tab so the user can see the dialog
+      this.tabManager.setActiveTab(tab.id);
+
+      // Wait for the tab switch to render before opening the dialog
+      setTimeout(() => {
+        tabConfig.openSaveBeforeQuitDialog((result: string) => {
+          if (result === 'confirm') {
+            // User chose to save — save data, close the tab, then move to next
+            try {
+              if (
+                tabConfig.constructDatasToSave &&
+                typeof tabConfig.constructDatasToSave === 'function'
+              ) {
+                const datasToSave = tabConfig.constructDatasToSave();
+                this.fileSystemService.saveFile(tab.filePath!, datasToSave);
+              }
+            } catch (err) {
+              console.error('Error saving tab data before quit:', err);
+            }
+            this.tabManager.closeTab(tab.id);
+            processNextTab(index + 1);
+          } else if (result === 'cancel') {
+            // User cancelled — abort the entire quit, stay on current tab
+            return;
+          } else {
+            // User chose "Don't save" (reject) — close the tab, move to next
+            this.tabManager.closeTab(tab.id);
+            processNextTab(index + 1);
+          }
+        });
+      }, 200);
+    };
+
+    processNextTab(0);
+  }
+
   constructMenu() {
+    const activeComponentType =
+      this.activeTab?.componentType || 'visualization';
+
     const menuTemplate = this.menuService.setMenu(
       this.btnUpdate,
       this.btnUpdateText,
@@ -433,10 +862,28 @@ export class AppComponent implements AfterViewInit {
           await this.electronService.ipcRenderer?.invoke('install-update-now');
         })();
       },
-      this.activeComponent,
+      activeComponentType,
     );
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);
-    this.electronService.remote.Menu.setApplicationMenu(menu);
+    // In multi-window mode, only set the application menu when this window
+    // is focused to prevent a background window (e.g. receiving an auto-update
+    // event) from overriding the focused window's menu handlers.
+    const currentWindow = this.electronService.remote.getCurrentWindow();
+    if (currentWindow.isFocused()) {
+      this.electronService.remote.Menu.setApplicationMenu(menu);
+    }
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Track by function for tab performance
+   */
+  trackByTabId(index: number, tab: Tab): string {
+    return tab.id;
   }
 }

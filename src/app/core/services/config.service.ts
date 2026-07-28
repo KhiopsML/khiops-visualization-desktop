@@ -36,12 +36,31 @@ export class ConfigService {
 
   private componentChangeCallback?: (
     componentType: 'visualization' | 'covisualization',
+    filePath?: string
   ) => void;
 
+  private tabDataCallback?: (tabId: string, data: any) => void;
+
   setComponentChangeCallback(
-    callback: (componentType: 'visualization' | 'covisualization') => void,
+    callback: (
+      componentType: 'visualization' | 'covisualization',
+      filePath?: string
+    ) => void,
   ) {
     this.componentChangeCallback = callback;
+  }
+
+  setTabDataCallback(callback: (tabId: string, data: any) => void) {
+    this.tabDataCallback = callback;
+  }
+
+  notifyTabData(tabId: string, data: any) {
+    if (this.tabDataCallback) {
+      this.tabDataCallback(tabId, data);
+    } else {
+      // Fallback to global setDatas if no tab callback
+      this.setDatas(data);
+    }
   }
 
   async requestComponentChange(filePath: string, jsonData?: any) {
@@ -73,7 +92,7 @@ export class ConfigService {
         requiredComponent = 'visualization';
     }
 
-    this.componentChangeCallback(requiredComponent);
+    this.componentChangeCallback(requiredComponent, undefined);
   }
 
   private analyzeJsonData(jsonData: any): 'visualization' | 'covisualization' {
@@ -175,9 +194,15 @@ export class ConfigService {
     }
   }
 
-  openSaveBeforeQuitDialog(cb: Function) {
+  openSaveBeforeQuitDialog(cb: Function, options?: { showBatchButtons?: boolean; filename?: string }) {
     if (this.config && this.config.openSaveBeforeQuitDialog) {
-      this.config.openSaveBeforeQuitDialog(cb);
+      this.config.openSaveBeforeQuitDialog(cb, options);
+    }
+  }
+
+  markSaved() {
+    if (this.config && this.config.markSaved) {
+      this.config.markSaved();
     }
   }
 

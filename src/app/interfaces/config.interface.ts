@@ -14,4 +14,5 @@ export interface ConfigI {
   copyDatas?: Function;
   openSaveBeforeQuitDialog?: Function;
   snack?: Function;
+  markSaved?: Function;
 }

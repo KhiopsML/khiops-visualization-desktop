@@ -8,8 +8,8 @@ import { Injectable, NgZone } from '@angular/core';
 import { ElectronService } from './electron.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from './config.service';
+import { TabManagerService } from './tab-manager.service';
 import { BehaviorSubject, Observable } from 'rxjs';
-import Toastify from 'toastify-js';
 import { StorageService } from './storage.service';
 import { FileLoaderI } from '../../interfaces/file-system.interface';
 import {
@@ -58,6 +58,7 @@ export class FileSystemService {
     private translate: TranslateService,
     private storageService: StorageService,
     private jsonFormatterService: JsonFormatterService,
+    private tabManagerService: TabManagerService,
   ) {
     this.initialize();
   }
@@ -86,8 +87,10 @@ export class FileSystemService {
     associationFiles.push('khj');
     associationFiles.push('khcj');
 
+    const parentWindow =
+      this.electronService.remote?.getCurrentWindow() ?? null;
     this.electronService.dialog
-      .showOpenDialog(null, {
+      .showOpenDialog(parentWindow, {
         properties: ['openFile'],
         filters: [{ extensions: associationFiles }],
       })
@@ -122,28 +125,42 @@ export class FileSystemService {
     })();
   }
 
-  async openFile(filename: string, callbackDone?: Function) {
+  async openFile(filename: string, callbackDone?: Function, tabId?: string, overrideData?: any) {
     if (!filename) return;
 
-    // Check if we need to save current work before opening new file
-    const currentActiveType = this.configService.getActiveComponentType();
-    const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
-
-    if (hasCurrentFile && currentActiveType === 'covisualization') {
-      this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone, true);
-      });
-    } else {
-      this.handleSaveBeforeAction(async () => {
-        await this.performOpenFile(filename, callbackDone, false);
-      }, true);
+    // Determine component type from filename
+    const extension = filename.toLowerCase().split('.').pop();
+    let componentType: 'visualization' | 'covisualization' = 'visualization';
+    if (extension === 'khcj') {
+      componentType = 'covisualization';
     }
+
+    // Check if file is already open - if so, just activate the tab
+    const existingTab = this.tabManagerService.getTabByFilePath(filename);
+    if (existingTab) {
+      this.tabManagerService.setActiveTab(existingTab.id);
+      callbackDone && callbackDone();
+      return;
+    }
+
+    // Create a new tab if no tabId provided
+    let finalTabId = tabId;
+    if (!finalTabId) {
+      finalTabId = this.tabManagerService.openFileInTab(
+        filename,
+        componentType,
+      );
+    }
+
+    await this.performOpenFile(filename, callbackDone, finalTabId, false, overrideData);
   }
 
   private async performOpenFile(
     filename: string,
     callbackDone?: Function,
+    tabId?: string,
     skipStorageSave: boolean = false,
+    overrideData?: any,
   ) {
     this.fileLoaderDatas!.datas = undefined;
     this.fileLoaderDatas!.isLoadingDatas = true;
@@ -194,25 +211,42 @@ export class FileSystemService {
       .then(async (datas: any) => {
         this.setTitleBar(filename, componentType);
         await this.setFileHistory(filename);
-
+        // Add delay to ensure component is fully configured before setting data
         if (!skipStorageSave) {
           await this.storageService.saveAll(() => {});
         }
 
         if (callbackDone) callbackDone();
-
+        // Wait for the web component to be registered, then deliver data
         setTimeout(() => {
-          this.configService.setDatas(datas);
-        }, 750);
+          if (tabId) {
+            // If overrideData is provided (e.g. from a detached tab with captured state),
+            // use it instead of the freshly-read file data so that savedDatas
+            // (selected variable ranks, active tab, etc.) are preserved.
+            const dataToDeliver = overrideData
+              ? { ...overrideData, filename: filename }
+              : { ...datas, filename: filename };
+            this.configService.notifyTabData(tabId, dataToDeliver);
+            // Mark tab as loaded
+            this.tabManagerService.updateTab(tabId, { isLoading: false });
+          } else {
+            // Fallback to global setDatas
+            this.configService.setDatas(datas);
+          }
+        }, 750); // Longer delay for Shadow DOM components
       })
       .catch((error: any) => {
-        this.closeFile();
-        // Toastify({
-        //   text: this.translate.instant('OPEN_FILE_ERROR'),
-        //   gravity: 'bottom',
-        //   position: 'center',
-        //   duration: 3000,
-        // }).showToast();
+        this.performCloseFile(tabId);
+        const basename = filename.split(/[\/]/).pop() ?? filename;
+        setTimeout(() => {
+          this.configService.snack(
+            `${this.translate.instant('GLOBAL_SNACKS_OPEN_FILE_ERROR', {
+              filename: basename,
+            })}`,
+            5000,
+            'error',
+          );
+        }, 50);
         this._fileLoaderSub.next(this.fileLoaderDatas);
       });
   }
@@ -353,17 +387,8 @@ export class FileSystemService {
                 resolve(this.fileLoaderDatas?.datas);
               } catch (e) {
                 console.error('JSON parsing error:', e);
-                Toastify({
-                  text:
-                    this.translate.instant('OPEN_FILE_ERROR') +
-                    this.translate.instant('INVALID_FILE_ERROR'),
-
-                  gravity: 'bottom',
-                  position: 'center',
-                  duration: 3000,
-                }).showToast();
+                this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
-                this.closeFile();
                 reject(e);
               }
             }
@@ -431,14 +456,6 @@ export class FileSystemService {
                 console.error('JSON parsing error in covisualization file:', e);
                 this.fileLoaderDatas!.isLoadingDatas = false;
                 this._fileLoaderSub.next(this.fileLoaderDatas);
-                Toastify({
-                  text:
-                    this.translate.instant('OPEN_FILE_ERROR') +
-                    this.translate.instant('INVALID_FILE_ERROR'),
-                  gravity: 'bottom',
-                  position: 'center',
-                  duration: 3000,
-                }).showToast();
                 reject(e);
               }
             }
@@ -452,29 +469,75 @@ export class FileSystemService {
    * Generic method to handle save before action logic for covisualization mode
    * @param finalAction The action to execute after save/cancel operations
    * @param skipStorageSave If true, skip the storage save (useful for file open where we manage history separately)
+   * @param tabIdToClose Optional tab ID to close after the action completes
+   * @param batchOptions Optional batch options for "Yes to All" / "No to All" support
    */
   handleSaveBeforeAction(
     finalAction: () => void | Promise<void>,
     skipStorageSave: boolean = false,
+    tabIdToClose?: string,
+    batchOptions?: {
+      showBatchButtons: boolean;
+      autoSave?: boolean;
+      autoClose?: boolean;
+      onConfirmAll?: () => void;
+      onRejectAll?: () => void;
+    },
   ) {
     const activeComponentType = this.configService.getActiveComponentType();
     const hasCurrentFile = this.currentFilePath && this.currentFilePath !== '';
 
     if (activeComponentType === 'covisualization' && hasCurrentFile) {
-      this.configService.openSaveBeforeQuitDialog((e: string) => {
-        if (e === 'confirm') {
-          const config = this.configService.getConfig();
-          if (config && config.constructDatasToSave) {
-            const datasToSave = config.constructDatasToSave();
-            this.saveFile(this.currentFilePath, datasToSave);
+      // Auto-save path (triggered by "Yes to All" on a previous tab)
+      if (batchOptions?.autoSave) {
+        const config = this.configService.getConfig();
+        if (config && config.constructDatasToSave) {
+          const datasToSave = config.constructDatasToSave();
+          this.saveFile(this.currentFilePath, datasToSave);
+        }
+        this.storageService.saveAll(() => finalAction());
+        return;
+      }
+
+      // Auto-close path (triggered by "No to All" on a previous tab)
+      if (batchOptions?.autoClose) {
+        this.storageService.saveAll(() => finalAction());
+        return;
+      }
+
+      this.configService.openSaveBeforeQuitDialog(
+        (e: string) => {
+          if (e === 'confirm') {
+            const config = this.configService.getConfig();
+            if (config && config.constructDatasToSave) {
+              const datasToSave = config.constructDatasToSave();
+              this.saveFile(this.currentFilePath, datasToSave);
+              this.storageService.saveAll(() => finalAction());
+            }
+          } else if (e === 'confirmAll') {
+            const config = this.configService.getConfig();
+            if (config && config.constructDatasToSave) {
+              const datasToSave = config.constructDatasToSave();
+              this.saveFile(this.currentFilePath, datasToSave);
+              // Notify batch controller before finalAction so state is set for next tabs
+              batchOptions?.onConfirmAll?.();
+              this.storageService.saveAll(() => finalAction());
+            }
+          } else if (e === 'cancel') {
+            return;
+          } else if (e === 'reject') {
+            this.storageService.saveAll(() => finalAction());
+          } else if (e === 'rejectAll') {
+            // Notify batch controller before finalAction so state is set for next tabs
+            batchOptions?.onRejectAll?.();
             this.storageService.saveAll(() => finalAction());
           }
-        } else if (e === 'cancel') {
-          return;
-        } else if (e === 'reject') {
-          this.storageService.saveAll(() => finalAction());
-        }
-      });
+        },
+        {
+          showBatchButtons: batchOptions?.showBatchButtons ?? false,
+          filename: this.currentFilePath,
+        },
+      );
     } else {
       // For file open, skip storage restore to avoid overwriting history changes
       if (skipStorageSave) {
@@ -485,20 +548,64 @@ export class FileSystemService {
     }
   }
 
-  closeFile(callbackDone?: Function) {
-    this.handleSaveBeforeAction(() => {
-      this.performCloseFile();
+  closeFile(
+    callbackDone?: Function,
+    tabIdToClose?: string,
+    batchOptions?: {
+      showBatchButtons: boolean;
+      autoSave?: boolean;
+      autoClose?: boolean;
+      onConfirmAll?: () => void;
+      onRejectAll?: () => void;
+    },
+  ) {
+    // Check if the tab being closed is a covisualization
+    const tabToClose = tabIdToClose
+      ? this.tabManagerService.getTab(tabIdToClose)
+      : null;
+    const isCovisualizationTab =
+      tabToClose?.componentType === 'covisualization' && tabToClose?.filePath;
+
+    if (isCovisualizationTab) {
+      // Show dialog for covisualization files
+      this.handleSaveBeforeAction(
+        () => {
+          this.performCloseFile(tabIdToClose);
+          callbackDone && callbackDone();
+        },
+        false,
+        tabIdToClose,
+        batchOptions,
+      );
+    } else {
+      // For other tabs (visualization or no file), just close without dialog
+      this.performCloseFile(tabIdToClose);
       callbackDone && callbackDone();
-    });
+    }
   }
 
-  private performCloseFile() {
-    this.initialize();
-    this.ngzone.run(() => {
-      this.configService.setDatas();
-      this.setTitleBar('');
-      this._fileLoaderSub.next(this.fileLoaderDatas);
-    });
+  private performCloseFile(tabIdToClose?: string) {
+    const activeTab = this.tabManagerService.getActiveTab();
+    const isClosingActiveTab = tabIdToClose && activeTab?.id === tabIdToClose;
+
+    // Close the tab if specified
+    if (tabIdToClose) {
+      this.tabManagerService.closeTab(tabIdToClose);
+    }
+
+    // Only clear data if no specific tab to close (old behavior)
+    // or if we closed the active tab and there are no more tabs
+    if (
+      !tabIdToClose ||
+      (isClosingActiveTab && !this.tabManagerService.hasOpenTabs())
+    ) {
+      this.initialize();
+      this.ngzone.run(() => {
+        this.configService.setDatas();
+        this.setTitleBar('');
+        this._fileLoaderSub.next(this.fileLoaderDatas);
+      });
+    }
   }
 
   setFileHistory(filename: string): Promise<void> {
@@ -522,13 +629,28 @@ export class FileSystemService {
       filesHistory.files.unshift(filename);
       this.storageService.setOne('OPEN_FILE', filesHistory);
       this._recentFilesChanged.next();
-      resolve();
+      // Wait for disk write to complete, then notify other windows with the actual data
+      this.storageService.saveAll(() => {
+        this.electronService.ipcRenderer?.invoke(
+          'broadcast-file-history-updated',
+          filesHistory,
+        );
+        resolve();
+      });
     });
   }
 
   getFileHistory() {
     const history = this.storageService.getOne('OPEN_FILE') || { files: [] };
     return history;
+  }
+
+  /**
+   * Notify subscribers that the recent files list was updated externally
+   * (e.g. by another window).
+   */
+  notifyRecentFilesChanged() {
+    this._recentFilesChanged.next();
   }
 
   /**
@@ -617,8 +739,8 @@ export class FileSystemService {
 
   /**
    * Determine file type based on extension and file content.
-   * For .json files, only the first few KB are read to find the "tool" field,
-   * avoiding crashes on very large files that exceed V8's string length limit.
+   * For .json files, only reads the first few KB to find the "tool" field
+   * so that large files do not freeze the UI or exceed V8 string limits.
    */
   private getFileType(filePath: string): 'visualization' | 'covisualization' {
     const extension = filePath.toLowerCase().split('.').pop();
@@ -628,16 +750,23 @@ export class FileSystemService {
     } else if (extension === 'khj') {
       return 'visualization';
     } else if (extension === 'json') {
-      // Read only the first 4 KB to find the "tool" field
       try {
+        // Read only the first 4 KB – enough to find the "tool" field near the top
+        const bufferSize = 4096;
+        const buffer = Buffer.alloc(bufferSize);
         const fd = this.electronService.fs.openSync(filePath, 'r');
-        const buffer = Buffer.alloc(4096);
-        const bytesRead = this.electronService.fs.readSync(fd, buffer, 0, 4096, 0);
+        const bytesRead = this.electronService.fs.readSync(
+          fd,
+          buffer,
+          0,
+          bufferSize,
+          0,
+        );
         this.electronService.fs.closeSync(fd);
-        const head = buffer.toString('utf-8', 0, bytesRead);
 
-        const toolMatch = head.match(/"tool"\s*:\s*"([^"]*)"/);                                                                                                                                   
-        if (toolMatch && toolMatch[1] === 'Khiops Coclustering') {
+        const head = buffer.toString('utf-8', 0, bytesRead);
+        // Match "tool" : "Khiops Coclustering" with flexible whitespace
+        if (/"tool"\s*:\s*"Khiops Coclustering"/.test(head)) {
           return 'covisualization';
         }
         return 'visualization';
@@ -647,11 +776,11 @@ export class FileSystemService {
           filePath,
           error,
         );
-        return 'visualization'; // Default fallback
+        return 'visualization';
       }
     }
 
-    return 'visualization'; // Default
+    return 'visualization';
   }
 
   /**
@@ -699,10 +828,19 @@ export class FileSystemService {
       : JSON.stringify(datas, null, 2);
 
     this.electronService.fs.writeFileSync(filename, serialized, 'utf-8');
+    const basename = filename.split(/[\\/]/).pop() ?? filename;
     this.configService.snack(
-      this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS'),
+      `${this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS', {
+        filename: basename,
+      })}`,
       4000,
       'success',
     );
+    // Update the dirty-state baseline in the component and clear the tab indicator
+    this.configService.markSaved();
+    const activeTab = this.tabManagerService.getActiveTab();
+    if (activeTab) {
+      this.tabManagerService.markTabDirty(activeTab.id, false);
+    }
   }
 }

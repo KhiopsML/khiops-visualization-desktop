@@ -11,6 +11,9 @@
 html,
 body {
   margin: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
   padding: 0;
   height: 100%;
   min-width: 800px;
@@ -22,42 +25,6 @@ app-root {
   padding: 0;
   height: 100%;
   width: 100%;
-}
-
-.toastify {
-  padding: 12px 20px;
-  color: #ffffff;
-  display: inline-block;
-  box-shadow:
-    0 3px 6px -1px rgba(0, 0, 0, 0.12),
-    0 10px 36px -4px rgba(77, 96, 232, 0.3);
-  background: red;
-  position: fixed;
-  opacity: 0;
-  transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
-  border-radius: 2px;
-  cursor: pointer;
-  text-decoration: none;
-  max-width: calc(50% - 20px);
-  z-index: 2147483647;
-  bottom: -150px;
-}
-
-.toastify.on {
-  opacity: 1;
-}
-
-.toastify-bottom {
-  bottom: -150px;
-}
-
-.toastify-center {
-  margin-left: auto;
-  margin-right: auto;
-  left: 0;
-  right: 0;
-  max-width: fit-content;
-  max-width: -moz-fit-content;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -101,4 +68,12 @@ app-root {
 ::-webkit-scrollbar-button {
   width: 0px;
   height: 0px;
+}
+
+// Snackbar panel classes
+.mat-mdc-snack-bar-container {
+  &.error .mdc-snackbar__surface {
+    background-color: #c62828 !important;
+    color: #fff !important;
+  }
 }

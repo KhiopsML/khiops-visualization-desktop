@@ -1,0 +1,112 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, feat-multi-tabs]
+  pull_request:
+    branches: [main, feat-multi-tabs]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Cache Electron binary
+        id: electron-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: electron-${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            electron-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          npm install -g yarn
+          yarn
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Ensure Electron binary is extracted
+        run: |
+          ELECTRON_VERSION=$(node -p "require('./node_modules/electron/package.json').version")
+
+          # Download the zip via @electron/get
+          ZIP_PATH=$(node -e "
+            const { downloadArtifact } = require('@electron/get');
+            downloadArtifact({ version: '$ELECTRON_VERSION', artifactName: 'electron' })
+              .then(p => process.stdout.write(p))
+              .catch(e => { console.error(e.message); process.exit(1); });
+          ")
+          echo "Zip path: $ZIP_PATH"
+
+          # Extract into node_modules/electron/dist/ (where Playwright expects the binary)
+          rm -rf node_modules/electron/dist
+          mkdir -p node_modules/electron/dist
+          unzip -q "$ZIP_PATH" -d node_modules/electron/dist
+          chmod +x node_modules/electron/dist/electron
+
+          # Write path.txt with just the relative filename
+          echo -n "electron" > node_modules/electron/path.txt
+
+          echo "path.txt content: $(cat node_modules/electron/path.txt)"
+          ls -la node_modules/electron/dist/electron
+        env:
+          ELECTRON_CACHE: ~/.cache/electron
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium
+
+      - name: Build Electron main process
+        run: yarn electron:serve-tsc
+
+      - name: Start Angular dev server and wait
+        run: |
+          yarn ng:serve:dev &
+          SERVER_PID=$!
+
+          yarn wait-on http://localhost:4200 --timeout 120000 || {
+            echo "wait-on failed. Checking server process..."
+            kill -0 $SERVER_PID 2>/dev/null && echo "Process alive but not responding" || echo "Process is dead"
+            exit 1
+          }
+
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+
+      - name: Run Playwright tests
+        id: playwright-tests
+        continue-on-error: true
+        run: xvfb-run --auto-servernum yarn e2e
+
+      - name: Debug - list generated files
+        if: always()
+        run: |
+          echo "=== e2e/test-results ==="
+          find e2e/test-results -type f 2>/dev/null || echo "No test-results"
+
+          echo "=== e2e/playwright-report ==="
+          find e2e/playwright-report -type f 2>/dev/null || echo "No report"
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Fail job if tests failed
+        if: steps.playwright-tests.outcome == 'failure'
+        run: exit 1
