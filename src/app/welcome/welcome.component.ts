@@ -4,9 +4,8 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { StartPanelComponent } from '../start-panel/start-panel.component';
 import { RecentlyOpenedFilesComponent } from '../recently-opened-files/recently-opened-files.component';
@@ -18,9 +17,9 @@ import { FileLoaderI } from '../interfaces/file-system.interface';
   templateUrl: './welcome.component.html',
   styleUrl: './welcome.component.scss',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     CommonModule,
-    TranslateModule,
     StartPanelComponent,
     RecentlyOpenedFilesComponent,
   ],

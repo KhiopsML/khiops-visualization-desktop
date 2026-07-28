@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MenuService } from '../core/services/menu.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 interface Shortcut {
   keys: string[];
@@ -13,7 +13,8 @@ interface Shortcut {
   templateUrl: './start-panel.component.html',
   styleUrl: './start-panel.component.scss',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [CommonModule, TranslatePipe],
 })
 export class StartPanelComponent implements OnInit {
   shortcut: Shortcut | null = null;

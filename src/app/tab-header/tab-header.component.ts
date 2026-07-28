@@ -4,7 +4,7 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
 import { TabManagerService } from '../core/services/tab-manager.service';
@@ -22,6 +22,7 @@ import { takeUntil } from 'rxjs/operators';
   templateUrl: './tab-header.component.html',
   styleUrls: ['./tab-header.component.scss'],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [CommonModule],
 })
 export class TabHeaderComponent implements OnInit, OnDestroy {

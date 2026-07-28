@@ -16,6 +16,7 @@ import {
   QueryList,
   ViewChildren,
   OnDestroy,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
@@ -45,6 +46,7 @@ import { takeUntil } from 'rxjs/operators';
     BigFileLoadingComponent,
     TabHeaderComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AppComponent implements AfterViewInit, OnDestroy {

@@ -4,9 +4,9 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { MenuService } from '../core/services/menu.service';
 import { Subscription } from 'rxjs';
@@ -24,7 +24,8 @@ interface RecentFileItem {
   templateUrl: './recently-opened-files.component.html',
   styleUrl: './recently-opened-files.component.scss',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [CommonModule, TranslatePipe],
 })
 export class RecentlyOpenedFilesComponent implements OnInit, OnDestroy {
   recentFiles: RecentFileItem[] = [];

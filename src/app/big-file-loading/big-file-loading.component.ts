@@ -4,9 +4,9 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { Subscription } from 'rxjs';
 import { FileLoaderI } from '../interfaces/file-system.interface';
@@ -16,7 +16,8 @@ import { FileLoaderI } from '../interfaces/file-system.interface';
   templateUrl: './big-file-loading.component.html',
   styleUrl: './big-file-loading.component.scss',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [CommonModule, TranslatePipe],
 })
 export class BigFileLoadingComponent implements OnInit, OnDestroy {
   private fileLoaderSub?: Subscription;
