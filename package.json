@@ -126,7 +126,7 @@
     "electron-debug": "^4.1.0",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-reloader": "^1.2.3",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "jasmine-core": "^6.3.0",
