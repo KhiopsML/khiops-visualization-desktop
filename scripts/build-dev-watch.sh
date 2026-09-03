@@ -2,7 +2,8 @@
 
 ANGULAR_JSON="angular.json"
 
-# Update the angular.json file to replace the script path
+# Update the angular.json file to replace the style and script paths
+sed -i 's/"styles": \["src\/styles.scss"\]/"styles": ["..\/visualization-component\/dist\/khiops-webcomponent\/styles.css", "src\/styles.scss"]/' $ANGULAR_JSON
 sed -i 's/"scripts": \[\]/"scripts": ["..\/visualization-component\/dist\/khiops-webcomponent\/main.js"]/' $ANGULAR_JSON
 
 # Store PIDs for cleanup
