@@ -8,7 +8,6 @@ export interface ConfigI {
   setDatas?: Function;
   constructDatasToSave?: Function;
   constructPrunedDatasToSave?: Function;
-  openChannelDialog?: Function;
   rightClick?: Function;
   copyImage?: Function;
   copyDatas?: Function;

@@ -7,6 +7,7 @@
 import { Injectable } from '@angular/core';
 import { ElectronService } from './electron.service';
 import { ConfigI } from '../../interfaces/config.interface';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +17,10 @@ export class ConfigService {
   private activeComponentType: 'visualization' | 'covisualization' =
     'visualization';
 
-  constructor(private electronService: ElectronService) {}
+  constructor(
+    private electronService: ElectronService,
+    private translate: TranslateService,
+  ) {}
 
   setConfig(config: ConfigI) {
     this.config = config;
@@ -36,7 +40,7 @@ export class ConfigService {
 
   private componentChangeCallback?: (
     componentType: 'visualization' | 'covisualization',
-    filePath?: string
+    filePath?: string,
   ) => void;
 
   private tabDataCallback?: (tabId: string, data: any) => void;
@@ -44,7 +48,7 @@ export class ConfigService {
   setComponentChangeCallback(
     callback: (
       componentType: 'visualization' | 'covisualization',
-      filePath?: string
+      filePath?: string,
     ) => void,
   ) {
     this.componentChangeCallback = callback;
@@ -138,11 +142,17 @@ export class ConfigService {
       // avoiding crashes on very large files (> V8 string limit).
       const fd = this.electronService.fs.openSync(filePath, 'r');
       const buffer = Buffer.alloc(4096);
-      const bytesRead = this.electronService.fs.readSync(fd, buffer, 0, 4096, 0);
+      const bytesRead = this.electronService.fs.readSync(
+        fd,
+        buffer,
+        0,
+        4096,
+        0,
+      );
       this.electronService.fs.closeSync(fd);
       const head = buffer.toString('utf-8', 0, bytesRead);
 
-      const toolMatch = head.match(/"tool"\s*:\s*"([^"]*)"/);                                                                                                                                   
+      const toolMatch = head.match(/"tool"\s*:\s*"([^"]*)"/);
       if (toolMatch && toolMatch[1] === 'Khiops Coclustering') {
         return 'covisualization';
       }
@@ -171,9 +181,21 @@ export class ConfigService {
   }
 
   openChannelDialog(cb: Function) {
-    if (this.config && this.config.openChannelDialog) {
-      this.config.openChannelDialog(cb);
-    }
+    // No tab open: the lib component isn't mounted, fall back to a native Electron dialog
+    this.electronService.dialog
+      .showMessageBox({
+        type: 'question',
+        buttons: [
+          this.translate.instant('GLOBAL_CANCEL'),
+          this.translate.instant('GLOBAL_CONFIRM'),
+        ],
+        defaultId: 1,
+        cancelId: 0,
+        message: this.translate.instant('ENABLE_BETA_VERSIONS_CONFIRM'),
+      })
+      .then((result: { response: number }) => {
+        cb(result.response === 1 ? 'confirm' : 'cancel');
+      });
   }
 
   rightClick(arg: any, cb?: Function) {
@@ -194,7 +216,10 @@ export class ConfigService {
     }
   }
 
-  openSaveBeforeQuitDialog(cb: Function, options?: { showBatchButtons?: boolean; filename?: string }) {
+  openSaveBeforeQuitDialog(
+    cb: Function,
+    options?: { showBatchButtons?: boolean; filename?: string },
+  ) {
     if (this.config && this.config.openSaveBeforeQuitDialog) {
       this.config.openSaveBeforeQuitDialog(cb, options);
     }
