@@ -6427,10 +6427,10 @@ electron-updater@^6.8.10:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^43.7.5:
-  version "43.7.5"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-43.7.5.tgz#2c3c8c4aea6fe8af8b1f15f8dd11743aef70b7b2"
-  integrity sha512-AR+OLH/8QAwx6Lz6mhaDQhesbjC/Xh2WOiFSI/CDFU6FKX/qJdBg65bEUn+MLvbvIi/LlaRQeLljnUcKb1KS0A==
+electron@^43.7.6:
+  version "43.7.6"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-43.7.6.tgz#16bbeaa200c19a6ae75f883e8fc910a24e72a3c8"
+  integrity sha512-dLKMEDmUFG9hyL5fj0wOPXxxtIbhH+I6gSXOFMGSLiOIxeU2LjNb9YkQQOH7clD2TSBf2fa+gz8EEQ46FTpMaA==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
@@ -12280,10 +12280,10 @@ void-elements@^2.0.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
   integrity sha512-qZKX4RnBzH2ugr8Lxa7x+0V6XD9Sb/ouARtiasEQCHB1EVU4NXtmHsDDrx1dO4ne5fc3J6EW05BP1Dl0z0iung==
 
-wait-on@^9.4.0:
-  version "9.4.0"
-  resolved "https://registry.yarnpkg.com/wait-on/-/wait-on-9.4.0.tgz#83a7c470c63d0ae5d3304bc3ba00e0713a9caae3"
-  integrity sha512-70vjt46idCEqR3THCRFOVTcEeAhzHTMwDvhZyixUYAGmLbQ05acRTbs9E/Jk1hrL3oiAn09C+uNTopbzgMt3ng==
+wait-on@^9.5.1:
+  version "9.5.1"
+  resolved "https://registry.yarnpkg.com/wait-on/-/wait-on-9.5.1.tgz#6867956a9dbb39e28d35e5db6a779bdbf0f013b8"
+  integrity sha512-bOtj1wRY6u+GPnNskZLcgZNHOaL5NC4+5hRCbEpVoVX6MbMrCLCqIBM2bjsAfrgst3ZC0siIo7vLb4LuYFfIow==
   dependencies:
     axios "^1.20.0"
     joi "^18.2.9"
