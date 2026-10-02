@@ -19,7 +19,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ElectronService } from './core/services/electron.service';
 import { ConfigService } from './core/services/config.service';
 import { MenuService } from './core/services/menu.service';
@@ -42,6 +42,7 @@ import { takeUntil } from 'rxjs/operators';
   standalone: true,
   imports: [
     CommonModule,
+    TranslatePipe,
     WelcomeComponent,
     BigFileLoadingComponent,
     TabHeaderComponent,

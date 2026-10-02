@@ -4,6 +4,7 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 @use './assets/fonts/Poppins.scss';
+
 * {
   font-family: 'Poppins', Verdana, Arial, sans-serif !important;
   -webkit-font-smoothing: antialiased;
@@ -21,6 +22,7 @@ body {
   overflow: hidden;
 }
 app-root {
+  --border-radius: 5px;
   margin: 0;
   padding: 0;
   height: 100%;

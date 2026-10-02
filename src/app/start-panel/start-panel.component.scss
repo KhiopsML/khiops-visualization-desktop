@@ -61,7 +61,7 @@
           background: #f5f5f5;
           color: #222;
           padding: 2px 6px;
-          border-radius: 5px;
+          border-radius: var(--border-radius);
           font-size: 12px;
           font-weight: 500;
           min-width: 28px;
@@ -83,7 +83,7 @@
     .description {
       font-size: 13px;
       color: #fff;
-      border-radius: 2px;
+      border-radius: var(--border-radius);
       line-height: 1.2;
       background-color: #1a1a1a;
       border: none;
