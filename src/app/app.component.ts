@@ -59,6 +59,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   tabs: Tab[] = [];
   activeTab: Tab | null = null;
   isDragOver: boolean = false;
+  isDragOverCovisuSidePanel: boolean = false;
   private destroy$ = new Subject<void>();
   private dragCounter: number = 0;
   btnUpdateText: string = '';
@@ -651,7 +652,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
 
-    if (this.isDragInsideCovisuSidePanel(event)) {
+    this.isDragOverCovisuSidePanel = this.isDragInsideCovisuSidePanel(event);
+
+    if (this.isDragOverCovisuSidePanel) {
       this.resetGlobalDragState();
       return;
     }
@@ -669,8 +672,15 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
 
-    if (this.isDragInsideCovisuSidePanel(event)) {
+    this.isDragOverCovisuSidePanel = this.isDragInsideCovisuSidePanel(event);
+
+    if (this.isDragOverCovisuSidePanel) {
       this.resetGlobalDragState();
+      return;
+    }
+
+    if (this.dragCounter > 0) {
+      this.isDragOver = true;
     }
   }
 
@@ -681,7 +691,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
 
-    if (this.isDragInsideCovisuSidePanel(event)) {
+    this.isDragOverCovisuSidePanel = this.isDragInsideCovisuSidePanel(event);
+
+    if (this.isDragOverCovisuSidePanel) {
       this.resetGlobalDragState();
       return;
     }
@@ -699,12 +711,16 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
 
-    if (this.isDragInsideCovisuSidePanel(event)) {
+    this.isDragOverCovisuSidePanel = this.isDragInsideCovisuSidePanel(event);
+
+    if (this.isDragOverCovisuSidePanel) {
       this.resetGlobalDragState();
+      this.isDragOverCovisuSidePanel = false;
       return;
     }
 
     this.resetGlobalDragState();
+    this.isDragOverCovisuSidePanel = false;
 
     const files = event.dataTransfer?.files;
     if (files && files.length > 0 && files[0]) {
@@ -757,9 +773,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         }
 
         const bounds = sidePanel.getBoundingClientRect();
+        // Keep side panel visual size unchanged, but make drag hit-area full width.
         const isInsideSidePanel =
-          event.clientX >= bounds.left &&
-          event.clientX <= bounds.right &&
+          event.clientX >= 0 &&
+          event.clientX <= window.innerWidth &&
           event.clientY >= bounds.top &&
           event.clientY <= bounds.bottom;
 

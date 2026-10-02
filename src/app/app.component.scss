@@ -53,6 +53,12 @@ app-welcome {
       visibility 0.2s ease-in-out;
   }
 
+  /* Overlay is visual-only: never capture drag/pointer events. */
+  .drag-drop-overlay,
+  .drag-drop-overlay * {
+    pointer-events: none !important;
+  }
+
   &.drag-over .drag-drop-overlay {
     opacity: 1;
     visibility: visible;

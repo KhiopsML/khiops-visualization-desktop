@@ -11,7 +11,7 @@
   <!-- Main content area -->
   <div
     class="main-content"
-    [class.drag-over]="isDragOver"
+    [class.drag-over]="isDragOver && !isDragOverCovisuSidePanel"
     (dragenter)="onDragEnter($event)"
     (dragover)="onDragOver($event)"
     (dragleave)="onDragLeave($event)"
