@@ -807,7 +807,22 @@ export class FileSystemService {
       .showSaveDialog(dialogOpts)
       .then((result: any) => {
         const filename = result.filePath;
-        if (filename) this.saveFile(filename, datas);
+        if (filename) {
+          this.saveFile(filename, datas);
+
+          const activeTab = this.tabManagerService.getActiveTab();
+          if (activeTab) {
+            const fileName = filename.replace(/\\/g, '/').split('/').pop() || filename;
+            this.tabManagerService.updateTab(activeTab.id, {
+              filePath: filename,
+              title: fileName,
+              isDirty: false,
+            });
+          }
+
+          this.setTitleBar(filename);
+          this.setFileHistory(filename);
+        }
       });
   }
 
