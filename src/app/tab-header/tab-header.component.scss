@@ -7,10 +7,21 @@
 .tab-header {
   display: flex;
   height: 40px;
-  background: #f1f3f4;
-  border-bottom: 1px solid #dadce0;
+  background: var(--color-0);
+  border-bottom: none;
   user-select: none;
   position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--color-border-subtle);
+    pointer-events: none;
+  }
 
   &.is-dragging {
     cursor: grabbing;
@@ -43,8 +54,9 @@
   min-width: 36px; // minimum tab width — tabs shrink like Chrome instead of overflowing
   flex: 1;
   padding: 0 16px;
-  background: #f1f3f4;
-  border-right: 1px solid #dadce0;
+  background: var(--color-0);
+  border-right: 1px solid var(--color-border-subtle);
+  border-top: 1px solid var(--color-border-subtle);
   cursor: pointer;
   position: relative;
   font-family:
@@ -56,12 +68,26 @@
     background-color 0.2s ease;
 
   &:hover {
-    background: #e8eaed;
+    background: var(--color-100);
   }
 
   &.active {
-    background: #fff;
-    border-bottom: 1px solid #fff;
+    background: var(--color-50);
+    border-bottom: none;
+    border-top: 1px solid var(--color-0);
+
+    z-index: 3;
+
+    // Hide tab-header bottom border below active tab
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background: var(--color-50);
+    }
 
     &::after {
       content: '';
@@ -70,7 +96,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: #1a73e8;
+      background: var(--color-brand-orange);
     }
   }
 
@@ -86,7 +112,7 @@
     top: 0;
     pointer-events: none;
     transition: none; // JS drives position — no CSS transition
-    background: #fff;
+    background: var(--color-0);
     box-shadow:
       0 4px 12px rgba(0, 0, 0, 0.15),
       0 1px 3px rgba(0, 0, 0, 0.1);
@@ -100,7 +126,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: #1a73e8;
+      background: var(--color-brand-orange);
     }
   }
 }
@@ -109,7 +135,7 @@
   display: flex;
   align-items: center;
   margin-right: 8px;
-  color: #5f6368;
+  color: var(--color-600);
   flex-shrink: 0;
 
   svg {
@@ -118,7 +144,7 @@
   }
 
   .active & {
-    color: #1a73e8;
+    color: var(--color-brand-orange);
   }
 }
 
@@ -142,8 +168,8 @@
 .spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid #e8eaed;
-  border-top: 2px solid #1a73e8;
+  border: 2px solid var(--color-100);
+  border-top: 2px solid var(--color-brand-orange);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -158,7 +184,7 @@
 }
 
 .tab-dirty {
-  color: #f57c00;
+  color: var(--color-brand-orange);
   font-size: 16px;
   line-height: 1;
   margin-right: 8px;
@@ -174,13 +200,13 @@
   background: none;
   border-radius: var(--border-radius);
   cursor: pointer;
-  color: #5f6368;
+  color: var(--color-600);
   flex-shrink: 0;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #e8eaed;
-    color: #202124;
+    background: var(--color-100);
+    color: var(--color-800);
   }
 
   svg {
@@ -200,13 +226,13 @@
   background: none;
   border-radius: var(--border-radius);
   cursor: pointer;
-  color: #5f6368;
+  color: var(--color-600);
   transition: all 0.2s ease;
   flex-shrink: 0;
 
   &:hover {
-    background: #e8eaed;
-    color: #202124;
+    background: var(--color-100);
+    color: var(--color-800);
   }
 
   svg {
@@ -219,7 +245,7 @@
   display: flex;
   align-items: center;
   padding: 0 8px;
-  border-left: 1px solid #dadce0;
+  border-left: 1px solid var(--color-100);
 }
 
 .control-btn {
@@ -232,13 +258,13 @@
   background: none;
   border-radius: var(--border-radius);
   cursor: pointer;
-  color: #5f6368;
+  color: var(--color-600);
   transition: all 0.2s ease;
   margin: 0 2px;
 
   &:hover {
-    background: #e8eaed;
-    color: #202124;
+    background: var(--color-100);
+    color: var(--color-800);
   }
 
   svg {
@@ -248,80 +274,80 @@
 }
 
 // Dark theme
-@media (prefers-color-scheme: dark) {
-  .tab-header {
-    background: #2d2e30;
-    border-color: #3c4043;
-  }
+// @media (prefers-color-scheme: dark) {
+//   .tab-header {
+//     background: #2d2e30;
+//     border-color: #3c4043;
+//   }
 
-  .tab {
-    background: #2d2e30;
-    border-color: #3c4043;
-    color: #e8eaed;
+//   .tab {
+//     background: #2d2e30;
+//     border-color: #3c4043;
+//     color: #e8eaed;
 
-    &:hover {
-      background: #3c4043;
-    }
+//     &:hover {
+//       background: #3c4043;
+//     }
 
-    &.active {
-      background: #202124;
-      border-color: #202124;
+//     &.active {
+//       background: #202124;
+//       border-color: #202124;
 
-      &::after {
-        background: #8ab4f8;
-      }
-    }
+//       &::after {
+//         background: #8ab4f8;
+//       }
+//     }
 
-    &.tab--ghost {
-      background: #202124;
-      box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.5),
-        0 1px 4px rgba(0, 0, 0, 0.3);
+//     &.tab--ghost {
+//       background: #202124;
+//       box-shadow:
+//         0 4px 16px rgba(0, 0, 0, 0.5),
+//         0 1px 4px rgba(0, 0, 0, 0.3);
 
-      &::after {
-        background: #8ab4f8;
-      }
-    }
-  }
+//       &::after {
+//         background: #8ab4f8;
+//       }
+//     }
+//   }
 
-  .tab-icon {
-    color: #9aa0a6;
-    .active & {
-      color: #8ab4f8;
-    }
-  }
+//   .tab-icon {
+//     color: #9aa0a6;
+//     .active & {
+//       color: #8ab4f8;
+//     }
+//   }
 
-  .tab-title {
-    color: #e8eaed;
-  }
+//   .tab-title {
+//     color: #e8eaed;
+//   }
 
-  .tab-dirty {
-    color: #ffb74d;
-  }
+//   .tab-dirty {
+//     color: #ffb74d;
+//   }
 
-  .spinner {
-    border-color: #3c4043;
-    border-top-color: #8ab4f8;
-  }
+//   .spinner {
+//     border-color: #3c4043;
+//     border-top-color: #8ab4f8;
+//   }
 
-  .tab-close {
-    color: #9aa0a6;
-    &:hover {
-      background: #3c4043;
-      color: #e8eaed;
-    }
-  }
+//   .tab-close {
+//     color: #9aa0a6;
+//     &:hover {
+//       background: #3c4043;
+//       color: #e8eaed;
+//     }
+//   }
 
-  .new-tab-btn,
-  .control-btn {
-    color: #9aa0a6;
-    &:hover {
-      background: #3c4043;
-      color: #e8eaed;
-    }
-  }
+//   .new-tab-btn,
+//   .control-btn {
+//     color: #9aa0a6;
+//     &:hover {
+//       background: #3c4043;
+//       color: #e8eaed;
+//     }
+//   }
 
-  .window-controls {
-    border-color: #3c4043;
-  }
-}
+//   .window-controls {
+//     border-color: #3c4043;
+//   }
+// }

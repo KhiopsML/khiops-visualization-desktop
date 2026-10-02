@@ -1,11 +1,12 @@
-import { app, BrowserWindow, clipboard, screen } from 'electron';
+import { app, BrowserWindow, clipboard, nativeTheme, screen } from 'electron';
 import * as electron from 'electron';
 import * as remoteMain from '@electron/remote/main';
 remoteMain.initialize();
 import * as path from 'path';
 import * as fs from 'fs';
 // Lazy-loaded on first use to avoid blocking startup
-let _machineIdSync: typeof import('node-machine-id').machineIdSync | null = null;
+let _machineIdSync: typeof import('node-machine-id').machineIdSync | null =
+  null;
 function getMachineId(): string {
   if (!_machineIdSync) {
     _machineIdSync = require('node-machine-id').machineIdSync;
@@ -61,9 +62,9 @@ if (!forceNewWindow) {
   } else {
     app.on('second-instance', (_event, argv) => {
       // argv from the second instance: find the file path (last non-flag arg)
-      const fileArg = argv.slice(1).find(
-        (a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a),
-      );
+      const fileArg = argv
+        .slice(1)
+        .find((a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a));
 
       const targetWindow =
         lastFocusedWindow ?? openWindows[openWindows.length - 1] ?? win;
@@ -80,6 +81,21 @@ if (!forceNewWindow) {
 }
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
+function getWindowChromeOptions(): Record<string, any> {
+  if (process.platform === 'win32') {
+    return {
+      titleBarStyle: 'default',
+      autoHideMenuBar: false,
+      backgroundColor: '#ffffff',
+    };
+  }
+
+  return {
+    titleBarStyle: 'default',
+    backgroundColor: '#ffffff',
+  };
+}
 
 // log.transports.file.level = 'info';
 // log.transports.file.file = __dirname + '/electron.log';
@@ -132,6 +148,8 @@ app.on('will-finish-launching', function () {
 function createWindow(): BrowserWindow {
   const size = screen.getPrimaryDisplay().workAreaSize;
 
+  nativeTheme.themeSource = 'light';
+
   // Create the browser window.
   const newWindow = new electron.BrowserWindow({
     x: 0,
@@ -146,9 +164,8 @@ function createWindow(): BrowserWindow {
       allowRunningInsecureContent: serve,
       contextIsolation: false, // false if you want to run e2e test with Spectron
     },
-    titleBarStyle: 'default',
     darkTheme: false,
-    backgroundColor: '#ffffff',
+    ...getWindowChromeOptions(),
   });
 
   newWindow.once('ready-to-show', () => {
@@ -347,9 +364,8 @@ function createPrewarmedWindow(): BrowserWindow {
       allowRunningInsecureContent: serve,
       contextIsolation: false,
     },
-    titleBarStyle: 'default',
     darkTheme: false,
-    backgroundColor: '#ffffff',
+    ...getWindowChromeOptions(),
   });
 
   require('@electron/remote/main').enable(pw);
@@ -439,12 +455,16 @@ function promotePrewarmedWindow(): BrowserWindow {
       { type: 'separator' },
       {
         label: 'Copy image',
-        click: () => { pw.webContents?.send('copy-image', params); },
+        click: () => {
+          pw.webContents?.send('copy-image', params);
+        },
         accelerator: 'CommandOrControl+Shift+c',
       },
       {
         label: 'Copy datas',
-        click: () => { pw.webContents?.send('copy-datas', params); },
+        click: () => {
+          pw.webContents?.send('copy-datas', params);
+        },
         accelerator: 'CommandOrControl+Shift+d',
       },
       { type: 'separator' },
@@ -493,7 +513,7 @@ try {
     const mainWin = createWindow();
     // Pre-warm a hidden window only after the main window finishes loading
     // mainWin.webContents.once('did-finish-load', () => {
-      schedulePrewarm();
+    schedulePrewarm();
     // });
   });
 
@@ -545,9 +565,9 @@ ipcMain.on('get-input-file', async (event: any) => {
     //   - --new-window: electron.exe main.js --new-window [file]
     //   - serve:       electron.exe main.js --serve ...
     // Skip flags (--*) and the main script to find the actual data file.
-    const fileArg = process.argv.slice(1).find(
-      (a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a),
-    );
+    const fileArg = process.argv
+      .slice(1)
+      .find((a) => !a.startsWith('-') && /\.(json|khj|khcj)$/i.test(a));
     if (fileArg) {
       inputFileConsumed = true;
     }
@@ -584,11 +604,13 @@ function checkForUpdates(channel: string, delay: number = 10000) {
   getAutoUpdater().allowPrerelease = channel === 'beta';
   log.info('checkForUpdates');
   setTimeout(() => {
-    getAutoUpdater().checkForUpdates().catch((err: Error) => {
-      // Silently ignore network errors during update check
-      log.warn('checkForUpdates failed (non-blocking):', err.message);
-      win?.webContents?.send('update-error', err);
-    });
+    getAutoUpdater()
+      .checkForUpdates()
+      .catch((err: Error) => {
+        // Silently ignore network errors during update check
+        log.warn('checkForUpdates failed (non-blocking):', err.message);
+        win?.webContents?.send('update-error', err);
+      });
   }, delay);
 }
 
@@ -639,24 +661,27 @@ async function openFileDialogForWindow(targetWindow: BrowserWindow) {
  * and fall back to getFocusedWindow / lastFocusedWindow only when the id is
  * missing.
  */
-ipcMain.handle('menu-action-open-file', async (_event: any, windowId?: number) => {
-  log.info('menu-action-open-file requested, windowId:', windowId);
+ipcMain.handle(
+  'menu-action-open-file',
+  async (_event: any, windowId?: number) => {
+    log.info('menu-action-open-file requested, windowId:', windowId);
 
-  let targetWindow: BrowserWindow | null = null;
-  if (windowId != null) {
-    targetWindow = BrowserWindow.fromId(windowId);
-  }
-  if (!targetWindow) {
-    targetWindow =
-      BrowserWindow.getFocusedWindow() ??
-      lastFocusedWindow ??
-      openWindows[openWindows.length - 1] ??
-      win;
-  }
-  if (!targetWindow) return { success: false, reason: 'no-window' };
+    let targetWindow: BrowserWindow | null = null;
+    if (windowId != null) {
+      targetWindow = BrowserWindow.fromId(windowId);
+    }
+    if (!targetWindow) {
+      targetWindow =
+        BrowserWindow.getFocusedWindow() ??
+        lastFocusedWindow ??
+        openWindows[openWindows.length - 1] ??
+        win;
+    }
+    if (!targetWindow) return { success: false, reason: 'no-window' };
 
-  return openFileDialogForWindow(targetWindow);
-});
+    return openFileDialogForWindow(targetWindow);
+  },
+);
 
 /**
  * Handle "Open recent file" action from the history list in the application menu.
@@ -664,25 +689,33 @@ ipcMain.handle('menu-action-open-file', async (_event: any, windowId?: number) =
  * renderer that last called setApplicationMenu, not necessarily the focused one.
  * We accept the windowId from the click callback to always target the right window.
  */
-ipcMain.handle('menu-action-open-recent-file', async (_event: any, filePath: string, windowId?: number) => {
-  log.info('menu-action-open-recent-file requested, windowId:', windowId, 'file:', filePath);
+ipcMain.handle(
+  'menu-action-open-recent-file',
+  async (_event: any, filePath: string, windowId?: number) => {
+    log.info(
+      'menu-action-open-recent-file requested, windowId:',
+      windowId,
+      'file:',
+      filePath,
+    );
 
-  let targetWindow: BrowserWindow | null = null;
-  if (windowId != null) {
-    targetWindow = BrowserWindow.fromId(windowId);
-  }
-  if (!targetWindow) {
-    targetWindow =
-      BrowserWindow.getFocusedWindow() ??
-      lastFocusedWindow ??
-      openWindows[openWindows.length - 1] ??
-      win;
-  }
-  if (!targetWindow) return { success: false, reason: 'no-window' };
+    let targetWindow: BrowserWindow | null = null;
+    if (windowId != null) {
+      targetWindow = BrowserWindow.fromId(windowId);
+    }
+    if (!targetWindow) {
+      targetWindow =
+        BrowserWindow.getFocusedWindow() ??
+        lastFocusedWindow ??
+        openWindows[openWindows.length - 1] ??
+        win;
+    }
+    if (!targetWindow) return { success: false, reason: 'no-window' };
 
-  targetWindow.webContents.send('file-open-system', filePath);
-  return { success: true };
-});
+    targetWindow.webContents.send('file-open-system', filePath);
+    return { success: true };
+  },
+);
 
 /**
  * Handle application quit request from renderer process
@@ -732,98 +765,113 @@ ipcMain.handle('set-update-auto-install-on-quit', () => {
  * Also includes the pre-warmed window so it stays up-to-date
  * before being promoted.
  */
-ipcMain.handle('broadcast-file-history-updated', (event: any, filesHistory: any) => {
-  const senderWindow = BrowserWindow.fromWebContents(event.sender);
-  openWindows.forEach((w) => {
-    if (!w.isDestroyed() && w !== senderWindow) {
-      w.webContents.send('file-history-updated', filesHistory);
+ipcMain.handle(
+  'broadcast-file-history-updated',
+  (event: any, filesHistory: any) => {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender);
+    openWindows.forEach((w) => {
+      if (!w.isDestroyed() && w !== senderWindow) {
+        w.webContents.send('file-history-updated', filesHistory);
+      }
+    });
+    // Keep the pre-warmed window in sync too (it is not in openWindows yet)
+    if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
+      prewarmedWindow.webContents.send('file-history-updated', filesHistory);
     }
-  });
-  // Keep the pre-warmed window in sync too (it is not in openWindows yet)
-  if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
-    prewarmedWindow.webContents.send('file-history-updated', filesHistory);
-  }
-});
+  },
+);
 
 /**
  * Keep a main-process view of opened files in each window.
  * Renderer sends the full list whenever tab state changes.
  */
-ipcMain.handle('window-open-files-updated', (event: any, filePaths: string[]) => {
-  const senderWindow = BrowserWindow.fromWebContents(event.sender);
-  if (!senderWindow) {
-    return { success: false, reason: 'no-window' };
-  }
-
-  const normalized = new Set<string>();
-  for (const filePath of filePaths || []) {
-    const normalizedPath = normalizeFilePath(filePath);
-    if (normalizedPath) {
-      normalized.add(normalizedPath);
+ipcMain.handle(
+  'window-open-files-updated',
+  (event: any, filePaths: string[]) => {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender);
+    if (!senderWindow) {
+      return { success: false, reason: 'no-window' };
     }
-  }
 
-  openFilesByWindow.set(senderWindow.id, normalized);
-  return { success: true };
-});
+    const normalized = new Set<string>();
+    for (const filePath of filePaths || []) {
+      const normalizedPath = normalizeFilePath(filePath);
+      if (normalizedPath) {
+        normalized.add(normalizedPath);
+      }
+    }
+
+    openFilesByWindow.set(senderWindow.id, normalized);
+    return { success: true };
+  },
+);
 
 /**
  * Handle opening a file in a new window.
  * Uses a pre-warmed window (if available) for near-instant startup,
  * falling back to createWindow otherwise.
  */
-ipcMain.handle('open-file-in-new-window', async (_event: any, filePath?: string) => {
-  try {
-    log.info('open-file-in-new-window requested');
-    let targetPath = filePath;
-    if (!targetPath) {
-      const result = await electron.dialog.showOpenDialog({
-        properties: ['openFile'],
-        filters: [{ name: 'Khiops Files', extensions: ['json', 'khj', 'khcj'] }],
-      });
-      if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
-        return { success: false, reason: 'canceled' };
+ipcMain.handle(
+  'open-file-in-new-window',
+  async (_event: any, filePath?: string) => {
+    try {
+      log.info('open-file-in-new-window requested');
+      let targetPath = filePath;
+      if (!targetPath) {
+        const result = await electron.dialog.showOpenDialog({
+          properties: ['openFile'],
+          filters: [
+            { name: 'Khiops Files', extensions: ['json', 'khj', 'khcj'] },
+          ],
+        });
+        if (
+          result.canceled ||
+          !result.filePaths ||
+          result.filePaths.length === 0
+        ) {
+          return { success: false, reason: 'canceled' };
+        }
+        targetPath = result.filePaths[0];
       }
-      targetPath = result.filePaths[0];
+
+      if (isFileOpenInAnyWindow(targetPath)) {
+        log.info('open-file-in-new-window ignored (already open):', targetPath);
+        return { success: false, reason: 'already-open' };
+      }
+
+      // Use pre-warmed window if available (near-instant), otherwise fall back to createWindow
+      let newWindow: BrowserWindow;
+      let alreadyLoaded = false;
+
+      if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
+        log.info('Using pre-warmed window for instant file open in new window');
+        newWindow = promotePrewarmedWindow();
+        alreadyLoaded = true;
+        schedulePrewarm();
+      } else {
+        newWindow = createWindow();
+      }
+
+      const sendFileOpen = () => {
+        newWindow.webContents.send('file-open-system', targetPath);
+      };
+
+      if (alreadyLoaded) {
+        sendFileOpen();
+      } else {
+        newWindow.webContents.once('did-finish-load', sendFileOpen);
+      }
+
+      newWindow.show();
+      newWindow.focus();
+
+      return { success: true };
+    } catch (error) {
+      log.error('Error opening file in new window:', error);
+      return { success: false, error: error };
     }
-
-    if (isFileOpenInAnyWindow(targetPath)) {
-      log.info('open-file-in-new-window ignored (already open):', targetPath);
-      return { success: false, reason: 'already-open' };
-    }
-
-    // Use pre-warmed window if available (near-instant), otherwise fall back to createWindow
-    let newWindow: BrowserWindow;
-    let alreadyLoaded = false;
-
-    if (prewarmedWindow && !prewarmedWindow.isDestroyed()) {
-      log.info('Using pre-warmed window for instant file open in new window');
-      newWindow = promotePrewarmedWindow();
-      alreadyLoaded = true;
-      schedulePrewarm();
-    } else {
-      newWindow = createWindow();
-    }
-
-    const sendFileOpen = () => {
-      newWindow.webContents.send('file-open-system', targetPath);
-    };
-
-    if (alreadyLoaded) {
-      sendFileOpen();
-    } else {
-      newWindow.webContents.once('did-finish-load', sendFileOpen);
-    }
-
-    newWindow.show();
-    newWindow.focus();
-
-    return { success: true };
-  } catch (error) {
-    log.error('Error opening file in new window:', error);
-    return { success: false, error: error };
-  }
-});
+  },
+);
 
 /**
  * Handle creating a new window with a detached tab
