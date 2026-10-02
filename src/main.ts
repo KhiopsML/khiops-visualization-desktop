@@ -30,26 +30,34 @@ if (APP_CONFIG.production) {
   enableProdMode();
 }
 
-bootstrapApplication(AppComponent, {
-  providers: [
-    importProvidersFrom(
-      CommonModule,
-      BrowserModule,
-      FormsModule,
-      MatomoModule.forRoot({
-        mode: 'deferred', // defer loading to set unique visitorId
+async function bootstrap(): Promise<void> {
+  if (!APP_CONFIG.useLocalVisualizationBundle) {
+    await import('khiops-visualization');
+  }
+
+  await bootstrapApplication(AppComponent, {
+    providers: [
+      importProvidersFrom(
+        CommonModule,
+        BrowserModule,
+        FormsModule,
+        MatomoModule.forRoot({
+          mode: 'deferred', // defer loading to set unique visitorId
+        }),
+      ),
+      provideHttpClient(withXhr(), withInterceptorsFromDi()),
+      provideTranslateService(),
+      provideTranslateHttpLoader({
+        prefix: './assets/i18n/',
+        suffix: '.json',
       }),
-    ),
-    provideHttpClient(withXhr(), withInterceptorsFromDi()),
-    provideTranslateService(),
-    provideTranslateHttpLoader({
-      prefix: './assets/i18n/',
-      suffix: '.json',
-    }),
-    TranslateService,
-    provideAppInitializer(() => {
-      const initializerFn = setupTranslateFactory(inject(TranslateService));
-      return initializerFn();
-    }),
-  ],
-}).catch((err) => console.error(err));
+      TranslateService,
+      provideAppInitializer(() => {
+        const initializerFn = setupTranslateFactory(inject(TranslateService));
+        return initializerFn();
+      }),
+    ],
+  });
+}
+
+bootstrap().catch((err) => console.error(err));

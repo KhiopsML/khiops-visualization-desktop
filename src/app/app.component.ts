@@ -33,7 +33,6 @@ import { TabHeaderComponent } from './tab-header/tab-header.component';
 import { Tab } from './core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import 'khiops-visualization';
 
 @Component({
   selector: 'app-root',
