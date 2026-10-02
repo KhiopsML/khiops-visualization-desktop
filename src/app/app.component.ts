@@ -648,6 +648,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   onDragEnter(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
+
+    if (this.isDragInsideCovisuSidePanel(event)) {
+      this.resetGlobalDragState();
+      return;
+    }
+
     this.dragCounter++;
     if (this.dragCounter === 1) {
       this.isDragOver = true;
@@ -660,6 +666,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
+
+    if (this.isDragInsideCovisuSidePanel(event)) {
+      this.resetGlobalDragState();
+    }
   }
 
   /**
@@ -668,7 +678,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.dragCounter--;
+
+    if (this.isDragInsideCovisuSidePanel(event)) {
+      this.resetGlobalDragState();
+      return;
+    }
+
+    this.dragCounter = Math.max(0, this.dragCounter - 1);
     if (this.dragCounter === 0) {
       this.isDragOver = false;
     }
@@ -680,13 +696,78 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.dragCounter = 0;
-    this.isDragOver = false;
+
+    if (this.isDragInsideCovisuSidePanel(event)) {
+      this.resetGlobalDragState();
+      return;
+    }
+
+    this.resetGlobalDragState();
 
     const files = event.dataTransfer?.files;
     if (files && files.length > 0 && files[0]) {
       this.processDroppedFile(files[0]);
     }
+  }
+
+  private resetGlobalDragState(): void {
+    this.dragCounter = 0;
+    this.isDragOver = false;
+  }
+
+  /**
+   * Detects when drag operation is over covisualization side panel.
+   * In that zone, side panel manages its own drag-and-drop feedback.
+   */
+  private isDragInsideCovisuSidePanel(event: DragEvent): boolean {
+    if (event.composedPath) {
+      const path = event.composedPath();
+      const hasSidePanelInPath = path.some(
+        (target) =>
+          target instanceof HTMLElement &&
+          target.classList.contains('side-panel'),
+      );
+
+      if (hasSidePanelInPath) {
+        return true;
+      }
+    }
+
+    if (event.clientX < 0 || event.clientY < 0) {
+      return false;
+    }
+
+    const covisuComponents = Array.from(
+      document.querySelectorAll('khiops-covisualization'),
+    );
+
+    for (const covisuComponent of covisuComponents) {
+      const sidePanels =
+        covisuComponent.shadowRoot?.querySelectorAll('.side-panel');
+
+      if (!sidePanels || sidePanels.length === 0) {
+        continue;
+      }
+
+      for (const sidePanel of sidePanels) {
+        if (!(sidePanel instanceof HTMLElement)) {
+          continue;
+        }
+
+        const bounds = sidePanel.getBoundingClientRect();
+        const isInsideSidePanel =
+          event.clientX >= bounds.left &&
+          event.clientX <= bounds.right &&
+          event.clientY >= bounds.top &&
+          event.clientY <= bounds.bottom;
+
+        if (isInsideSidePanel) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   /**
