@@ -23,7 +23,6 @@ body {
   overflow: hidden;
 }
 app-root {
-  --border-radius: 5px;
   margin: 0;
   padding: 0;
   height: 100%;
@@ -47,13 +46,20 @@ $grid-size: 80px;
   background-color: $bg-color;
   background-image: 
     // Dégradé diagonal subtil (du haut-gauche vers le bas-droite)
-    linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(240, 244, 250, 0.2) 100%),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(240, 244, 250, 0.2) 100%
+    ),
     // Lignes verticales de la grille
     linear-gradient(to right, $grid-color 1px, transparent 1px),
     // Lignes horizontales de la grille
     linear-gradient(to bottom, $grid-color 1px, transparent 1px);
-  
-  background-size: 100% 100%, $grid-size $grid-size, $grid-size $grid-size;
+
+  background-size:
+    100% 100%,
+    $grid-size $grid-size,
+    $grid-size $grid-size;
 }
 
 ::-webkit-scrollbar-thumb:hover {
