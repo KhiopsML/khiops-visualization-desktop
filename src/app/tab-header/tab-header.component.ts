@@ -4,7 +4,14 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  NgZone,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
 import { TabManagerService } from '../core/services/tab-manager.service';
@@ -39,14 +46,19 @@ export class TabHeaderComponent implements OnInit, OnDestroy {
     private tabDrag: TabDragService,
     private configService: ConfigService,
     private translate: TranslateService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
     this.tabManager.tabState$
       .pipe(takeUntil(this.destroy$))
       .subscribe((state) => {
-        this.tabs = state.tabs;
-        this.activeTabId = state.activeTabId;
+        this.ngZone.run(() => {
+          this.tabs = state.tabs;
+          this.activeTabId = state.activeTabId;
+          this.cdr.detectChanges();
+        });
       });
 
     // Listen for keyboard shortcuts relayed from the main process via before-input-event

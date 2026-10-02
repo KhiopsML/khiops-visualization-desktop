@@ -125,7 +125,12 @@ export class FileSystemService {
     })();
   }
 
-  async openFile(filename: string, callbackDone?: Function, tabId?: string, overrideData?: any) {
+  async openFile(
+    filename: string,
+    callbackDone?: Function,
+    tabId?: string,
+    overrideData?: any,
+  ) {
     if (!filename) return;
 
     // Determine component type from filename
@@ -152,7 +157,13 @@ export class FileSystemService {
       );
     }
 
-    await this.performOpenFile(filename, callbackDone, finalTabId, false, overrideData);
+    await this.performOpenFile(
+      filename,
+      callbackDone,
+      finalTabId,
+      false,
+      overrideData,
+    );
   }
 
   private async performOpenFile(
@@ -219,20 +230,28 @@ export class FileSystemService {
         if (callbackDone) callbackDone();
         // Wait for the web component to be registered, then deliver data
         setTimeout(() => {
-          if (tabId) {
-            // If overrideData is provided (e.g. from a detached tab with captured state),
-            // use it instead of the freshly-read file data so that savedDatas
-            // (selected variable ranks, active tab, etc.) are preserved.
-            const dataToDeliver = overrideData
-              ? { ...overrideData, filename: filename }
-              : { ...datas, filename: filename };
-            this.configService.notifyTabData(tabId, dataToDeliver);
-            // Mark tab as loaded
-            this.tabManagerService.updateTab(tabId, { isLoading: false });
-          } else {
-            // Fallback to global setDatas
-            this.configService.setDatas(datas);
-          }
+          this.ngzone.run(() => {
+            if (tabId) {
+              // If overrideData is provided (e.g. from a detached tab with captured state),
+              // use it instead of the freshly-read file data so that savedDatas
+              // (selected variable ranks, active tab, etc.) are preserved.
+              const dataToDeliver = overrideData
+                ? { ...overrideData, filename: filename }
+                : { ...datas, filename: filename };
+
+              try {
+                this.configService.notifyTabData(tabId, dataToDeliver);
+              } catch (error) {
+                console.error('Error delivering tab data:', error);
+              } finally {
+                // Always clear loading state to avoid stuck tab spinner.
+                this.tabManagerService.updateTab(tabId, { isLoading: false });
+              }
+            } else {
+              // Fallback to global setDatas
+              this.configService.setDatas(datas);
+            }
+          });
         }, 750); // Longer delay for Shadow DOM components
       })
       .catch((error: any) => {
@@ -812,7 +831,8 @@ export class FileSystemService {
 
           const activeTab = this.tabManagerService.getActiveTab();
           if (activeTab) {
-            const fileName = filename.replace(/\\/g, '/').split('/').pop() || filename;
+            const fileName =
+              filename.replace(/\\/g, '/').split('/').pop() || filename;
             this.tabManagerService.updateTab(activeTab.id, {
               filePath: filename,
               title: fileName,
