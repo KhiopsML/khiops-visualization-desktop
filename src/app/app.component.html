@@ -20,27 +20,18 @@
     <div class="drag-drop-overlay" aria-hidden="true">
       <div class="drag-drop-overlay-card drag-drop-overlay--default">
         <svg
+          lucideArrowDownToLine
+          size="50"
           class="drag-drop-overlay-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
           aria-hidden="true"
-        >
-          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" />
-          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-          <path d="M12 18v-6" />
-          <path d="m9 15 3 3 3-3" />
-        </svg>
-        <div class="drag-drop-overlay-title">
+        ></svg>
+        <p class="drop-help">
           {{ 'GLOBAL_DROP_YOUR_FILE_HERE' | translate }}
-        </div>
-        <div class="drag-drop-overlay-badges">
-          <span class="drag-drop-badge drag-drop-badge--blue">*.json</span>
-          <span class="drag-drop-badge drag-drop-badge--orange">*.khj</span>
-          <span class="drag-drop-badge drag-drop-badge--orange">*.khcj</span>
+        </p>
+        <div class="format-tags" aria-hidden="true">
+          <span>Khj (Khiops JSON)</span>
+          <span>Khcj (Khiops Clustering)</span>
+          <span>Standard JSON</span>
         </div>
       </div>
     </div>

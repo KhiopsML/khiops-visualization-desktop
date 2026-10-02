@@ -101,7 +101,40 @@ $grid-size: 80px;
 // Snackbar panel classes
 .mat-mdc-snack-bar-container {
   &.error .mdc-snackbar__surface {
-    background-color: #c62828 !important;
-    color: #fff !important;
+    background-color: var(--color-danger) !important;
+    color: var(--color-0) !important;
+  }
+}
+
+.drop-help {
+  margin: 0;
+  text-align: center;
+  color: var(--color-800);
+  font-size: 1rem;
+  line-height: 1.35;
+
+  strong {
+    color: var(--color-800);
+    font-weight: 600;
+  }
+}
+
+.format-tags {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+
+  span {
+    font-family: var(--font-code) !important;
+    border: 1px solid var(--color-300);
+    background: var(--color-0);
+    color: var(--color-600);
+    font-size: 0.67rem;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    padding: 0.1rem 0.4rem;
+    letter-spacing: 0.02em;
   }
 }

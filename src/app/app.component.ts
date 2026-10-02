@@ -33,6 +33,7 @@ import { TabHeaderComponent } from './tab-header/tab-header.component';
 import { Tab } from './core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { LucideArrowDownToLine } from '@lucide/angular';
 
 @Component({
   selector: 'app-root',
@@ -45,6 +46,7 @@ import { takeUntil } from 'rxjs/operators';
     WelcomeComponent,
     BigFileLoadingComponent,
     TabHeaderComponent,
+    LucideArrowDownToLine,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
