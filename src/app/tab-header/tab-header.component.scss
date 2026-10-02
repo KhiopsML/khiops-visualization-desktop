@@ -205,7 +205,7 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--color-100);
+    background: var(--color-150);
     color: var(--color-800);
   }
 
@@ -231,7 +231,7 @@
   flex-shrink: 0;
 
   &:hover {
-    background: var(--color-100);
+    background: var(--color-150);
     color: var(--color-800);
   }
 
@@ -263,7 +263,7 @@
   margin: 0 2px;
 
   &:hover {
-    background: var(--color-100);
+    background: var(--color-150);
     color: var(--color-800);
   }
 
@@ -272,82 +272,3 @@
     height: 16px;
   }
 }
-
-// Dark theme
-// @media (prefers-color-scheme: dark) {
-//   .tab-header {
-//     background: #2d2e30;
-//     border-color: #3c4043;
-//   }
-
-//   .tab {
-//     background: #2d2e30;
-//     border-color: #3c4043;
-//     color: #e8eaed;
-
-//     &:hover {
-//       background: #3c4043;
-//     }
-
-//     &.active {
-//       background: #202124;
-//       border-color: #202124;
-
-//       &::after {
-//         background: #8ab4f8;
-//       }
-//     }
-
-//     &.tab--ghost {
-//       background: #202124;
-//       box-shadow:
-//         0 4px 16px rgba(0, 0, 0, 0.5),
-//         0 1px 4px rgba(0, 0, 0, 0.3);
-
-//       &::after {
-//         background: #8ab4f8;
-//       }
-//     }
-//   }
-
-//   .tab-icon {
-//     color: #9aa0a6;
-//     .active & {
-//       color: #8ab4f8;
-//     }
-//   }
-
-//   .tab-title {
-//     color: #e8eaed;
-//   }
-
-//   .tab-dirty {
-//     color: #ffb74d;
-//   }
-
-//   .spinner {
-//     border-color: #3c4043;
-//     border-top-color: #8ab4f8;
-//   }
-
-//   .tab-close {
-//     color: #9aa0a6;
-//     &:hover {
-//       background: #3c4043;
-//       color: #e8eaed;
-//     }
-//   }
-
-//   .new-tab-btn,
-//   .control-btn {
-//     color: #9aa0a6;
-//     &:hover {
-//       background: #3c4043;
-//       color: #e8eaed;
-//     }
-//   }
-
-//   .window-controls {
-//     border-color: #3c4043;
-//   }
-// }

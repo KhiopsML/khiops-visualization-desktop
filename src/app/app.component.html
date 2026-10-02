@@ -6,7 +6,7 @@
 
 <div class="app-container">
   <!-- Tab header -->
-  <app-tab-header></app-tab-header>
+  <app-tab-header *ngIf="activeTab && activeTab.filePath"></app-tab-header>
 
   <!-- Main content area -->
   <div

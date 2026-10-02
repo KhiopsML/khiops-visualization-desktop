@@ -67,6 +67,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   updateState: 'idle' | 'available' | 'downloading' | 'ready' = 'idle';
   updateAvailableTimer?: any;
   isUpdateInstalled = false;
+  private pathModule?: any;
+  private customTitlebar: any;
 
   // Map to store each tab's component configuration and instance data
   private tabConfigs = new Map<string, any>();
@@ -87,6 +89,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.translate.setFallbackLang('en');
 
     this.trackerService.initialize();
+
+    if (this.electronService.isElectron) {
+      this.pathModule = this.electronService.remote.require('path');
+    }
   }
 
   ngAfterViewInit() {
@@ -120,6 +126,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         if (activeTabChanged) {
           this.fileSystemService.setTitleBar(this.activeTab?.filePath || '');
         }
+        this.updateCustomTitlebarTitle();
 
         // Configure all tab components after change detection has rendered them
         // Use requestAnimationFrame instead of a fixed delay
@@ -152,7 +159,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     });
 
     if (this.electronService.isElectron) {
-      this.addIpcRendererEvents();
+      (async () => {
+        await this.initializeCustomTitlebar();
+        this.addIpcRendererEvents();
+      })();
     }
   }
 
@@ -966,6 +976,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       },
       activeComponentType,
     );
+
     const menu =
       this.electronService.remote.Menu.buildFromTemplate(menuTemplate);
     // In multi-window mode, only set the application menu when this window
@@ -974,7 +985,55 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const currentWindow = this.electronService.remote.getCurrentWindow();
     if (currentWindow.isFocused()) {
       this.electronService.remote.Menu.setApplicationMenu(menu);
+      this.customTitlebar?.refreshMenu?.();
     }
+  }
+
+  private async initializeCustomTitlebar() {
+    if (this.customTitlebar || !this.electronService.isElectron) {
+      return;
+    }
+
+    const titlebarLib = (window as any).require('custom-electron-titlebar');
+    this.customTitlebar = new titlebarLib.Titlebar({
+      backgroundColor: titlebarLib.TitlebarColor.fromHex('#ffffff'),
+      menuBarBackgroundColor: titlebarLib.TitlebarColor.fromHex('#ffffff'),
+      menuPosition: 'left',
+      titleHorizontalAlignment: 'center',
+      icon: 'assets/icons/favicon.png',
+      iconSize: 16,
+      shadow: false,
+    });
+
+    await this.customTitlebar.refreshMenu?.();
+    this.updateCustomTitlebarTitle();
+  }
+
+  private updateCustomTitlebarTitle() {
+    if (!this.customTitlebar) {
+      return;
+    }
+
+    const filePath = this.activeTab?.filePath;
+    const appTitle = 'Khiops Visualization Desktop';
+
+    if (!filePath) {
+      this.customTitlebar.updateTitle(appTitle);
+      return;
+    }
+
+    if (this.pathModule?.basename) {
+      this.customTitlebar.updateTitle(this.pathModule.basename(filePath));
+      return;
+    }
+
+    const slashIndex = Math.max(
+      filePath.lastIndexOf('/'),
+      filePath.lastIndexOf('\\'),
+    );
+    const displayName =
+      slashIndex >= 0 ? filePath.slice(slashIndex + 1) : filePath;
+    this.customTitlebar.updateTitle(displayName);
   }
 
   ngOnDestroy() {

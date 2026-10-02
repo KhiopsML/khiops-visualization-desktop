@@ -45,6 +45,11 @@ concat-map@0.0.1:
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==
 
+custom-electron-titlebar@4.4.1:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/custom-electron-titlebar/-/custom-electron-titlebar-4.4.1.tgz#aea64f009697c9771cb2a67d2eb5ac8059696906"
+  integrity sha512-I+sOGBdslrGpuCWlhda8P0vtRAZK+W2NzjHLsxTiE2bNmhAIs9YLDe6iRBExwU1xVZt+J1hSXzUT67BlAuMWLA==
+
 debug@^4.0.1, debug@^4.3.4:
   version "4.4.3"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.3.tgz#c6ae432d9bd9662582fce08709b038c58e9e3d6a"

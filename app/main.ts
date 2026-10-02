@@ -4,6 +4,7 @@ import * as remoteMain from '@electron/remote/main';
 remoteMain.initialize();
 import * as path from 'path';
 import * as fs from 'fs';
+import { setupTitlebarAndAttachToWindow } from 'custom-electron-titlebar/main';
 // Lazy-loaded on first use to avoid blocking startup
 let _machineIdSync: typeof import('node-machine-id').machineIdSync | null =
   null;
@@ -83,16 +84,9 @@ if (!forceNewWindow) {
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
 function getWindowChromeOptions(): Record<string, any> {
-  if (process.platform === 'win32') {
-    return {
-      titleBarStyle: 'default',
-      autoHideMenuBar: false,
-      backgroundColor: '#ffffff',
-    };
-  }
-
   return {
-    titleBarStyle: 'default',
+    frame: false,
+    titleBarStyle: 'hidden',
     backgroundColor: '#ffffff',
   };
 }
@@ -170,6 +164,10 @@ function createWindow(): BrowserWindow {
 
   newWindow.once('ready-to-show', () => {
     newWindow?.show();
+  });
+
+  void setupTitlebarAndAttachToWindow(newWindow).catch((error: Error) => {
+    log.warn('custom-electron-titlebar setup failed:', error.message);
   });
 
   // Track focus so that second-instance events and menus target the correct window
@@ -370,6 +368,10 @@ function createPrewarmedWindow(): BrowserWindow {
 
   require('@electron/remote/main').enable(pw);
   require('@electron/remote/main').enable(pw.webContents);
+
+  void setupTitlebarAndAttachToWindow(pw).catch((error: Error) => {
+    log.warn('custom-electron-titlebar setup failed for prewarmed window:', error.message);
+  });
 
   if (serve) {
     pw.loadURL('http://localhost:4200');

@@ -5746,6 +5746,11 @@ cssesc@^3.0.0:
   resolved "https://registry.yarnpkg.com/cssesc/-/cssesc-3.0.0.tgz#37741919903b868565e1c09ea747445cd18983ee"
   integrity sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==
 
+custom-electron-titlebar@4.4.1:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/custom-electron-titlebar/-/custom-electron-titlebar-4.4.1.tgz#aea64f009697c9771cb2a67d2eb5ac8059696906"
+  integrity sha512-I+sOGBdslrGpuCWlhda8P0vtRAZK+W2NzjHLsxTiE2bNmhAIs9YLDe6iRBExwU1xVZt+J1hSXzUT67BlAuMWLA==
+
 custom-event@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/custom-event/-/custom-event-1.0.1.tgz#5d02a46850adf1b4a317946a3928fccb5bfd0425"
