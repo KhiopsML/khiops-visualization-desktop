@@ -5,34 +5,33 @@
 -->
 <div class="start-panel-container" *ngIf="shortcut">
   <h3>
-    <svg
-      class="folder-icon"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-    >
-      <path
-        d="M1.5 4.5C1.5 3.67 2.17 3 3 3H6.38c.35 0 .68.13.93.37L8.5 4.5H13c.83 0 1.5.67 1.5 1.5v6c0 .83-.67 1.5-1.5 1.5H3c-.83 0-1.5-.67-1.5-1.5v-7z"
-        fill="currentColor"
-        fill-opacity="0.15"
-        stroke="currentColor"
-        stroke-width="1.2"
-        stroke-linejoin="round"
-      />
-    </svg>
+    <svg lucideFolderOpen size="16" aria-hidden="true"></svg>
     {{ 'START_BY_LOADING_DATASET' | translate }}
+    <span class="format-note font-code">Native Khiops Format & JSON</span>
   </h3>
-  <div class="shortcut-item">
-    <button class="description" type="button" (click)="openFile()">
-      <span>{{ shortcut.description | translate }}</span>
-    </button>
-    <div class="keys">
-      <span class="key" *ngFor="let key of shortcut.keys; let last = last">
-        <span class="key-label">{{ getKeyDisplay(key) }}</span>
-        <span class="key-plus" *ngIf="!last">+</span>
-      </span>
+
+  <div class="drop-zone">
+    <div class="shortcut-item">
+      <button class="description" type="button" (click)="openFile()">
+        <span>{{ shortcut.description | translate }}</span>
+        <div class="keys">
+          <span class="key" *ngFor="let key of shortcut.keys; let last = last">
+            <span class="key-label font-code">{{ getKeyDisplay(key) }}</span>
+            <span class="key-plus font-code" *ngIf="!last">+</span>
+          </span>
+        </div>
+      </button>
+    </div>
+
+    <p class="drop-help">
+      drag & drop your <strong>.json</strong>, <strong>.khj</strong>, or
+      <strong>.khcj</strong> files directly anywhere here
+    </p>
+
+    <div class="format-tags" aria-hidden="true">
+      <span>Khj (Khiops JSON)</span>
+      <span>Khcj (Khiops Clustering)</span>
+      <span>Standard JSON</span>
     </div>
   </div>
 </div>

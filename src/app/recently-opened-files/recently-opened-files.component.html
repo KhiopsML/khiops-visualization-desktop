@@ -5,29 +5,32 @@
 -->
 
 <div id="app-recently-opened-files">
-  <h3>
-    <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
-      <circle
-        cx="8"
-        cy="8"
-        r="6.5"
-        fill="currentColor"
-        fill-opacity="0.15"
-        stroke="currentColor"
-        stroke-width="1.2"
-      />
-      <path
-        d="M8 4.5V8l2.5 1.5"
-        stroke="currentColor"
-        stroke-width="1.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
-    {{ 'RECENTLY_OPENED_FILES' | translate }}
-  </h3>
-  <ul class="recent-files-list" *ngIf="recentFiles.length > 0">
-    <li *ngFor="let file of recentFiles" class="recent-file-item">
+  <div class="recent-files-header">
+    <h3>
+      <svg lucideClock3 size="16" aria-hidden="true"></svg>
+      {{ 'RECENTLY_OPENED_FILES' | translate }}
+      <span class="files-count"
+        >{{ recentFiles.length }} {{ 'FILES' | translate }}</span
+      >
+    </h3>
+    <div class="toolbar" *ngIf="recentFiles.length > 0">
+      <label
+        class="filter-input-wrapper"
+        [attr.aria-label]="'FILTER_RECENT_FILES' | translate"
+      >
+        <svg lucideSearch size="14" aria-hidden="true"></svg>
+        <input
+          type="search"
+          [value]="filterValue"
+          (input)="onFilterInput($event)"
+          [placeholder]="'FILTER_RECENT_FILES' | translate"
+        />
+      </label>
+    </div>
+  </div>
+
+  <ul class="recent-files-list" *ngIf="filteredRecentFiles.length > 0">
+    <li *ngFor="let file of filteredRecentFiles" class="recent-file-item">
       <button type="button" class="file-button" (click)="openFile(file.path)">
         <div class="file-info">
           <span
@@ -49,13 +52,32 @@
               width="20"
               height="20"
             />
+            <svg
+              *ngIf="showFallbackIcon(file) && isJsonFile(file.filename)"
+              lucideFileJson2
+              size="17"
+              aria-hidden="true"
+            ></svg>
+            <svg
+              *ngIf="showFallbackIcon(file) && !isJsonFile(file.filename)"
+              lucideFile
+              size="17"
+              aria-hidden="true"
+            ></svg>
           </span>
-          <span class="file-name">{{ file.filename }}</span>
-          <span class="file-size">{{ file.sizeDisplay }}</span>
+          <div>
+            <div>
+              <span class="file-name">{{ file.filename }}</span>
+              <span class="file-size font-code">{{ file.sizeDisplay }}</span>
+            </div>
+            <span class="file-path font-code">{{ file.path }}</span>
+          </div>
         </div>
-        <span class="file-path">{{ file.path }}</span>
       </button>
     </li>
   </ul>
   <p *ngIf="recentFiles.length === 0">{{ 'NO_RECENT_FILES' | translate }}</p>
+  <p *ngIf="recentFiles.length > 0 && filteredRecentFiles.length === 0">
+    {{ 'NO_MATCHING_RECENT_FILES' | translate }}
+  </p>
 </div>

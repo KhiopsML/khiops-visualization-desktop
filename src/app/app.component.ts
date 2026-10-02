@@ -26,7 +26,6 @@ import { MenuService } from './core/services/menu.service';
 import { FileSystemService } from './core/services/file-system.service';
 import { TrackerService } from './core/services/tracker.service';
 import { TabManagerService } from './core/services/tab-manager.service';
-import 'khiops-visualization';
 import { StorageService } from './core/services/storage.service';
 import { WelcomeComponent } from './welcome/welcome.component';
 import { BigFileLoadingComponent } from './big-file-loading/big-file-loading.component';
@@ -34,6 +33,7 @@ import { TabHeaderComponent } from './tab-header/tab-header.component';
 import { Tab } from './core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import 'khiops-visualization';
 
 @Component({
   selector: 'app-root',

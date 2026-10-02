@@ -4,12 +4,23 @@
  * at https://spdx.org/licenses/BSD-3-Clause-Clear.html or see the "LICENSE" file for more details.
  */
 
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { FileSystemService } from '../core/services/file-system.service';
 import { MenuService } from '../core/services/menu.service';
 import { Subscription } from 'rxjs';
+import {
+  LucideClock3,
+  LucideSearch,
+  LucideFile,
+  LucideFileJson2,
+} from '@lucide/angular';
 
 interface RecentFileItem {
   path: string;
@@ -25,10 +36,18 @@ interface RecentFileItem {
   styleUrl: './recently-opened-files.component.scss',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule, TranslatePipe],
+  imports: [
+    CommonModule,
+    TranslatePipe,
+    LucideClock3,
+    LucideSearch,
+    LucideFile,
+    LucideFileJson2,
+  ],
 })
 export class RecentlyOpenedFilesComponent implements OnInit, OnDestroy {
   recentFiles: RecentFileItem[] = [];
+  filterValue = '';
   private recentFilesChangedSubscription?: Subscription;
 
   constructor(
@@ -54,6 +73,35 @@ export class RecentlyOpenedFilesComponent implements OnInit, OnDestroy {
 
   private loadRecentFiles(): void {
     this.recentFiles = this.fileSystemService.getRecentFiles();
+  }
+
+  get filteredRecentFiles(): RecentFileItem[] {
+    const normalizedFilter = this.filterValue.trim().toLowerCase();
+    if (!normalizedFilter) {
+      return this.recentFiles;
+    }
+
+    return this.recentFiles.filter((file) => {
+      return (
+        file.filename.toLowerCase().includes(normalizedFilter) ||
+        file.path.toLowerCase().includes(normalizedFilter)
+      );
+    });
+  }
+
+  onFilterInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.filterValue = target?.value ?? '';
+  }
+
+  showFallbackIcon(file: RecentFileItem): boolean {
+    return (
+      file.fileType !== 'visualization' && file.fileType !== 'covisualization'
+    );
+  }
+
+  isJsonFile(filename: string): boolean {
+    return filename.toLowerCase().endsWith('.json');
   }
 
   openFile(filePath: string): void {

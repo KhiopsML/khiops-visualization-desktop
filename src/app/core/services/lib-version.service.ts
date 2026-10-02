@@ -21,6 +21,10 @@ export class LibVersionService {
     return packageInfo.name || undefined;
   }
   static getLibVersion() {
-    return packageInfo.dependencies['khiops-visualization'] || undefined;
+    return (
+      (packageInfo.dependencies as Record<string, string>)[
+        'khiops-visualization'
+      ] || undefined
+    );
   }
 }

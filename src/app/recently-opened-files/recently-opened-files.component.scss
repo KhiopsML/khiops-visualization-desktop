@@ -5,63 +5,142 @@
  */
 
 #app-recently-opened-files {
-  padding: 1.5rem;
-  border: 1px solid rgba(4, 32, 69, 0.1);
-  background-color: #fff;
-  margin-bottom: 1rem;
+  --panel-shadow: 0 4px 16px rgba(7, 44, 108, 0.08);
+  --muted-text: #8e97b1;
+  --accent: #f25f12;
+  --accent-soft: rgba(242, 95, 18, 0.12);
 
-  h3 {
-    margin: 1rem 0 2rem;
-    font-size: 0.9rem;
-    color: #555;
-    font-weight: 600;
-    text-align: left;
-    padding-left: 10px;
-    svg {
-      width: 20px;
-      height: 20px;
-      margin-bottom: 3px;
-      vertical-align: middle;
-      margin-right: 2px;
-      color: inherit;
+  padding: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--border-radius-card);
+  background-color: #fff;
+  box-shadow: var(--panel-shadow);
+  margin-bottom: 1rem;
+  overflow: hidden;
+
+  .recent-files-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid rgba(17, 52, 120, 0.08);
+
+    h3 {
+      margin: 0;
+      font-size: 14px;
+      color: var(--color-800);
+      font-weight: 700;
+      text-align: left;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+
+      > svg {
+        color: var(--color-accent);
+        flex-shrink: 0;
+      }
+
+      .files-count {
+        margin-left: 0.35rem;
+        font-size: 0.72rem;
+        padding: 0.13rem 0.45rem;
+        border-radius: var(--border-radius);
+        color: #5f7cb2;
+        border: 1px solid rgba(95, 124, 178, 0.22);
+        background: rgba(95, 124, 178, 0.08);
+        font-weight: 600;
+      }
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .filter-input-wrapper {
+      width: 260px;
+      height: 34px;
+      border: 1px solid rgba(17, 52, 120, 0.12);
+      border-radius: var(--border-radius);
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0 0.55rem;
+
+      > svg {
+        color: #9eabc8;
+        flex-shrink: 0;
+      }
+
+      input {
+        border: 0;
+        outline: none;
+        width: 100%;
+        color: #1f3268;
+        font-size: 0.85rem;
+        background: transparent;
+      }
+
+      &:focus-within {
+        border-color: #8fa7d8;
+        box-shadow: 0 0 0 3px rgba(86, 117, 183, 0.12);
+      }
+    }
+
+    .clear-button {
+      border: 0;
+      background: transparent;
+      color: #8998b9;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0.2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+
+      &:hover {
+        color: #35558f;
+      }
     }
   }
 
   .recent-files-list {
     list-style: none;
-    max-height: 40vh;
+    max-height: 34vh;
     overflow: auto;
-    padding: 10px;
+    padding: 0;
     margin: 0;
 
     .recent-file-item {
-      margin-bottom: 0.5rem;
+      margin: 0;
+      border-bottom: 1px solid rgba(17, 52, 120, 0.06);
 
       &:last-child {
-        margin-bottom: 0;
+        border-bottom: 0;
       }
 
       .file-button {
-    border-radius: var(--border-radius);
+        border-radius: var(--border-radius);
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
-        padding: 0.75rem 1rem;
-        background-color: #f9fafb;
-        border: 1px solid rgba(4, 32, 69, 0.1);
+        padding: 0.7rem 1rem;
+        background-color: #fff;
+        border: 0;
         cursor: pointer;
         text-align: left;
         transition: all 0.2s ease;
 
         &:hover {
-          background-color: #f5f5f5;
-          border-color: #999;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          background-color: #f8fbff;
         }
 
         &:active {
-          background-color: #efefef;
+          background-color: #eff4ff;
         }
 
         .file-info {
@@ -69,55 +148,114 @@
           align-items: center;
           word-break: break-word;
           width: 100%;
-          margin-bottom: 0.25rem;
+          margin-bottom: 0.2rem;
+          gap: 0.45rem;
         }
 
         .file-type-icon {
-          display: inline-flex;
+          display: flex;
           align-items: center;
           justify-content: center;
-          margin-right: 0.5rem;
-          color: #666;
+          width: 36px;
+          height: 36px;
+          border-radius: var(--border-radius);
+          color: var(--color-600);
+          // background: #f2f6ff;
           flex-shrink: 0;
 
+          svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2.1px;
+          }
+
+          img {
+            width: 22px;
+            height: 22px;
+          }
+
           &.icon-visualization {
-            color: #0066cc;
+            // background: rgba(0, 111, 255, 0.12);
+            // border: 1px solid var(--color-data-num);
+            background: var(--color-data-num);
           }
 
           &.icon-covisualization {
-            color: #cc6600;
+            // background: rgba(255, 135, 65, 0.16);
+            // border: 1px solid var(--color-data-cat);
+            background: var(--color-data-cat);
           }
         }
 
         .file-name {
           display: inline;
-          color: #cd3c14;
+          color: var(--accent);
           font-weight: 600;
           word-break: break-word;
+          padding-left: 5px;
+          line-height: 1.2;
         }
 
         .file-size {
           display: inline;
-          margin-left: 0.75rem;
-          color: #999;
-          font-size: 0.8rem;
+          margin-left: 0.35rem;
+          color: #7b89a8;
+          font-size: 0.74rem;
+          padding: 0.06rem 0.35rem;
+          border-radius: var(--border-radius);
+          background: var(--accent-soft);
           white-space: nowrap;
         }
 
         .file-path {
           display: block;
           word-break: break-word;
-          font-size: 0.75rem;
-          color: #999;
-          margin-top: 0.25rem;
+          font-size: 12px;
+          color: var(--muted-text);
+          margin-top: 0.15rem;
+          padding-left: 5px;
+          font-family:
+            ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas,
+            'Liberation Mono', 'Courier New', monospace;
+          white-space: normal;
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          line-clamp: 2;
         }
       }
     }
   }
 
   > p {
-    font-size: 0.8rem;
-    color: #777;
-    padding: 50px;
+    font-size: 0.86rem;
+    color: #7482a2;
+    padding: 2rem 1.2rem;
+    margin: 0;
+    text-align: center;
+  }
+
+  @media (max-width: 960px) {
+    .recent-files-header {
+      flex-direction: column;
+      align-items: stretch;
+
+      .toolbar {
+        width: 100%;
+      }
+
+      .filter-input-wrapper {
+        width: 100%;
+      }
+    }
+
+    .recent-files-list {
+      max-height: 42vh;
+
+      .recent-file-item .file-button .file-path {
+        font-size: 0.76rem;
+      }
+    }
   }
 }

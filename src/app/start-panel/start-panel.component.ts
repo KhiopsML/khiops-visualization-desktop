@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MenuService } from '../core/services/menu.service';
 import { TranslatePipe } from '@ngx-translate/core';
+import { LucideFolderOpen } from '@lucide/angular';
 
 interface Shortcut {
   keys: string[];
@@ -14,7 +15,7 @@ interface Shortcut {
   styleUrl: './start-panel.component.scss',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, LucideFolderOpen],
 })
 export class StartPanelComponent implements OnInit {
   shortcut: Shortcut | null = null;
@@ -24,9 +25,7 @@ export class StartPanelComponent implements OnInit {
     Cmd: '⌘',
   };
 
-  constructor(
-    private readonly menuService: MenuService,
-  ) {}
+  constructor(private readonly menuService: MenuService) {}
 
   ngOnInit(): void {
     // Detect OS and set shortcut dynamically
