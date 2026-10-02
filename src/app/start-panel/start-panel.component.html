@@ -7,7 +7,7 @@
   <h3>
     <svg lucideFolderOpen size="16" aria-hidden="true"></svg>
     {{ 'START_BY_LOADING_DATASET' | translate }}
-    <span class="format-note font-code">Native Khiops Format & JSON</span>
+    <span class="format-note font-code">{{ 'START_PANEL_NATIVE_KHIOPS_FORMAT' | translate }}</span>
   </h3>
 
   <div class="drop-zone">
@@ -24,14 +24,15 @@
     </div>
 
     <p class="drop-help">
-      drag & drop your <strong>.json</strong>, <strong>.khj</strong>, or
-      <strong>.khcj</strong> files directly anywhere here
+      {{ 'START_PANEL_DROP_HELP_PREFIX' | translate }} <strong>.json</strong>,
+      <strong>.khj</strong>, {{ 'START_PANEL_DROP_HELP_OR' | translate }}
+      <strong>.khcj</strong> {{ 'START_PANEL_DROP_HELP_SUFFIX' | translate }}
     </p>
 
     <div class="format-tags" aria-hidden="true">
-      <span>Khj (Khiops JSON)</span>
-      <span>Khcj (Khiops Clustering)</span>
-      <span>Standard JSON</span>
+      <span>{{ 'START_PANEL_FORMAT_TAG_KHJ' | translate }}</span>
+      <span>{{ 'START_PANEL_FORMAT_TAG_KHCJ' | translate }}</span>
+      <span>{{ 'START_PANEL_FORMAT_TAG_JSON' | translate }}</span>
     </div>
   </div>
 </div>

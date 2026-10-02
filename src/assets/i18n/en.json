@@ -60,6 +60,13 @@
   "OPEN_A_FILE_FROM_THE_MENU": "Open a file from the menu",
   "GLOBAL_DROP_YOUR_FILE_HERE": "Drop your file here",
   "START_BY_LOADING_DATASET": "Start by loading a dataset",
+  "START_PANEL_NATIVE_KHIOPS_FORMAT": "Native Khiops Format & Json",
+  "START_PANEL_DROP_HELP_PREFIX": "drag & drop your",
+  "START_PANEL_DROP_HELP_OR": "or",
+  "START_PANEL_DROP_HELP_SUFFIX": "files directly anywhere here",
+  "START_PANEL_FORMAT_TAG_KHJ": "Khj (Khiops JSON)",
+  "START_PANEL_FORMAT_TAG_KHCJ": "Khcj (Khiops Clustering)",
+  "START_PANEL_FORMAT_TAG_JSON": "Standard JSON",
   "TAB_CONTEXT_CLOSE": "Close",
   "TAB_CONTEXT_MOVE_NEW_WINDOW": "Move into New Window",
   "TAB_CONTEXT_CLOSE_ALL": "Close all tabs"
