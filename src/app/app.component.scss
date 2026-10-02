@@ -11,7 +11,7 @@
 }
 
 app-welcome {
-  background: var(--color-50);
+  background: var(--color-0);
   flex: 1;
   width: 100%;
   display: flex;
@@ -76,7 +76,7 @@ app-welcome {
     align-items: center;
     gap: 14px;
     color: var(--color-800);
-    box-shadow: var(---box-shadow-elevate-500);
+    box-shadow: var(--box-shadow-elevate-500);
   }
 
   .drag-drop-overlay-icon {
