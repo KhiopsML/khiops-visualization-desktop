@@ -21,10 +21,10 @@ export class LibVersionService {
     return packageInfo.name || undefined;
   }
   static getLibVersion() {
-    return (
-      (packageInfo.dependencies as Record<string, string>)[
-        'khiops-visualization'
-      ] || undefined
-    );
+    const rawVersion = (packageInfo.dependencies as Record<string, string>)[
+      'khiops-visualization'
+    ];
+
+    return rawVersion ? rawVersion.replace(/^\^/, '') : undefined;
   }
 }
