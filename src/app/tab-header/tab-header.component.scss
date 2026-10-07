@@ -74,30 +74,30 @@
   &.active {
     background: var(--color-50);
     border-bottom: none;
-    border-top: 1px solid var(--color-0);
-
+    // border-top: 1px solid var(--color-0);
+    font-weight: 500;
     z-index: 3;
 
     // Hide tab-header bottom border below active tab
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 1px;
-      background: var(--color-50);
-    }
+    // &::before {
+    //   content: '';
+    //   position: absolute;
+    //   left: 0;
+    //   right: 0;
+    //   bottom: 0;
+    //   height: 1px;
+    //   background: var(--color-50);
+    // }
 
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--color-brand-orange);
-    }
+    // &::after {
+    //   content: '';
+    //   position: absolute;
+    //   top: 0;
+    //   left: 0;
+    //   right: 0;
+    //   height: 2px;
+    //   background: var(--color-brand-orange);
+    // }
   }
 
   &.dirty {
