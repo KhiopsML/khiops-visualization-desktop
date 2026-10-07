@@ -733,9 +733,33 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.isDragOverCovisuSidePanel = false;
 
     const files = event.dataTransfer?.files;
-    if (files && files.length > 0 && files[0]) {
-      this.processDroppedFile(files[0]);
+    if (files && files.length > 0) {
+      this.processDroppedFiles(files);
     }
+  }
+
+  /**
+   * Processes all dropped files sequentially.
+   * Sequential opening avoids race conditions in component switching.
+   */
+  private processDroppedFiles(files: FileList): void {
+    const droppedFiles = Array.from(files);
+
+    const processAtIndex = (index: number) => {
+      if (index >= droppedFiles.length) {
+        return;
+      }
+
+      const file = droppedFiles[index];
+      if (!file) {
+        processAtIndex(index + 1);
+        return;
+      }
+
+      this.processDroppedFile(file, () => processAtIndex(index + 1));
+    };
+
+    processAtIndex(0);
   }
 
   private resetGlobalDragState(): void {
@@ -803,7 +827,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
    * Processes the dropped file if it has a valid extension.
    * Opens file in the active tab or creates a new tab if needed.
    */
-  private processDroppedFile(file: File): void {
+  private processDroppedFile(file: File, callbackDone?: () => void): void {
     const validExtensions = ['.json', '.khj', '.khcj'];
     const fileExtension = file.name
       .toLowerCase()
@@ -813,20 +837,23 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       console.warn(
         `Invalid file extension: ${fileExtension}. Supported extensions: ${validExtensions.join(', ')}`,
       );
+      callbackDone?.();
       return;
     }
 
     if (!this.electronService.isElectron) {
+      callbackDone?.();
       return;
     }
 
     const path = this.electronService.electron.webUtils.getPathForFile(file);
     if (!path) {
+      callbackDone?.();
       return;
     }
 
     // Open the file - openFile will create the tab
-    this.fileSystemService.openFile(path);
+    this.fileSystemService.openFile(path, callbackDone);
   }
 
   beforeQuit() {

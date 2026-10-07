@@ -226,8 +226,6 @@ export class FileSystemService {
         if (!skipStorageSave) {
           await this.storageService.saveAll(() => {});
         }
-
-        if (callbackDone) callbackDone();
         // Wait for the web component to be registered, then deliver data
         setTimeout(() => {
           this.ngzone.run(() => {
@@ -246,10 +244,12 @@ export class FileSystemService {
               } finally {
                 // Always clear loading state to avoid stuck tab spinner.
                 this.tabManagerService.updateTab(tabId, { isLoading: false });
+                callbackDone && callbackDone();
               }
             } else {
               // Fallback to global setDatas
               this.configService.setDatas(datas);
+              callbackDone && callbackDone();
             }
           });
         }, 750); // Longer delay for Shadow DOM components
@@ -267,6 +267,7 @@ export class FileSystemService {
           );
         }, 50);
         this._fileLoaderSub.next(this.fileLoaderDatas);
+        callbackDone && callbackDone();
       });
   }
 
