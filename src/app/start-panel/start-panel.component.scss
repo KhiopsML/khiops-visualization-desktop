@@ -124,5 +124,20 @@
         stroke-width: 2.2;
       }
     }
+
+    .description:hover {
+      background-color: color-mix(
+        in srgb,
+        var(--color-brand-orange) 20%,
+        transparent
+      ) !important;
+    }
+    .description:active {
+      background-color: color-mix(
+        in srgb,
+        var(--color-brand-orange) 10%,
+        transparent
+      ) !important;
+    }
   }
 }
