@@ -6,7 +6,6 @@
 
 .tab-header {
   display: flex;
-  height: 36px;
   background: var(--color-0);
   border-bottom: none;
   user-select: none;
@@ -18,8 +17,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 1px;
-    background: var(--color-border-subtle);
     pointer-events: none;
   }
 
@@ -50,13 +47,10 @@
   display: flex;
   align-items: center;
   max-width: 200px;
-  height: 100%; // important during dnd
   min-width: 36px; // minimum tab width — tabs shrink like Chrome instead of overflowing
   flex: 1;
-  padding: 0 16px;
+  padding: 0px 3px 0 8px;
   background: var(--color-0);
-  border-right: 1px solid var(--color-border-subtle);
-  border-top: 1px solid var(--color-border-subtle);
   cursor: pointer;
   position: relative;
   font-family:
@@ -66,6 +60,10 @@
   transition:
     transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     background-color 0.2s ease;
+  margin: 0 5px !important;
+  height: 30px !important;
+  border-radius: 5px;
+  border: 1px solid transparent !important;
 
   &:hover {
     background: var(--color-100);
@@ -73,31 +71,9 @@
 
   &.active {
     background: var(--color-50);
-    border-bottom: none;
-    // border-top: 1px solid var(--color-0);
     font-weight: 500;
     z-index: 3;
-
-    // Hide tab-header bottom border below active tab
-    // &::before {
-    //   content: '';
-    //   position: absolute;
-    //   left: 0;
-    //   right: 0;
-    //   bottom: 0;
-    //   height: 1px;
-    //   background: var(--color-50);
-    // }
-
-    // &::after {
-    //   content: '';
-    //   position: absolute;
-    //   top: 0;
-    //   left: 0;
-    //   right: 0;
-    //   height: 2px;
-    //   background: var(--color-brand-orange);
-    // }
+    border-color: var(--color-border-subtle) !important;
   }
 
   &.dirty {
@@ -118,16 +94,6 @@
       0 1px 3px rgba(0, 0, 0, 0.1);
     z-index: 9999;
     opacity: 1 !important;
-
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--color-brand-orange);
-    }
   }
 }
 
@@ -222,7 +188,7 @@
   justify-content: center;
   width: 30px;
   height: 28px;
-  margin: 4px;
+  margin: 0px 10px;
   border: none;
   background: none;
   border-radius: var(--border-radius);

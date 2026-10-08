@@ -29,7 +29,11 @@ app-welcome {
   flex-direction: column;
 }
 
+app-tab-header {
+  z-index: 2;
+}
 .main-content {
+  z-index: 1;
   flex: 1;
   min-height: 0;
   display: flex;
