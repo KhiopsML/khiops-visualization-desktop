@@ -63,7 +63,7 @@
   "START_PANEL_NATIVE_KHIOPS_FORMAT": "Native Khiops Format & Json",
   "START_PANEL_DROP_HELP_PREFIX": "drag & drop your",
   "START_PANEL_DROP_HELP_OR": "or",
-  "START_PANEL_DROP_HELP_SUFFIX": "files directly anywhere here",
+  "START_PANEL_DROP_HELP_SUFFIX": "file(s) directly anywhere here",
   "START_PANEL_FORMAT_TAG_KHJ": "Khj (Khiops JSON)",
   "START_PANEL_FORMAT_TAG_KHCJ": "Khcj (Khiops Clustering)",
   "START_PANEL_FORMAT_TAG_JSON": "Standard JSON",
