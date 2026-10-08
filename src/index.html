@@ -14,17 +14,27 @@
     <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <style>
       .welcome-header {
+        align-items: center;
+        justify-content: start;
         display: flex;
-        align-items: center;
-        flex-direction: column;
-        margin-bottom: 40px;
-        align-items: center;
-        justify-content: center;
-
         span {
-          font-size: 16px;
-          font-weight: 700;
-          color: #393f4d;
+          font-size: 14px;
+          line-height: 1;
+          text-align: left;
+          margin-left: 5px;
+          flex-direction: column;
+          display: flex;
+          strong {
+            font-weight: 600;
+            margin-bottom: 1px;
+            font-size: 16px;
+            color: var(--color-800);
+          }
+          label {
+            font-family: var(--font-code) !important;
+            color: var(--color-600);
+            font-weight: 400;
+          }
         }
       }
     </style>
@@ -51,8 +61,8 @@
       <div class="welcome-header">
         <svg
           version="1.0"
-          width="60"
-          height="60"
+          width="50"
+          height="50"
           viewBox="0 0 496.31 305.509"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -197,7 +207,12 @@
             d="m316.075 217.14 15.414 59.091 164.82 29.278z"
           />
         </svg>
-        <span>Khiops Visualization Desktop</span>
+        <div class="welcome-header">
+          <span>
+            <strong>Khiops Visualization</strong>
+            <label>Desktop</label>
+          </span>
+        </div>
       </div>
     </div>
     <app-root></app-root>
