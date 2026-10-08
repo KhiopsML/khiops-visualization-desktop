@@ -44,12 +44,12 @@
     "@angular-devkit/core" "22.0.8"
     rxjs "7.8.2"
 
-"@angular-devkit/architect@0.2202.1":
-  version "0.2202.1"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.1.tgz#2d65fb044dafa14539c4ee394d95871a910e1783"
-  integrity sha512-WGRAxFj+R9LC8HuK3DnDgxHo/XrgfklNQeNgjq/phTEVq5ZdWxc8kDoPA4uQz4vF+HY2eycAAtOPfMvj2TBEiQ==
+"@angular-devkit/architect@0.2202.2":
+  version "0.2202.2"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.2.tgz#e79d2938186f42711efac81a4300a9bb5e507b97"
+  integrity sha512-7ScBo47haHyRGG5M5ZEpbhwHgO2LEDbCLwNCjpjwhtRFDIEmAFbULM1OQjIybN3x+wOyY1kWRK7KvihCbs371g==
   dependencies:
-    "@angular-devkit/core" "22.2.1"
+    "@angular-devkit/core" "22.2.2"
     rxjs "7.8.2"
 
 "@angular-devkit/build-angular@^22.0.0":
@@ -133,10 +133,10 @@
     rxjs "7.8.2"
     source-map "0.7.6"
 
-"@angular-devkit/core@22.2.1":
-  version "22.2.1"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-22.2.1.tgz#7e871765d3f8de3a283dc48f7bede44dba4d5c4f"
-  integrity sha512-2oiuWVbUg7pE9kh2grp+MF2ynys+tMWZ/mmoYlqWrhMS2n5oV304ir0/IvvCCSGz9qsbL2A1vZhnlI2UbTSNiA==
+"@angular-devkit/core@22.2.2":
+  version "22.2.2"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-22.2.2.tgz#ee8c3c23ebde4bb6cac6719c07bcbaaa5dd803ba"
+  integrity sha512-iQexb5xUON9AkTzvBiMftrHWLguIlYv6M/BOH/sj7U5L8eOPMu8N269WF74xPo4n/X5tusFLqniGI0zolT2Sjg==
   dependencies:
     ajv "8.20.0"
     ajv-formats "3.0.1"
@@ -156,12 +156,12 @@
     ora "9.4.0"
     rxjs "7.8.2"
 
-"@angular-devkit/schematics@22.2.1":
-  version "22.2.1"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.2.1.tgz#a6b23a35fb6c1dc34411e66b8d9d06b02e188a45"
-  integrity sha512-frHhFwu2TEfTZX5jfAYL2bztuG5mGggfJhiM9bo5/QtLAi49LtRbJxIktsu6vjJdujxeB2TKD7KqnXwNYgd41Q==
+"@angular-devkit/schematics@22.2.2":
+  version "22.2.2"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.2.2.tgz#a36398e0941bccd3fe6538b62793b4f71386ae1c"
+  integrity sha512-uCpFZbQgFUrOjKHLeYSCaYCJdufauYom8yFGggm67yetMAGKPbmRvUEko8i8auNFoBQ+1w1CivjSTwtmXQzZkA==
   dependencies:
-    "@angular-devkit/core" "22.2.1"
+    "@angular-devkit/core" "22.2.2"
     jsonc-parser "3.3.1"
     magic-string "1.4.1"
     ora "9.4.1"
@@ -260,13 +260,13 @@
   optionalDependencies:
     lmdb "3.5.4"
 
-"@angular/build@^22.2.1":
-  version "22.2.1"
-  resolved "https://registry.yarnpkg.com/@angular/build/-/build-22.2.1.tgz#0c55891730a500589ae2321a86b58545b786fa02"
-  integrity sha512-VA8EkK5Y6sJbBFyn2x5jzd3KByh29DDpI7n6hucT0sK6YkMJEvsojPUWet9ifwF3OL+ZrGvxYlAHyZGKVlqw0g==
+"@angular/build@^22.2.2":
+  version "22.2.2"
+  resolved "https://registry.yarnpkg.com/@angular/build/-/build-22.2.2.tgz#81399fe7f9e69c55b3eaa45ba2b0071063b66e3f"
+  integrity sha512-QHJWkZdEWTqqb3+HiSp8lnuS4iQJCa7yTK9gg5TaMIjCoZzP9mD9L417stiVDZGj2J3Y9mrml044nEVvSbW0ig==
   dependencies:
     "@ampproject/remapping" "2.3.0"
-    "@angular-devkit/architect" "0.2202.1"
+    "@angular-devkit/architect" "0.2202.2"
     "@babel/core" "8.0.5"
     "@inquirer/confirm" "6.3.2"
     "@parcel/watcher" "2.6.0"
@@ -295,18 +295,18 @@
   optionalDependencies:
     lmdb "3.5.6"
 
-"@angular/cli@^22.2.1":
-  version "22.2.1"
-  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-22.2.1.tgz#ab9a9dc7fd0e0e08830d3757b71d39fcc30b0f7d"
-  integrity sha512-tKMP68SZP+A9YCSRg0c+2e/+yWp7qiFrjCuQAomHK7owNaxHnLigAbra+8QA4xmWHoGaQk89NMmUPyA1BsBp8w==
+"@angular/cli@^22.2.2":
+  version "22.2.2"
+  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-22.2.2.tgz#f25822685820a997ba1bff010087dde6c2563ea8"
+  integrity sha512-AALIN+zai0CiA7HgSCGVPHyZyiw3yFWliCfbaS4ueHDJHVZ8QhVjRUrnfGZc3EJnigcyQ0w2DKeTxjwqpDjKew==
   dependencies:
-    "@angular-devkit/architect" "0.2202.1"
-    "@angular-devkit/core" "22.2.1"
-    "@angular-devkit/schematics" "22.2.1"
+    "@angular-devkit/architect" "0.2202.2"
+    "@angular-devkit/core" "22.2.2"
+    "@angular-devkit/schematics" "22.2.2"
     "@inquirer/prompts" "8.7.2"
     "@listr2/prompt-adapter-inquirer" "4.2.7"
-    "@modelcontextprotocol/server" "2.0.0"
-    "@schematics/angular" "22.2.1"
+    "@modelcontextprotocol/server" "2.3.1"
+    "@schematics/angular" "22.2.2"
     jsonc-parser "3.3.1"
     listr2 "11.1.0"
     npm-package-arg "14.0.0"
@@ -2747,19 +2747,19 @@
     lodash "^4.17.15"
     tmp-promise "^3.0.2"
 
-"@modelcontextprotocol/core@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/core/-/core-2.0.0.tgz#c918a4c6aef22a7c59dfb0aabc2a82c187cce157"
-  integrity sha512-pJCEwGG7Lfr/+PQp9ZTwKXNeO5wzbfKL7H3MYpCorM4oFBoQrdjnBgEoqG+RjhsvS1FKrDbKux+M1HhlnGWqcA==
+"@modelcontextprotocol/core@2.3.1":
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/core/-/core-2.3.1.tgz#14e177b68558bb47b584dc1457617a2155c83e73"
+  integrity sha512-laVmIhPGpWi7rG9q+0UigblRN0Hws/Yjlb6qLFtVqryXVLkc4h+yN8z731POD2LnAGQlFe7/tXhUm7Bi0YB91g==
   dependencies:
     zod "^4.2.0"
 
-"@modelcontextprotocol/server@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/server/-/server-2.0.0.tgz#4fae5ccb8f7925ed9a6bf6595bb3b58617063ffd"
-  integrity sha512-YhHWdHfpFMQfd0prsEnxKeS3Qz3ytIGmsS0sth4KDjnacIT7hxk6hXHkJ9KysxlkvTM+WZAtQbbcUhdoP4Hvtw==
+"@modelcontextprotocol/server@2.3.1":
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/server/-/server-2.3.1.tgz#a15440d5c06f3bad67360952fe58e6965b4a4ac7"
+  integrity sha512-e59MfWuSssj6DoQ96JCTqdW1AXT5/XtnTl0WWd6MU1Ka434fFUGGosCLJbGNySDhHGvxQWoRWK137FXYFkYNWw==
   dependencies:
-    "@modelcontextprotocol/core" "2.0.0"
+    "@modelcontextprotocol/core" "2.3.1"
     zod "^4.2.0"
 
 "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3":
@@ -3368,12 +3368,12 @@
     tslib "^2.8.1"
     tsyringe "^4.10.0"
 
-"@playwright/test@^1.63.0":
-  version "1.63.0"
-  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.63.0.tgz#808020c46e8b6b91f9d628cd0ebcbb32bdfd8b6c"
-  integrity sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==
+"@playwright/test@^1.64.0":
+  version "1.64.0"
+  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.64.0.tgz#af51c4f1dd5f689b2ff16e6eacf27ac00843f239"
+  integrity sha512-oTN9FNYuN6bqQMwiho6jJKLCG2/QOYCixGXuCjRmzOq23eODeukuY2XiAVoVpAECbuezMt1MHQjAiQxK8F+Y+g==
   dependencies:
-    playwright "1.63.0"
+    playwright "1.64.0"
 
 "@rolldown/binding-android-arm-eabi@1.2.11":
   version "1.2.11"
@@ -3785,13 +3785,13 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@schematics/angular@22.2.1":
-  version "22.2.1"
-  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-22.2.1.tgz#7a147fd30528935b114cf47aa4b96df94502db95"
-  integrity sha512-L4Nl8D43znCzXwze9PtbQhG1GKlhWq9ip8Hz+e3LHgG3WpT5Tlr7aVsyHDqb9Qetuy0Mpd4tXE15STtGdA897w==
+"@schematics/angular@22.2.2":
+  version "22.2.2"
+  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-22.2.2.tgz#53896b8de74c978aaa02ec315fdb1ef2258bc5d5"
+  integrity sha512-JxpXKpxdmQcRsJbriWJOhB7HeVTzz9CEsPNw6fQ0LOuPFnvtyUIXLxyFbKv/LfoFUz8wFADCtNU5sjowME5Mvg==
   dependencies:
-    "@angular-devkit/core" "22.2.1"
-    "@angular-devkit/schematics" "22.2.1"
+    "@angular-devkit/core" "22.2.2"
+    "@angular-devkit/schematics" "22.2.2"
     jsonc-parser "3.3.1"
     oxc-parser "0.150.0"
     typescript "6.0.3"
@@ -6427,10 +6427,10 @@ electron-updater@^6.8.10:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^43.7.7:
-  version "43.7.7"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-43.7.7.tgz#ae3b27bafb3bc6ab1166bbd11d8c60205fd42a28"
-  integrity sha512-y0pg+KhWLAkW2Ts2njkFFNFl3KtB1FmbUp9Te9i+R2Og2v1fcI/I6MADJ7jvnzB5UKdt+U+0EUoCnVL79xMPMA==
+electron@^43.7.9:
+  version "43.7.9"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-43.7.9.tgz#ad0852f0992a9721c401f77ead951e028a578821"
+  integrity sha512-wZkQ/R9F5Bv8dM5vX6vWboNo5ZCBC/IYQV195dtG9JvFAlNbebzlkWWSE5esgpCVy3rVYQ/g09GeknJwvQnS9A==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
@@ -10086,17 +10086,17 @@ pkijs@^3.3.3, pkijs@^3.4.0:
     pvutils "^1.1.3"
     tslib "^2.8.1"
 
-playwright-core@1.63.0:
-  version "1.63.0"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.63.0.tgz#e57665bc32846c213ac39a1e4d5bc6228e76b376"
-  integrity sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==
+playwright-core@1.64.0:
+  version "1.64.0"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.64.0.tgz#a765f91dabd2b2cadd67e87439842c1d6c72c652"
+  integrity sha512-T9r+MZkTECl2+oUcZ26YgZzTrYidTsIhYYkJix+6iDOymOb1FB2RLLSOxRGnZGv5DStt+aduIVbt+E8WygXYpg==
 
-playwright@1.63.0:
-  version "1.63.0"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.63.0.tgz#99b56f9f69b1b70c44f00bf84b2fe52348ae2511"
-  integrity sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==
+playwright@1.64.0:
+  version "1.64.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.64.0.tgz#c105a3ffe174d487a5927a6836a79778b1180742"
+  integrity sha512-kVzTnYFYEyQ9RGzBjNCd2+yEqWmVbxl3AHPynv3qQ6JTjv4a+kwRcnqQwIpuP3NnrnIrE/Q6wWAIAvMfIE2/Yg==
   dependencies:
-    playwright-core "1.63.0"
+    playwright-core "1.64.0"
 
 plist@3.1.0, plist@^3.0.5, plist@^3.1.0:
   version "3.1.0"
