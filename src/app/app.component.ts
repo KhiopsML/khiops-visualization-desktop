@@ -125,6 +125,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         // Update OS window title when active tab changes
         if (activeTabChanged) {
           this.fileSystemService.setTitleBar(this.activeTab?.filePath || '');
+          this.constructMenu();
         }
         this.updateCustomTitlebarTitle();
 
