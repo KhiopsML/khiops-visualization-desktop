@@ -123,7 +123,7 @@
     "electron": "^43.7.9",
     "electron-builder": "^26.17.0",
     "electron-builder-notarize": "^1.5.2",
-    "electron-debug": "^4.1.0",
+    "electron-debug": "^5.0.0",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-reloader": "^1.2.3",
     "eslint": "^10.12.0",
