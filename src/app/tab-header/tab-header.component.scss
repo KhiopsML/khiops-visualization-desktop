@@ -97,6 +97,16 @@
   }
 }
 
+.tab:not(.tab--ghost) + .tab:not(.tab--ghost)::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--color-200);
+}
+
 .tab-icon {
   display: flex;
   align-items: center;
