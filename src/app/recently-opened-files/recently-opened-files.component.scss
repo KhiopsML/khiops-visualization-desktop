@@ -171,11 +171,11 @@
           }
 
           &.icon-visualization {
-            background: var(--color-data-num);
+            background: color-mix(in srgb, var(--color-data-num) 50%, white);
           }
 
           &.icon-covisualization {
-            background: var(--color-data-cat);
+            background: color-mix(in srgb, var(--color-data-cat) 50%, white);
           }
         }
 
