@@ -1,11 +1,5 @@
 #!/bin/bash
 
-ANGULAR_JSON="angular.json"
-
-# Update the angular.json file to replace the style and script paths
-sed -i 's/"styles": \["src\/styles.scss"\]/"styles": ["..\/visualization-component\/dist\/khiops-webcomponent\/styles.css", "src\/styles.scss"]/' $ANGULAR_JSON
-sed -i 's/"scripts": \[\]/"scripts": ["..\/visualization-component\/dist\/khiops-webcomponent\/main.js"]/' $ANGULAR_JSON
-
 # Store PIDs for cleanup
 PIDS=()
 
@@ -25,12 +19,13 @@ trap cleanup EXIT INT TERM
 
 # Resolve absolute paths before any cd
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKSPACE_DIR="$(cd "$PROJECT_DIR/.." && pwd)"
 # Watch main.js — produced directly by ng build, exists before the bundle post-processing step
-BUNDLE_PATH="$REPO_ROOT/visualization-component/dist/khiops-webcomponent/main.js"
+BUNDLE_PATH="$WORKSPACE_DIR/visualization-component/dist/khiops-webcomponent/main.js"
 
 # Remove previous build artifacts to prevent false-positive readiness detection
-cd "$REPO_ROOT/visualization-component"
+cd "$WORKSPACE_DIR/visualization-component"
 rm -f dist/khiops-webcomponent/main.js
 rm -f dist/khiops-webcomponent/khiops-webcomponents.bundle.js
 
@@ -55,7 +50,8 @@ done
 PREV_SIZE=0
 STABLE_COUNT=0
 while [ "$STABLE_COUNT" -lt 3 ]; do
-    CURR_SIZE=$(stat -c%s "$BUNDLE_PATH" 2>/dev/null || echo 0)
+    CURR_SIZE=$(wc -c < "$BUNDLE_PATH" 2>/dev/null | tr -d '[:space:]')
+    CURR_SIZE=${CURR_SIZE:-0}
     if [ "$CURR_SIZE" -eq "$PREV_SIZE" ] && [ "$CURR_SIZE" -gt 0 ]; then
         STABLE_COUNT=$((STABLE_COUNT + 1))
     else
@@ -68,7 +64,7 @@ done
 echo "Webcomponents build is ready. Starting the application..."
 
 # Start the application
-cd "$REPO_ROOT/khiops-visualization-desktop"
+cd "$PROJECT_DIR"
 yarn start &
 START_PID=$!
 PIDS+=($START_PID)
