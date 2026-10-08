@@ -18,6 +18,8 @@ import { Subject } from 'rxjs';
   providedIn: 'root',
 })
 export class MenuService {
+  private readonly MAX_MENU_RECENT_FILES = 10;
+
   private currentChannel: string = 'latest';
   private updateInProgress = false;
 
@@ -141,29 +143,35 @@ export class MenuService {
           label: this.translate.instant('GLOBAL_MENU_RESTART_APP'),
           accelerator: 'CommandOrControl+R',
           click: () => {
-            if (activeComponent === 'covisualization' && this.fileSystemService.currentFilePath) {
-              this.configService.openSaveBeforeQuitDialog((e: string) => {
-                if (e === 'confirm') {
-                  const config = this.configService.getConfig();
-                  if (config && config.constructDatasToSave) {
-                    const datasToSave = config.constructDatasToSave();
-                    this.fileSystemService.save(datasToSave);
+            if (
+              activeComponent === 'covisualization' &&
+              this.fileSystemService.currentFilePath
+            ) {
+              this.configService.openSaveBeforeQuitDialog(
+                (e: string) => {
+                  if (e === 'confirm') {
+                    const config = this.configService.getConfig();
+                    if (config && config.constructDatasToSave) {
+                      const datasToSave = config.constructDatasToSave();
+                      this.fileSystemService.save(datasToSave);
+                    }
+                    this.storageService.saveAll(async () => {
+                      await this.electronService.ipcRenderer?.invoke(
+                        'app-relaunch',
+                      );
+                    });
+                  } else if (e === 'cancel') {
+                    return;
+                  } else if (e === 'reject') {
+                    this.storageService.saveAll(async () => {
+                      await this.electronService.ipcRenderer?.invoke(
+                        'app-relaunch',
+                      );
+                    });
                   }
-                  this.storageService.saveAll(async () => {
-                    await this.electronService.ipcRenderer?.invoke(
-                      'app-relaunch',
-                    );
-                  });
-                } else if (e === 'cancel') {
-                  return;
-                } else if (e === 'reject') {
-                  this.storageService.saveAll(async () => {
-                    await this.electronService.ipcRenderer?.invoke(
-                      'app-relaunch',
-                    );
-                  });
-                }
-              }, { filename: this.fileSystemService.currentFilePath });
+                },
+                { filename: this.fileSystemService.currentFilePath },
+              );
             } else {
               this.storageService.saveAll(async () => {
                 await this.electronService.ipcRenderer?.invoke('app-relaunch');
@@ -175,25 +183,35 @@ export class MenuService {
           label: this.translate.instant('GLOBAL_MENU_EXIT'),
           accelerator: 'CommandOrControl+Q',
           click: () => {
-            if (activeComponent === 'covisualization' && this.fileSystemService.currentFilePath) {
-              this.configService.openSaveBeforeQuitDialog((e: string) => {
-                if (e === 'confirm') {
-                  const config = this.configService.getConfig();
-                  if (config && config.constructDatasToSave) {
-                    const datasToSave = config.constructDatasToSave();
-                    this.fileSystemService.save(datasToSave);
+            if (
+              activeComponent === 'covisualization' &&
+              this.fileSystemService.currentFilePath
+            ) {
+              this.configService.openSaveBeforeQuitDialog(
+                (e: string) => {
+                  if (e === 'confirm') {
+                    const config = this.configService.getConfig();
+                    if (config && config.constructDatasToSave) {
+                      const datasToSave = config.constructDatasToSave();
+                      this.fileSystemService.save(datasToSave);
+                    }
+                    this.storageService.saveAll(async () => {
+                      await this.electronService.ipcRenderer?.invoke(
+                        'app-quit',
+                      );
+                    });
+                  } else if (e === 'cancel') {
+                    return;
+                  } else if (e === 'reject') {
+                    this.storageService.saveAll(async () => {
+                      await this.electronService.ipcRenderer?.invoke(
+                        'app-quit',
+                      );
+                    });
                   }
-                  this.storageService.saveAll(async () => {
-                    await this.electronService.ipcRenderer?.invoke('app-quit');
-                  });
-                } else if (e === 'cancel') {
-                  return;
-                } else if (e === 'reject') {
-                  this.storageService.saveAll(async () => {
-                    await this.electronService.ipcRenderer?.invoke('app-quit');
-                  });
-                }
-              }, { filename: this.fileSystemService.currentFilePath });
+                },
+                { filename: this.fileSystemService.currentFilePath },
+              );
             } else {
               this.storageService.saveAll(async () => {
                 await this.electronService.ipcRenderer?.invoke('app-quit');
@@ -206,13 +224,17 @@ export class MenuService {
 
     // insert history files after the first separator
     if (opendFiles.files.length > 0) {
+      const menuRecentFiles = opendFiles.files.slice(
+        0,
+        this.MAX_MENU_RECENT_FILES,
+      );
       const insertIndex = menuFile.submenu.findIndex(
         (item: any) => item.type === 'separator',
       );
       // in reverse order
-      for (let i = opendFiles.files.length - 1; i >= 0; i--) {
-        if (typeof opendFiles.files[i] === 'string') {
-          const filename = opendFiles.files[i];
+      for (let i = menuRecentFiles.length - 1; i >= 0; i--) {
+        if (typeof menuRecentFiles[i] === 'string') {
+          const filename = menuRecentFiles[i];
           menuFile.submenu.splice(insertIndex + 1, 0, {
             label: filename,
             accelerator: '',
@@ -461,7 +483,11 @@ export class MenuService {
           filters: [{ extensions: associationFiles }],
         })
         .then((result: Electron.OpenDialogReturnValue) => {
-          if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+          if (
+            result.canceled ||
+            !result.filePaths ||
+            result.filePaths.length === 0
+          ) {
             return;
           }
 
@@ -479,7 +505,10 @@ export class MenuService {
       return;
     }
 
-    this.electronService.ipcRenderer?.invoke('open-file-in-new-window', filePath);
+    this.electronService.ipcRenderer?.invoke(
+      'open-file-in-new-window',
+      filePath,
+    );
   }
 
   save() {

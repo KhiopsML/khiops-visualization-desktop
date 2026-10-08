@@ -34,6 +34,8 @@ try {
   providedIn: 'root',
 })
 export class FileSystemService {
+  private readonly MAX_RECENT_FILES = 20;
+
   fileLoaderDatas?: FileLoaderI;
   currentFilePath = '';
 
@@ -639,7 +641,7 @@ export class FileSystemService {
         if (isExistingHistoryIndex !== -1) {
           filesHistory.files.splice(isExistingHistoryIndex, 1);
         } else {
-          if (filesHistory.files.length >= 10) {
+          if (filesHistory.files.length >= this.MAX_RECENT_FILES) {
             filesHistory.files.splice(-1, 1);
           }
         }
@@ -754,7 +756,8 @@ export class FileSystemService {
           sizeDisplay: this.formatFileSize(fileSize),
           fileType: fileType,
         };
-      });
+      })
+      .slice(0, this.MAX_RECENT_FILES);
   }
 
   /**
