@@ -28,7 +28,6 @@
     align-items: flex-start;
     flex-direction: row;
     margin-bottom: 0;
-    margin-top: 1rem;
     align-items: center;
     justify-content: start;
     img {
@@ -72,6 +71,7 @@
     width: min(800px, 100%);
     display: block;
     margin: 0.5rem auto;
+    margin-bottom: 2rem;
   }
   app-start-panel {
     width: min(800px, 100%);
