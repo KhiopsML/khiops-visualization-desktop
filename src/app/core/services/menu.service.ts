@@ -19,6 +19,8 @@ import { Subject } from 'rxjs';
 })
 export class MenuService {
   private readonly MAX_MENU_RECENT_FILES = 10;
+  private readonly MAX_RECENT_FILE_MENU_WIDTH_PX = 600;
+  private readonly APPROX_MENU_CHAR_WIDTH_PX = 6;
 
   private currentChannel: string = 'latest';
   private updateInProgress = false;
@@ -51,6 +53,66 @@ export class MenuService {
 
   setUpdateInProgress(value = false) {
     this.updateInProgress = value;
+  }
+
+  private getMaxRecentFileLabelLength(): number {
+    return Math.floor(
+      this.MAX_RECENT_FILE_MENU_WIDTH_PX / this.APPROX_MENU_CHAR_WIDTH_PX,
+    );
+  }
+
+  private getApproxRecentFileLabelWidthPx(value: string): number {
+    // Approximate width by character families to avoid truncating too early.
+    return Array.from(value).reduce((width, char) => {
+      if ('ilI|.,:;!'.includes(char)) {
+        return width + 3.2;
+      }
+
+      if ('MW@#%&'.includes(char)) {
+        return width + 8.4;
+      }
+
+      if ('/\\'.includes(char)) {
+        return width + 4.2;
+      }
+
+      return width + 6.0;
+    }, 0);
+  }
+
+  private truncateMiddle(value: string, maxLength: number): string {
+    if (value.length <= maxLength) {
+      return value;
+    }
+
+    if (maxLength <= 3) {
+      return '.'.repeat(maxLength);
+    }
+
+    const availableChars = maxLength - 3;
+    const startLength = Math.ceil(availableChars / 2);
+    const endLength = Math.floor(availableChars / 2);
+
+    return `${value.slice(0, startLength)}...${value.slice(
+      value.length - endLength,
+    )}`;
+  }
+
+  private formatRecentFileLabel(filePath: string): string {
+    if (
+      this.getApproxRecentFileLabelWidthPx(filePath) <=
+      this.MAX_RECENT_FILE_MENU_WIDTH_PX
+    ) {
+      return filePath;
+    }
+
+    const maxLength = this.getMaxRecentFileLabelLength();
+
+    if (filePath.length <= maxLength) {
+      return filePath;
+    }
+
+    return this.truncateMiddle(filePath, maxLength);
   }
 
   setMenu(
@@ -235,8 +297,9 @@ export class MenuService {
       for (let i = menuRecentFiles.length - 1; i >= 0; i--) {
         if (typeof menuRecentFiles[i] === 'string') {
           const filename = menuRecentFiles[i];
+          const displayFileName = this.formatRecentFileLabel(filename);
           menuFile.submenu.splice(insertIndex + 1, 0, {
-            label: filename,
+            label: displayFileName,
             accelerator: '',
             enabled: true,
             click: ((_menuItem: any, browserWindow: any, event: any) => {
