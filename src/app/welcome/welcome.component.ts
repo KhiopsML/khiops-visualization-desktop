@@ -11,6 +11,7 @@ import { StartPanelComponent } from '../start-panel/start-panel.component';
 import { RecentlyOpenedFilesComponent } from '../recently-opened-files/recently-opened-files.component';
 import { Subscription } from 'rxjs';
 import { FileLoaderI } from '../interfaces/file-system.interface';
+import { LibVersionService } from '../core/services/lib-version.service';
 
 @Component({
   selector: 'app-welcome',
@@ -28,6 +29,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
   private fileLoaderSub?: Subscription;
 
   visible: boolean = true;
+  appVersion: string = LibVersionService.getAppVersion() || '-';
 
   constructor(
     public fileSystemService: FileSystemService,
