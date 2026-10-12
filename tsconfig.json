@@ -22,7 +22,6 @@
   "exclude": ["node_modules"],
   "angularCompilerOptions": {
     "strictTemplates": true,
-    "annotateForClosureCompiler": true,
     "strictInjectionParameters": true,
     "preserveWhitespaces": false,
     "disableTypeScriptVersionCheck": true

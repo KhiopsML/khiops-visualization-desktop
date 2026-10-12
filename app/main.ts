@@ -209,11 +209,11 @@ function createWindow(): BrowserWindow {
   });
 
   // Custom context menu
-  newWindow.webContents.on('context-menu', (_event, params) => {
+  newWindow.webContents.on('context-menu', async (_event, params) => {
     // Check if there is selected text or if clipboard has content to enable/disable menu items
     const hasSelection =
       params.selectionText && params.selectionText.trim().length > 0;
-    const hasClipboard = clipboard.readText().trim().length > 0;
+    const hasClipboard = (await clipboard.readText()).trim().length > 0;
 
     // process right-click event and send to renderer process
     newWindow?.webContents?.send('right-click', params);
@@ -247,7 +247,14 @@ function createWindow(): BrowserWindow {
   // win.webContents.openDevTools();
 
   if (serve) {
-    require('electron-reloader')(module);
+    try {
+      const reloader = require('electron-reloader');
+      (reloader.default ?? reloader)(module);
+    } catch (error) {
+      // Hot reload is optional in dev, do not block startup
+      log.warn('electron-reloader setup failed:', (error as Error).message);
+    }
+
     newWindow.loadURL('http://localhost:4200');
 
     const electronReload = require('electron-reload');
@@ -370,7 +377,10 @@ function createPrewarmedWindow(): BrowserWindow {
   require('@electron/remote/main').enable(pw.webContents);
 
   void setupTitlebarAndAttachToWindow(pw).catch((error: Error) => {
-    log.warn('custom-electron-titlebar setup failed for prewarmed window:', error.message);
+    log.warn(
+      'custom-electron-titlebar setup failed for prewarmed window:',
+      error.message,
+    );
   });
 
   if (serve) {
@@ -446,10 +456,10 @@ function promotePrewarmedWindow(): BrowserWindow {
   });
 
   // Wire up context menu (same as createWindow)
-  pw.webContents.on('context-menu', (_event, params) => {
+  pw.webContents.on('context-menu', async (_event, params) => {
     const hasSelection =
       params.selectionText && params.selectionText.trim().length > 0;
-    const hasClipboard = clipboard.readText().trim().length > 0;
+    const hasClipboard = (await clipboard.readText()).trim().length > 0;
     pw.webContents?.send('right-click', params);
     Menu.buildFromTemplate([
       { label: 'Copy', role: 'copy', enabled: hasSelection },
