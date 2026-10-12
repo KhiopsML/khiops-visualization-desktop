@@ -148,7 +148,8 @@
     "wait-on": "^9.5.1"
   },
   "resolutions": {
-    "@babel/compat-data": "8.0.5"
+    "@babel/compat-data": "8.0.5",
+    "@jridgewell/sourcemap-codec": "1.6.0"
   },
   "browserslist": [
     "chrome 110"
