@@ -139,6 +139,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
             this.setActiveConfig(this.activeTab);
             // Propagate resize event when tab changes
             this.propagateResizeEvent();
+            void this.fileSystemService.checkAndPromptReloadForTab(
+              this.activeTab,
+            );
           }
         });
       });
@@ -199,6 +202,19 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       event.stopPropagation();
       this.tabManager.switchToNextTab(event.shiftKey ? -1 : 1);
     }
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {
+    this.checkActiveTabExternalChanges();
+  }
+
+  private checkActiveTabExternalChanges(): void {
+    if (!this.activeTab) {
+      return;
+    }
+
+    void this.fileSystemService.checkAndPromptReloadForTab(this.activeTab);
   }
 
   /**
@@ -591,6 +607,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     // always point to the correct (active) renderer.
     this.electronService.ipcRenderer?.on('window-focused', () => {
       this.constructMenu();
+      this.checkActiveTabExternalChanges();
     });
 
     this.constructMenu();

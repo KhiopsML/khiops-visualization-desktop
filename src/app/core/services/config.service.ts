@@ -225,6 +225,19 @@ export class ConfigService {
     }
   }
 
+  openFileModifiedDialog(
+    cb: Function,
+    options?: { filename?: string; message?: string },
+  ) {
+    if (this.config && this.config.openFileModifiedDialog) {
+      this.config.openFileModifiedDialog(cb, options);
+      return;
+    }
+
+    // No mounted lib component: do not fall back to a native Electron dialog.
+    cb('reject');
+  }
+
   markSaved() {
     if (this.config && this.config.markSaved) {
       this.config.markSaved();

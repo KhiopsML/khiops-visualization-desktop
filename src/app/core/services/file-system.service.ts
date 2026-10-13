@@ -12,6 +12,7 @@ import { TabManagerService } from './tab-manager.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { StorageService } from './storage.service';
 import { FileLoaderI } from '../../interfaces/file-system.interface';
+import { Tab } from '../interfaces/tab.interface';
 import {
   JsonFormatterService,
   JsonFormatState,
@@ -44,6 +45,12 @@ export class FileSystemService {
 
   /** Raw JSON content pending lazy format analysis on first save */
   private pendingFormatAnalysisRaw: string | null = null;
+
+  /** Last known file modification time (mtimeMs) by file path */
+  private fileModificationTimes = new Map<string, number>();
+
+  /** Guard to avoid opening multiple reload dialogs simultaneously */
+  private isReloadDialogOpen = false;
 
   private _fileLoaderSub: BehaviorSubject<any> = new BehaviorSubject(undefined);
   public fileLoader$: Observable<any> = this._fileLoaderSub.asObservable();
@@ -146,6 +153,7 @@ export class FileSystemService {
     const existingTab = this.tabManagerService.getTabByFilePath(filename);
     if (existingTab) {
       this.tabManagerService.setActiveTab(existingTab.id);
+      await this.checkAndPromptReloadForTab(existingTab);
       callbackDone && callbackDone();
       return;
     }
@@ -223,6 +231,7 @@ export class FileSystemService {
     this.readFile(filename, jsonData)
       .then(async (datas: any) => {
         this.setTitleBar(filename, componentType);
+        this.updateKnownFileModificationTime(filename);
         await this.setFileHistory(filename);
         // Add delay to ensure component is fully configured before setting data
         if (!skipStorageSave) {
@@ -271,6 +280,101 @@ export class FileSystemService {
         this._fileLoaderSub.next(this.fileLoaderDatas);
         callbackDone && callbackDone();
       });
+  }
+
+  /**
+   * Check whether file behind a tab changed on disk, and optionally reload it.
+   */
+  async checkAndPromptReloadForTab(tab: Tab | null): Promise<void> {
+    if (!tab?.filePath) {
+      return;
+    }
+
+    await this.checkAndPromptReloadForFile(tab.filePath, tab.id);
+  }
+
+  private async checkAndPromptReloadForFile(
+    filePath: string,
+    tabId?: string,
+  ): Promise<void> {
+    if (!this.electronService.isElectron) {
+      return;
+    }
+
+    const currentMtime = this.getFileMtimeMs(filePath);
+    if (currentMtime === null) {
+      return;
+    }
+
+    const knownMtime = this.fileModificationTimes.get(filePath);
+
+    // First observation becomes baseline.
+    if (knownMtime === undefined) {
+      this.fileModificationTimes.set(filePath, currentMtime);
+      return;
+    }
+
+    if (currentMtime <= knownMtime || this.isReloadDialogOpen) {
+      return;
+    }
+
+    this.isReloadDialogOpen = true;
+
+    try {
+      const fileName = filePath.split(/[\\/]/).pop() || filePath;
+      const dialogResult = await this.openFileModifiedDialog(fileName);
+
+      if (dialogResult === 'confirm') {
+        await this.performOpenFile(filePath, undefined, tabId, true);
+      } else {
+        // User declined reload: accept current disk state as baseline.
+        this.fileModificationTimes.set(filePath, currentMtime);
+      }
+    } catch (error) {
+      console.error('Error while checking external file modification:', error);
+    } finally {
+      this.isReloadDialogOpen = false;
+    }
+  }
+
+  private openFileModifiedDialog(
+    fileName: string,
+  ): Promise<'confirm' | 'reject'> {
+    return new Promise((resolve) => {
+      this.configService.openFileModifiedDialog(
+        (result: string) => {
+          resolve(result === 'confirm' ? 'confirm' : 'reject');
+        },
+        {
+          filename: fileName,
+        },
+      );
+    });
+  }
+
+  private getFileMtimeMs(filePath: string): number | null {
+    try {
+      const stats = this.electronService.fs.statSync(filePath);
+
+      if (typeof stats?.mtimeMs === 'number') {
+        return stats.mtimeMs;
+      }
+
+      if (stats?.mtime instanceof Date) {
+        return stats.mtime.getTime();
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private updateKnownFileModificationTime(filePath: string): void {
+    const mtime = this.getFileMtimeMs(filePath);
+    if (mtime !== null) {
+      this.fileModificationTimes.set(filePath, mtime);
+    }
   }
 
   private readFileContent(filename: string): Promise<string> {
@@ -867,6 +971,7 @@ export class FileSystemService {
       : JSON.stringify(datas, null, 2);
 
     this.electronService.fs.writeFileSync(filename, serialized, 'utf-8');
+    this.updateKnownFileModificationTime(filename);
     const basename = filename.split(/[\\/]/).pop() ?? filename;
     this.configService.snack(
       `${this.translate.instant('GLOBAL_SNACKS_SAVE_FILE_SUCCESS', {

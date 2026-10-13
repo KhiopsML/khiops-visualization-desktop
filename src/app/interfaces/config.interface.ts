@@ -12,6 +12,7 @@ export interface ConfigI {
   copyImage?: Function;
   copyDatas?: Function;
   openSaveBeforeQuitDialog?: Function;
+  openFileModifiedDialog?: Function;
   snack?: Function;
   markSaved?: Function;
 }
