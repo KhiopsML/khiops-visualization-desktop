@@ -34,6 +34,7 @@ import { Tab } from './core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LucideArrowDownToLine } from '@lucide/angular';
+import 'khiops-visualization';
 
 @Component({
   selector: 'app-root',
