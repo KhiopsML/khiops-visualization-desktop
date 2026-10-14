@@ -6427,10 +6427,10 @@ electron-updater@^6.8.10:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@^43.7.9:
-  version "43.7.9"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-43.7.9.tgz#ad0852f0992a9721c401f77ead951e028a578821"
-  integrity sha512-wZkQ/R9F5Bv8dM5vX6vWboNo5ZCBC/IYQV195dtG9JvFAlNbebzlkWWSE5esgpCVy3rVYQ/g09GeknJwvQnS9A==
+electron@^43.7.11:
+  version "43.7.11"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-43.7.11.tgz#fab0f04190894956cd9439f3bc47b65df0d5dc8e"
+  integrity sha512-wEzOBtconxs86zwFPKCn5OzwGpr/pTAIvNT70aoDYslKlUcc76NbKQr2pqH8IMqL2bnN1K0EfVTREDa6sEp6OQ==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
