@@ -7322,10 +7322,10 @@ keyv@^5.6.0:
   dependencies:
     "@keyv/serialize" "^1.1.1"
 
-khiops-visualization@^11.17.0:
-  version "11.17.0"
-  resolved "https://registry.yarnpkg.com/khiops-visualization/-/khiops-visualization-11.17.0.tgz#cec8341dcc2c40c670343c1ca05af067a5f91df1"
-  integrity sha512-7xQgqgU8YcRI+6VedJzWQggI2ePFFGuM/SqL+HWdA3xxiJeq57c5Q/FAO/j6WTMI2UzJPEafsAoWRVVW6ygf6A==
+khiops-visualization@^11.17.1:
+  version "11.17.1"
+  resolved "https://registry.yarnpkg.com/khiops-visualization/-/khiops-visualization-11.17.1.tgz#51e5366e5ecccea465f7e21cd64589dea01137ac"
+  integrity sha512-0VDVaXyGo95OFMlsHHQq1VCNyFfX5k2I7pPmysls0Xl0UgcIccHmAPHSFRIeyiO4ADWm5JSyYJGxUixR3kbOkQ==
 
 kind-of@^6.0.2:
   version "6.0.3"
