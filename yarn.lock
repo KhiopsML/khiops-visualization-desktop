@@ -2227,10 +2227,10 @@
   resolved "https://registry.yarnpkg.com/@lmdb/lmdb-win32-x64/-/lmdb-win32-x64-3.5.6.tgz#8e26cbb62abb1454130fe73bd475df3b24a97567"
   integrity sha512-1g7G0knRX2iV/voDu54yxrGqw5Dk0w2oIYb7dgJq8IkOi+m7wbD8Q3QpPFjh0C01G58S88dqGn03len6UPCXsg==
 
-"@lucide/angular@^1.58.0":
-  version "1.58.0"
-  resolved "https://registry.yarnpkg.com/@lucide/angular/-/angular-1.58.0.tgz#36617df32aee11df64b0ff9270e4d8fca2e49c8b"
-  integrity sha512-ah+FaL/1Blr8hxfRQzyuFdMwGCfOqlJyttPLKuumpFw2mWhnt04Z24PlRdG8AilHgCUNHBCh3hHtjL3JR9fmaw==
+"@lucide/angular@^1.59.0":
+  version "1.59.0"
+  resolved "https://registry.yarnpkg.com/@lucide/angular/-/angular-1.59.0.tgz#484ff835c33d8f23aef74bef0e3cdc424dcd523b"
+  integrity sha512-DyCmxhMvneVI76fiP8JtBVW3tBh/UBWBPvl2YsqIboSsepZFk0mQIOhVdw+0oyQg+I8y6rZ5srWqA/mDdWJFQQ==
   dependencies:
     tslib "^2.3.0"
 
@@ -5335,10 +5335,10 @@ electron-updater@^6.8.10:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@44.8.0:
-  version "44.8.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-44.8.0.tgz#b5df8325062e08a78d92dcc7fd8879ab7ce26314"
-  integrity sha512-Yn2tJ335l8MGRJj86vaAYq1MOidtiw9eXdmHX6p3ecHQWwucsMMBxDzqUrYnXEHyqdc/IhOh2KGHzmizJvzd3Q==
+electron@44.9.0:
+  version "44.9.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-44.9.0.tgz#540c3050b23b3b6e5191201c804e9f4887842140"
+  integrity sha512-boP8zA5OIoMGYe3uWP4IqB1VJNoEzdHYgcBaVYnd1DBv5TogwXkbM4yJGSfNmYCzalVQ5J3TAIbaKOY+ILTnyg==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
@@ -5720,10 +5720,10 @@ eslint-visitor-keys@^5.0.0, eslint-visitor-keys@^5.0.1:
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-5.0.1.tgz#9e3c9489697824d2d4ce3a8ad12628f91e9f59be"
   integrity sha512-tD40eHxA35h0PEIZNeIjkHoDR4YjjJp34biM0mDvplBe//mB+IHCqHDGV7pxF+7MklTvighcCPPZC7ynWyjdTA==
 
-eslint@^10.12.0:
-  version "10.12.0"
-  resolved "https://registry.yarnpkg.com/eslint/-/eslint-10.12.0.tgz#4f2f7e679bdce9d71438c2900f2c8d4d297332b0"
-  integrity sha512-npHjrHb2o4ehH3mE+YuxABR+0gyb0aVWCIolgJDArwCiHEIsonBm3ZKjel5b0U5+a+MbEvIyRCGCzD3eKKK2NA==
+eslint@^10.13.0:
+  version "10.13.0"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-10.13.0.tgz#a8a4742648c0fa9131f429b509de5407682d4864"
+  integrity sha512-UohDjD4zSzEwhf58M3O7vc/ycc8O1I7dNlhtD0WxE8Px8EHNJKtUwzBqrzeGhisRuv2ag4sAYswszCJRgKXYUg==
   dependencies:
     "@eslint-community/eslint-utils" "^4.8.0"
     "@eslint-community/regexpp" "^4.12.2"
