@@ -312,10 +312,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
         onFileError: (filePath: string) => {
           this.fileSystemService.closeFile(undefined, tab.id);
         },
-        onCopyImage: (base64data: any) => {
-          const natImage =
-            this.electronService.nativeImage.createFromDataURL(base64data);
-          this.electronService.clipboard.writeImage(natImage);
+        onCopyImage: (base64data: string) => {
+          return this.electronService.ipcRenderer!.invoke(
+            'clipboard-write-image',
+            base64data,
+          );
         },
         readLocalFile: (file: File | any, cb: Function) => {
           console.log(

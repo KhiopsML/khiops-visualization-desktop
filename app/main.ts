@@ -1,4 +1,12 @@
-import { app, BrowserWindow, clipboard, nativeTheme, screen } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  ClipboardItem,
+  nativeImage,
+  nativeTheme,
+  screen,
+} from 'electron';
 import * as electron from 'electron';
 import * as remoteMain from '@electron/remote/main';
 remoteMain.initialize();
@@ -48,6 +56,31 @@ const args = process.argv.slice(1),
 const forceNewWindow = args.some((val) => val === '--new-window');
 const { Menu } = require('electron');
 const { ipcMain } = require('electron');
+ipcMain.handle('clipboard-write-image', (_event: any, dataUrl: string) => {
+  const image = nativeImage.createFromDataURL(dataUrl);
+  if (image.isEmpty()) {
+    throw new Error('Cannot copy an empty image to the clipboard');
+  }
+
+  const clipboardAny = clipboard as any;
+  if (typeof clipboardAny.writeImage === 'function') {
+    clipboardAny.writeImage(image);
+    return;
+  }
+
+  if (typeof clipboardAny.writeBuffer === 'function') {
+    clipboardAny.writeBuffer('image/png', image.toPNG());
+    return;
+  }
+
+  return clipboard.write([
+    new ClipboardItem({
+      'image/png': new Blob([new Uint8Array(image.toPNG())], {
+        type: 'image/png',
+      }),
+    }),
+  ]);
+});
 if (serve) require('electron-debug');
 if (serve) require('source-map-support').install();
 
