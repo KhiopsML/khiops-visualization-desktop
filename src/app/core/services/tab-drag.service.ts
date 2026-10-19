@@ -367,8 +367,20 @@ export class TabDragService {
     titleEl.style.overflow = 'hidden';
     titleEl.style.textOverflow = 'ellipsis';
 
+    const hintEl = document.createElement('span');
+    hintEl.textContent = 'Drop to open in a new window';
+    hintEl.style.fontSize = '11px';
+
+    const labelEl = document.createElement('div');
+    labelEl.style.display = 'flex';
+    labelEl.style.flexDirection = 'column';
+    labelEl.style.gap = '2px';
+    labelEl.style.minWidth = '0';
+    labelEl.appendChild(titleEl);
+    labelEl.appendChild(hintEl);
+
     dragImage.appendChild(iconEl);
-    dragImage.appendChild(titleEl);
+    dragImage.appendChild(labelEl);
     document.body.appendChild(dragImage);
 
     ctx.dragImageEl = dragImage;
