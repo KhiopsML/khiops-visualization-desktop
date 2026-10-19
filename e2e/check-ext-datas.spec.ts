@@ -47,14 +47,14 @@ test.describe('Check loading external datas', () => {
     await mockOpenDialog(app, 'adult2var.json');
     await clickMenuItem(app, 'File', 'Open');
 
-    const uploadBtn = firstWindow.locator('button', { hasText: 'file_upload' });
+    const uploadBtn = firstWindow.locator('button', { hasText: 'import external' });
     await expect(uploadBtn).toBeVisible({ timeout: 10000 });
     await uploadBtn.click();
 
     const filePath = PATH.join(__dirname, 'mocks', 'ExternalDataEducation.txt');
 
     const importBtn = firstWindow.locator('button', {
-      hasText: 'Import new file',
+      hasText: 'Browse local file',
     });
     await expect(importBtn).toBeVisible({ timeout: 10000 });
 
