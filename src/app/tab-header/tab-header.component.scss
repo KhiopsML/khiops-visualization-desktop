@@ -41,6 +41,7 @@
   min-width: 0; // allow shrinking below content size
   overflow: hidden;
   position: relative; // required for ghost absolute positioning
+  padding: 2px;
 }
 
 .tab {
@@ -74,6 +75,11 @@
     font-weight: 500;
     z-index: 3;
     border-color: var(--color-border-subtle) !important;
+    border-color: color-mix(
+      in srgb,
+      var(--color-border-subtle) 90%,
+      black
+    ) !important;
   }
 
   &.dirty {
@@ -122,6 +128,13 @@
   .active & {
     color: var(--color-brand-orange);
   }
+}
+
+.tab.visualization {
+  background: color-mix(in srgb, var(--color-data-num) 50%, white);
+}
+.tab.covisualization {
+  background: color-mix(in srgb, var(--color-data-cat) 50%, white);
 }
 
 .tab-title {
