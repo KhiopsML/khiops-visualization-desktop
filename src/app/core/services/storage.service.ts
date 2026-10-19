@@ -13,6 +13,15 @@ import { ElectronService } from './electron.service';
 export class StorageService {
   private _storage: any = {};
   private _storageKey: string = 'KHIOPS_VISUALIZATION_DESKTOP';
+  private readonly globalSettingKeys = [
+    'SETTING_NUMBER_PRECISION',
+    'SETTING_AUTO_SCALE_FACTOR',
+    'SETTING_LEVEL_RELATIVE_VALUE',
+    'SETTING_MATRIX_CONTRAST',
+    'SETTING_AUTO_SCALE',
+    'DISTRIBUTION_GRAPH_OPTION_X',
+    'DISTRIBUTION_GRAPH_OPTION_Y',
+  ];
 
   // Storage for individual tab instances
   private _tabStorages: Map<string, any> = new Map();
@@ -104,8 +113,16 @@ export class StorageService {
   // Tab-specific storage methods for isolated instances
   getTabStorage(instanceId: string): any {
     if (!this._tabStorages.has(instanceId)) {
-      // Initialize with empty storage for this tab instance
-      this._tabStorages.set(instanceId, {});
+      const tabStorage = {};
+      for (const key of this.globalSettingKeys) {
+        Object.defineProperty(tabStorage, key, {
+          get: () => this._storage[key],
+          set: (value: any) => {
+            this._storage[key] = value;
+          },
+        });
+      }
+      this._tabStorages.set(instanceId, tabStorage);
     }
     return this._tabStorages.get(instanceId);
   }
@@ -113,6 +130,7 @@ export class StorageService {
   saveTabStorage(instanceId: string, cb?: Function) {
     const tabStorage = this._tabStorages.get(instanceId);
     if (tabStorage) {
+      this.saveAll();
       const tabStorageKey = `${this._storageKey}_tab_${instanceId}`;
       this.electronService.storage?.set(tabStorageKey, tabStorage, () => {
         console.log('Saved tab storage for instance:', instanceId);
@@ -153,8 +171,19 @@ export class StorageService {
    */
   saveFileSettings(filePath: string, settings: any) {
     const allFileSettings = this.getOne('FILE_SETTINGS') || {};
-    allFileSettings[filePath] = settings;
+    allFileSettings[filePath] = this.getFileScopedSettings(settings);
     this.setOne('FILE_SETTINGS', allFileSettings);
+  }
+
+  private getFileScopedSettings(settings: any): any {
+    if (!settings) {
+      return settings;
+    }
+    const fileSettings = { ...settings };
+    for (const key of this.globalSettingKeys) {
+      delete fileSettings[key];
+    }
+    return fileSettings;
   }
 
   /**
@@ -169,15 +198,20 @@ export class StorageService {
       // Always read fresh from disk so pre-warmed windows get the latest data
       const freshStorage =
         this.electronService.storage?.getSync(this._storageKey) || {};
+      for (const key of this.globalSettingKeys) {
+        if (freshStorage[key] !== undefined) {
+          this._storage[key] = freshStorage[key];
+        }
+      }
       const allFileSettings = freshStorage['FILE_SETTINGS'] || {};
       // Also sync the in-memory cache
       if (freshStorage['FILE_SETTINGS']) {
         this._storage['FILE_SETTINGS'] = freshStorage['FILE_SETTINGS'];
       }
-      return allFileSettings[filePath];
+      return this.getFileScopedSettings(allFileSettings[filePath]);
     } catch {
       const allFileSettings = this.getOne('FILE_SETTINGS') || {};
-      return allFileSettings[filePath];
+      return this.getFileScopedSettings(allFileSettings[filePath]);
     }
   }
 }
