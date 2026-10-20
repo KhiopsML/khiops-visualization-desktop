@@ -131,10 +131,10 @@
 }
 
 .tab.visualization {
-  background: color-mix(in srgb, var(--color-data-num) 50%, white);
+  background: color-mix(in srgb, var(--color-data-num) 40%, white);
 }
 .tab.covisualization {
-  background: color-mix(in srgb, var(--color-data-cat) 50%, white);
+  background: color-mix(in srgb, var(--color-data-cat) 30%, white);
 }
 
 .tab-title {
