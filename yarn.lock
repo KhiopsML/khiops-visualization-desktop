@@ -44,12 +44,12 @@
     "@angular-devkit/core" "22.2.2"
     rxjs "7.8.2"
 
-"@angular-devkit/architect@0.2202.3":
-  version "0.2202.3"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.3.tgz#ed263805072ccab035db32873fa7f2dede56a2d1"
-  integrity sha512-/605FxTg8Kt5fqNuIBVZMfuiNwIf+CTNsiYnHY85/7OTqCNkEwdkXKc3DiFM2KlR/AV2g64GkvHgHqxHzYh34g==
+"@angular-devkit/architect@0.2202.4":
+  version "0.2202.4"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/architect/-/architect-0.2202.4.tgz#680d90e9c81085cfb19d738493f56b6099feeb82"
+  integrity sha512-hafew1tft3+bnv+DjAtLDEq/Yx5/UyAz/+M4VC5EWQQhcFCN81X47szTX3F9dNeiZIQb8d/WmCnmlbHz6CyupA==
   dependencies:
-    "@angular-devkit/core" "22.2.3"
+    "@angular-devkit/core" "22.2.4"
     rxjs "7.8.2"
 
 "@angular-devkit/build-angular@^22.0.0":
@@ -133,10 +133,10 @@
     rxjs "7.8.2"
     source-map "0.8.0"
 
-"@angular-devkit/core@22.2.3":
-  version "22.2.3"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-22.2.3.tgz#4cdcf4b2a8aa0be7035ca27e8757cba701025e64"
-  integrity sha512-bi1oBjJeg1XCgRrBYSuJikaJV4sO/mcnyFE/0a1H646yHhQpVYoU/M2Vh69Qv8h+YoMfC7RuSxT4LZHaubhhLw==
+"@angular-devkit/core@22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-22.2.4.tgz#062f946ebdb4fa12483f60fc11aadd073584fbb7"
+  integrity sha512-HDlsVK/qN7p5ttKgPvVLo87yrN0UcHR7OyQo1n/lvvMQcYrA0n01E+ix4t+q4C04ifpMbNQtrK0I1222OKi99w==
   dependencies:
     ajv "8.20.0"
     ajv-formats "3.0.1"
@@ -156,12 +156,12 @@
     ora "9.4.1"
     rxjs "7.8.2"
 
-"@angular-devkit/schematics@22.2.3":
-  version "22.2.3"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.2.3.tgz#13fd38643955a340a4f52fecf843b93ddce43e0b"
-  integrity sha512-+XfBViIGqiFQK8KJXA6PgANX9tLuMO/x8GFjlzEmA4LIe9ikAtpGZw+Ezo547BIJQoJBIKCJYR0knE4BmbFeSQ==
+"@angular-devkit/schematics@22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-22.2.4.tgz#045e1400b48bd2254e98daf95cbb2fb315add9f2"
+  integrity sha512-9pRNtcZN87yM7KQX+HTxGatrm86y30JxVwkF2WNG1pR0e9yeiYWc1KQ5hRS1Nq1LULoP95HApc+TBXqUXzF4Ag==
   dependencies:
-    "@angular-devkit/core" "22.2.3"
+    "@angular-devkit/core" "22.2.4"
     jsonc-parser "3.3.1"
     magic-string "1.4.1"
     ora "9.4.1"
@@ -262,13 +262,13 @@
   optionalDependencies:
     lmdb "3.5.6"
 
-"@angular/build@^22.2.3":
-  version "22.2.3"
-  resolved "https://registry.yarnpkg.com/@angular/build/-/build-22.2.3.tgz#26d03a32691d0382e127234a2e8ee463dd0db495"
-  integrity sha512-EtNEuPBUCyIuzdXrQ/nINvgFzW8bUI5AkAZtJiSn7nsFOlvaygaKN0kENNTO3zRl3T9B4GDog+Ks5Nec3FBkhg==
+"@angular/build@^22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular/build/-/build-22.2.4.tgz#1ece31057d10b8dfaa4bf52e85879b0f84958be4"
+  integrity sha512-Emb3pxRkvf749NQ5cz4ux2h9Cnbxx3FmcupdXIaoRxIyNXM8JxjFDCLZTe0yGGOWv5+hSaoR7XESOcN134vBPw==
   dependencies:
     "@ampproject/remapping" "2.3.0"
-    "@angular-devkit/architect" "0.2202.3"
+    "@angular-devkit/architect" "0.2202.4"
     "@babel/core" "8.0.5"
     "@inquirer/confirm" "6.3.2"
     "@parcel/watcher" "2.6.0"
@@ -297,18 +297,18 @@
   optionalDependencies:
     lmdb "3.5.6"
 
-"@angular/cli@^22.2.3":
-  version "22.2.3"
-  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-22.2.3.tgz#7f6090cf07d068cf6f27059dfd968ddc83d269ca"
-  integrity sha512-ObTX0DxJ0/PMl4pkUKI+uWPr7UC7Je94KpHP8l1lr3exhundapgr7VvNsozprJb1hMlOMDab6+quTReSYvF85Q==
+"@angular/cli@^22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@angular/cli/-/cli-22.2.4.tgz#4668160c3dc0ff804ef1cd7925ffd7f71cfc92d0"
+  integrity sha512-luD9gNbMV7ME7mv9cUatVE+WF8Ecqa8v9Zo47YZK/6EPQUKdLxeosGWlHtrvBXElK1YehHItrUbawtZQmQwwlg==
   dependencies:
-    "@angular-devkit/architect" "0.2202.3"
-    "@angular-devkit/core" "22.2.3"
-    "@angular-devkit/schematics" "22.2.3"
+    "@angular-devkit/architect" "0.2202.4"
+    "@angular-devkit/core" "22.2.4"
+    "@angular-devkit/schematics" "22.2.4"
     "@inquirer/prompts" "8.7.2"
     "@listr2/prompt-adapter-inquirer" "4.2.7"
     "@modelcontextprotocol/server" "2.3.1"
-    "@schematics/angular" "22.2.3"
+    "@schematics/angular" "22.2.4"
     jsonc-parser "3.3.1"
     listr2 "11.1.0"
     npm-package-arg "14.0.0"
@@ -1496,7 +1496,7 @@
     minimist "^1.2.6"
     plist "^3.0.5"
 
-"@electron/rebuild@^4.0.4":
+"@electron/rebuild@^4.2.1":
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/@electron/rebuild/-/rebuild-4.2.1.tgz#89f22183fcb26b8661382097fa38531505310728"
   integrity sha512-IS4pG3BysRrCLJ8xTAfvg+IQDbiUoAzdJy2SfjcYKnLDy5DpCdjnPdhS5Zf5UMfrkB24xu0KC+TqcOxg+eG+6w==
@@ -2227,10 +2227,10 @@
   resolved "https://registry.yarnpkg.com/@lmdb/lmdb-win32-x64/-/lmdb-win32-x64-3.5.6.tgz#8e26cbb62abb1454130fe73bd475df3b24a97567"
   integrity sha512-1g7G0knRX2iV/voDu54yxrGqw5Dk0w2oIYb7dgJq8IkOi+m7wbD8Q3QpPFjh0C01G58S88dqGn03len6UPCXsg==
 
-"@lucide/angular@^1.60.0":
-  version "1.60.0"
-  resolved "https://registry.yarnpkg.com/@lucide/angular/-/angular-1.60.0.tgz#0b967eaf16d574bda94bd46627a51a9f4b17f061"
-  integrity sha512-+i6/+FqEoc8M477qdEgH07jy+zB7wbXMLKw8+0jkwzOxj1p6DfonE7WMzFqfER9/XvfvmjkTNaKtg5gcgTlYTg==
+"@lucide/angular@^1.61.0":
+  version "1.61.0"
+  resolved "https://registry.yarnpkg.com/@lucide/angular/-/angular-1.61.0.tgz#bf47f0b0387224715a64afe452244ab1c6580814"
+  integrity sha512-62orthtecq8JuJKmB3HrJFUe1Ur28yx8vHHDBItjr8APOuvfp0/eiEvmxj8lIWkES72x5Rsf6QRQY7h/ZUQ99g==
   dependencies:
     tslib "^2.3.0"
 
@@ -2936,13 +2936,13 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@schematics/angular@22.2.3":
-  version "22.2.3"
-  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-22.2.3.tgz#6100058b5710efc4ed7c11e55ac2fbfeaa5bde05"
-  integrity sha512-DY8wv/LtNf3YD/EEoFdER4ihMyw5yywuOQEKasm4d2uBJ5peGIWV3LXJXXqD7b4WVC8xS1eUAjingyWfI9reHw==
+"@schematics/angular@22.2.4":
+  version "22.2.4"
+  resolved "https://registry.yarnpkg.com/@schematics/angular/-/angular-22.2.4.tgz#6364b30280bf15e1a2fbab5af011bc271dbd92ea"
+  integrity sha512-3yXpeDsn780rk/Pm+2QjoGpvS03doyuB2i8jUt/tNtDatIIVoXUJak3kjPOK3TVorOJX/fTNMjMxDwQzvec2+w==
   dependencies:
-    "@angular-devkit/core" "22.2.3"
-    "@angular-devkit/schematics" "22.2.3"
+    "@angular-devkit/core" "22.2.4"
+    "@angular-devkit/schematics" "22.2.4"
     jsonc-parser "3.3.1"
     oxc-parser "0.150.0"
     typescript "6.0.3"
@@ -3630,17 +3630,17 @@ anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-app-builder-lib@26.17.0:
-  version "26.17.0"
-  resolved "https://registry.yarnpkg.com/app-builder-lib/-/app-builder-lib-26.17.0.tgz#76e0e936031d48c2c92bc32b91089612a0ea2d6d"
-  integrity sha512-wfL7EhujuODDW3uMSD8RPcr/MLzmT0dmpVfWV0wFUWXI0rIdaukzAJ7EFUSyHXOpxuBZqaIGlQt6VeQhtHhetw==
+app-builder-lib@26.18.0:
+  version "26.18.0"
+  resolved "https://registry.yarnpkg.com/app-builder-lib/-/app-builder-lib-26.18.0.tgz#83e1ac45d8d60b446278f8cab2d2d45bc8710761"
+  integrity sha512-lx+KkuCSZHcbECf4R3IAcC9VOFk0+cMUwljO63s5y8yqS1Lw0sRGmjPaWsPwP3zv3ohZYbMhUvjXeiQXXZhJXA==
   dependencies:
     "@electron/asar" "3.4.1"
     "@electron/fuses" "^1.8.0"
     "@electron/get" "^3.0.0"
     "@electron/notarize" "2.5.0"
     "@electron/osx-sign" "1.3.3"
-    "@electron/rebuild" "^4.0.4"
+    "@electron/rebuild" "^4.2.1"
     "@electron/universal" "2.0.3"
     "@malept/flatpak-bundler" "^0.4.0"
     "@noble/hashes" "^1.8.0"
@@ -3657,7 +3657,7 @@ app-builder-lib@26.17.0:
     dotenv "^16.4.5"
     dotenv-expand "^11.0.6"
     ejs "^3.1.8"
-    electron-publish "26.16.0"
+    electron-publish "26.18.0"
     fs-extra "^10.1.0"
     hosted-git-info "^4.1.0"
     isbinaryfile "^5.0.0"
@@ -5095,12 +5095,12 @@ dir-compare@^4.2.0:
     minimatch "^3.0.5"
     p-limit "^3.1.0 "
 
-dmg-builder@26.17.0:
-  version "26.17.0"
-  resolved "https://registry.yarnpkg.com/dmg-builder/-/dmg-builder-26.17.0.tgz#335e180c936904361e1ee519cdb73c1a1222587f"
-  integrity sha512-EAw1f2iGkICmUvAVBOjm7v5mxJdB7/+OZSycHFhKBimiTkCXtvkCC6wBKzHo7ZQYi58C2MmwIleRbgRnROlK2Q==
+dmg-builder@26.18.0:
+  version "26.18.0"
+  resolved "https://registry.yarnpkg.com/dmg-builder/-/dmg-builder-26.18.0.tgz#061dc211149e3f55657a50ea5abdbd5750081f02"
+  integrity sha512-ozCGC54wi2C1RkS2v69y9lQxvoQ1Coh+iT8CmWiyY8y1ZuOKVvuNson2Hd+HEOs9+EZNNsOBbzKgQZ4SNqWd0w==
   dependencies:
-    app-builder-lib "26.17.0"
+    app-builder-lib "26.18.0"
     builder-util "26.16.0"
     fs-extra "^10.1.0"
     js-yaml "^4.1.0"
@@ -5176,10 +5176,10 @@ dotenv@^16.4.5:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.6.1.tgz#773f0e69527a8315c7285d5ee73c4459d20a8020"
   integrity sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==
 
-dotenv@^18.0.8:
-  version "18.0.8"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-18.0.8.tgz#e51b1e4424d73df5e17802954dc503aaa565bd1a"
-  integrity sha512-2KDeoFoK/zRtcnbunCDlLG5VWVMcyqeQc6iK65o231nfNAcuGrKoqUQfJFUtBI+QlShk5HKIHxwebBtUl3rEfA==
+dotenv@^18.0.9:
+  version "18.0.9"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-18.0.9.tgz#5c565760ce7e6fb69f9477ebcd1a3b64c766f9c8"
+  integrity sha512-3fVOW4cB02R066PUSwn8O4TJyz9NckQl7F81blIbaq9jKBm2tSmOKky7ZHIXzGvkVPXCSn6jkpziBPZdGFs8Tw==
 
 dotenv@^8.2.0:
   version "8.6.0"
@@ -5237,17 +5237,17 @@ electron-builder-notarize@^1.5.2:
     js-yaml "^3.14.0"
     read-pkg-up "^7.0.0"
 
-electron-builder@^26.17.0:
-  version "26.17.0"
-  resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.17.0.tgz#ccd8d12f9baec04798353463c0e969326f49f0a5"
-  integrity sha512-iYHBRiagS9sDIbZx1ZD113f5rEGQvtpvTvHf70ovHKJ8mRvxwIkWX7JCwfmVQmVS4eX735p7TZmoxHnBPwF3vA==
+electron-builder@^26.18.0:
+  version "26.18.0"
+  resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.18.0.tgz#27d87cd51da618bb2d9e4c5321fc55e4556c028f"
+  integrity sha512-ASgIuQnOq4RuD8jMhS9hI0LS3EMRT1I/M5R6utqifB/BHN80IcCjBdt+DED+NmNPvmBgEtrlExXZitNdA7kXOg==
   dependencies:
-    app-builder-lib "26.17.0"
+    app-builder-lib "26.18.0"
     builder-util "26.16.0"
     builder-util-runtime "9.7.0"
     chalk "^4.1.2"
     ci-info "^4.2.0"
-    dmg-builder "26.17.0"
+    dmg-builder "26.18.0"
     fs-extra "^10.1.0"
     lazy-val "^1.0.5"
     simple-update-notifier "2.0.0"
@@ -5295,10 +5295,10 @@ electron-notarize@^1.1.1:
     debug "^4.1.1"
     fs-extra "^9.0.1"
 
-electron-publish@26.16.0:
-  version "26.16.0"
-  resolved "https://registry.yarnpkg.com/electron-publish/-/electron-publish-26.16.0.tgz#a8a2201310b55d0bafcbe0f2ab17f2ca0624548a"
-  integrity sha512-Vt3KzQIiw9BImvNOYtndg9Mjki+tl4+1sQiC/+G5j8khWaENOJFWodiB+sUl6yyHwtd37avehskdtPw7f8y/+Q==
+electron-publish@26.18.0:
+  version "26.18.0"
+  resolved "https://registry.yarnpkg.com/electron-publish/-/electron-publish-26.18.0.tgz#fce508669730d9dbc7d99a54498fbd536e38eb06"
+  integrity sha512-MagnqaZSALSWjcdKu5HEVhYUZD/2BDL3q7XzrqWwub6gf/UfD3ItMgmthVDv9w5y9E0gH1C3JWqKaXwf6f4ROg==
   dependencies:
     "@types/fs-extra" "^9.0.11"
     aws4 "^1.13.2"
@@ -5333,10 +5333,10 @@ electron-to-chromium@^1.5.439:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.456.tgz#cfa8b3b4c44450b8a28df4a7bc8be377cae1b691"
   integrity sha512-8hboqI6xesozteFb8aa7OGknvxUtTeRJLz0FoePysUEh/oWbddykIGdgpEJRbPRg/nIMfBf2DFos+H2MtvJl2A==
 
-electron-updater@^6.8.10:
-  version "6.8.10"
-  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-6.8.10.tgz#888dbc9165fa821895390cb31a173c159efec7e3"
-  integrity sha512-6ZSwTUoBNtI1f9Pp8y6zCigD8LKV18Rb1+1A7sZzvKvA17o2sqSqKmm0t6uvKeF+HZqA4vsmw4qq0JSS241USQ==
+electron-updater@^6.8.11:
+  version "6.8.11"
+  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-6.8.11.tgz#561a74002189c1ce60e7ad710b10a9bde561d678"
+  integrity sha512-12U/mbzaIKQS3Q543aQ7DjyAZMXeVJy1Wpu0qdq5ne4RXpIQDpWYm25zRjgXngAoo6swMrm4C4owGyiIipelsg==
   dependencies:
     builder-util-runtime "9.7.0"
     fs-extra "^10.1.0"
@@ -5347,10 +5347,10 @@ electron-updater@^6.8.10:
     semver "~7.7.3"
     tiny-typed-emitter "^2.1.0"
 
-electron@44.9.1:
-  version "44.9.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-44.9.1.tgz#fcc94888711c895fef93fa18474c0074df627976"
-  integrity sha512-x/tECFFDa2OFNjMObFH0EGKWrCnFZPOR1wP2iMIVt0STecGl8FmDXdaiaryY0kf8mtw9kSLP2yK8dfdaWkfDmw==
+electron@44.9.3:
+  version "44.9.3"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-44.9.3.tgz#dd36517429bc000bbb98116e21422cb947d33b85"
+  integrity sha512-Cv9/yMnZxNWsMlIe8T4v//NKHdUvbeyoTJoXE3BIcRxus2meeFaO9h/P3zB5d4cBXum51IgAYrT2QjpIDWKpJA==
   dependencies:
     "@electron-internal/extract-zip" "^1.0.1"
     "@electron/get" "^5.0.0"
