@@ -6,6 +6,10 @@
 @use './assets/fonts/Poppins.scss';
 @use './assets/fonts/JetBrainsMono.scss';
 
+:root {
+  --font-code: 'JetBrains Mono NL', 'Courier New', monospace;
+}
+
 * {
   font-family: 'Poppins', Verdana, Arial, sans-serif !important;
   -webkit-font-smoothing: antialiased;
