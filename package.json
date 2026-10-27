@@ -125,7 +125,7 @@
     "concurrently": "10.0.6",
     "cypress": "^16.2.0",
     "cypress-shadow-dom": "^1.4.1",
-    "electron": "44.9.3",
+    "electron": "45.0.0",
     "electron-builder": "^26.18.1",
     "electron-builder-notarize": "^1.5.2",
     "electron-debug": "^5.0.0",
