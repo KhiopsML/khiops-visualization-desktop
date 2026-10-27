@@ -92,7 +92,7 @@
     "dotenv": "^18.0.9",
     "electron-json-storage": "^4.6.0",
     "electron-log": "^5.4.4",
-    "electron-updater": "^6.8.11",
+    "electron-updater": "^6.8.12",
     "event-stream": "^4.0.1",
     "khiops-visualization": "^11.17.1",
     "ngx-matomo-client": "^10.0.0",
