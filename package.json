@@ -154,5 +154,6 @@
   },
   "browserslist": [
     "chrome 110"
-  ]
+  ],
+  "packageManager": "yarn@4.18.1"
 }

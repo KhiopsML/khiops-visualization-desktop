@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           corepack enable
-          yarn install --frozen-lockfile
+          yarn install
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
