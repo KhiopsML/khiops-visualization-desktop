@@ -52,6 +52,11 @@ jobs:
           node-version: 24
         continue-on-error: true
 
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          yarn --version
+
       - run: yarn setEnv
         env:
           TRACKER_ID: ${{ secrets.TRACKER_ID }}
@@ -69,8 +74,8 @@ jobs:
         run: |
           node -e "let p=require('./package.json');p.resolutions=p.resolutions||{};p.resolutions['node-gyp']='https://github.com/electron/node-gyp.git';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2));"
 
-      - name: Force Install Dependencies Before Build
-        run: yarn install --force
+      - name: Install dependencies before build
+        run: yarn install --no-immutable
         continue-on-error: true
 
       # Configuration of SAAS signature for Windows only
@@ -126,6 +131,7 @@ jobs:
           mac_certs_password: ${{ secrets.mac_certs_password }}
         env:
           DEBUG: electron-builder
+          YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
           # macOS notarization API key
           API_KEY_ID: ${{ secrets.api_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.api_key_issuer_id }}
