@@ -34,7 +34,7 @@ jobs:
           corepack enable
           yarn --version
 
-      - run: yarn setEnv
+      - run: node ./scripts/set-env.js
         env:
           TRACKER_ID: ${{ secrets.TRACKER_ID }}
 
