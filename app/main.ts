@@ -2,7 +2,6 @@ import {
   app,
   BrowserWindow,
   clipboard,
-  ClipboardItem,
   nativeImage,
   nativeTheme,
   screen,
@@ -62,24 +61,7 @@ ipcMain.handle('clipboard-write-image', (_event: any, dataUrl: string) => {
     throw new Error('Cannot copy an empty image to the clipboard');
   }
 
-  const clipboardAny = clipboard as any;
-  if (typeof clipboardAny.writeImage === 'function') {
-    clipboardAny.writeImage(image);
-    return;
-  }
-
-  if (typeof clipboardAny.writeBuffer === 'function') {
-    clipboardAny.writeBuffer('image/png', image.toPNG());
-    return;
-  }
-
-  return clipboard.write([
-    new ClipboardItem({
-      'image/png': new Blob([new Uint8Array(image.toPNG())], {
-        type: 'image/png',
-      }),
-    }),
-  ]);
+  clipboard.writeImage(image);
 });
 if (serve) require('electron-debug');
 if (serve) require('source-map-support').install();
