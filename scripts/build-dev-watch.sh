@@ -1,16 +1,33 @@
 #!/bin/bash
+set -e
 
-ANGULAR_JSON="angular.json"
+# Resolve paths before changing the working directory.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+DESKTOP_DIR="$REPO_ROOT/khiops-visualization-desktop"
+COMPONENT_DIR="$REPO_ROOT/visualization-component"
+ANGULAR_JSON="$DESKTOP_DIR/angular.json"
+APP_COMPONENT_PATH="$DESKTOP_DIR/src/app/app.component.ts"
+
+if [ ! -d "$COMPONENT_DIR" ]; then
+    echo "ERROR: visualization-component was not found at $COMPONENT_DIR."
+    exit 1
+fi
+
+# BSD sed (macOS) requires an explicit backup suffix after -i.
+if [ "$(uname -s)" = "Darwin" ]; then
+    SED_INPLACE=(-i '')
+else
+    SED_INPLACE=(-i)
+fi
 
 # Update the angular.json file to replace the style and script paths
-sed -i 's/"styles": \["src\/styles.scss"\]/"styles": ["..\/visualization-component\/dist\/khiops-webcomponent\/styles.css", "src\/styles.scss"]/' $ANGULAR_JSON
-sed -i 's/"scripts": \[\]/"scripts": ["..\/visualization-component\/dist\/khiops-webcomponent\/main.js"]/' $ANGULAR_JSON
-
-APP_COMPONENT_PATH="src/app/app.component.ts"
+sed "${SED_INPLACE[@]}" 's/"styles": \["src\/styles.scss"\]/"styles": ["..\/visualization-component\/dist\/khiops-webcomponent\/styles.css", "src\/styles.scss"]/' "$ANGULAR_JSON"
+sed "${SED_INPLACE[@]}" 's/"scripts": \[\]/"scripts": ["..\/visualization-component\/dist\/khiops-webcomponent\/main.js"]/' "$ANGULAR_JSON"
 
 # Ensure desktop app does not import npm package directly during dev startup.
 if grep -q "^import 'khiops-visualization';" "$APP_COMPONENT_PATH"; then
-    sed -i "s|^import 'khiops-visualization';|// import 'khiops-visualization';|" "$APP_COMPONENT_PATH"
+    sed "${SED_INPLACE[@]}" "s|^import 'khiops-visualization';|// import 'khiops-visualization';|" "$APP_COMPONENT_PATH"
 fi
 
 # Store PIDs for cleanup
@@ -24,20 +41,17 @@ cleanup() {
             kill -TERM "$PID" 2>/dev/null
         fi
     done
-    pkill -TERM -P $$ 2>/dev/null
-    wait 2>/dev/null
+    pkill -TERM -P $$ 2>/dev/null || true
+    wait 2>/dev/null || true
     echo "Done."
 }
 trap cleanup EXIT INT TERM
 
-# Resolve absolute paths before any cd
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Watch main.js — produced directly by ng build, exists before the bundle post-processing step
-BUNDLE_PATH="$REPO_ROOT/visualization-component/dist/khiops-webcomponent/main.js"
+BUNDLE_PATH="$COMPONENT_DIR/dist/khiops-webcomponent/main.js"
 
 # Remove previous build artifacts to prevent false-positive readiness detection
-cd "$REPO_ROOT/visualization-component"
+cd "$COMPONENT_DIR"
 rm -f dist/khiops-webcomponent/main.js
 rm -f dist/khiops-webcomponent/khiops-webcomponents.bundle.js
 
@@ -49,10 +63,17 @@ PIDS+=($WEBCOMPONENT_PID)
 echo "Waiting for webcomponents build to be ready..."
 echo "Watching: $BUNDLE_PATH"
 
-# Wait until the bundle file exists (first build completed)
-until [ -f "$BUNDLE_PATH" ]; do
+# Wait until the bundle file exists (first build completed), without hanging
+# forever when Angular reports a compilation error but keeps watching.
+BUILD_TIMEOUT_SECONDS=600
+BUILD_START_TIME=$(date +%s)
+while [ ! -f "$BUNDLE_PATH" ]; do
     if ! kill -0 "$WEBCOMPONENT_PID" 2>/dev/null; then
         echo "ERROR: webcomponents build process exited unexpectedly."
+        exit 1
+    fi
+    if [ "$(( $(date +%s) - BUILD_START_TIME ))" -ge "$BUILD_TIMEOUT_SECONDS" ]; then
+        echo "ERROR: webcomponents build did not produce main.js within ${BUILD_TIMEOUT_SECONDS}s."
         exit 1
     fi
     sleep 2
@@ -62,7 +83,7 @@ done
 PREV_SIZE=0
 STABLE_COUNT=0
 while [ "$STABLE_COUNT" -lt 3 ]; do
-    CURR_SIZE=$(stat -c%s "$BUNDLE_PATH" 2>/dev/null || echo 0)
+    CURR_SIZE=$(node -e "process.stdout.write(String(require('node:fs').statSync(process.argv[1]).size))" "$BUNDLE_PATH")
     if [ "$CURR_SIZE" -eq "$PREV_SIZE" ] && [ "$CURR_SIZE" -gt 0 ]; then
         STABLE_COUNT=$((STABLE_COUNT + 1))
     else
@@ -75,7 +96,7 @@ done
 echo "Webcomponents build is ready. Starting the application..."
 
 # Start the application
-cd "$REPO_ROOT/khiops-visualization-desktop"
+cd "$DESKTOP_DIR"
 yarn start &
 START_PID=$!
 PIDS+=($START_PID)
