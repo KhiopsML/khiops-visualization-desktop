@@ -150,7 +150,8 @@
   },
   "resolutions": {
     "@babel/compat-data": "8.0.5",
-    "@jridgewell/sourcemap-codec": "1.6.0"
+    "@jridgewell/sourcemap-codec": "1.6.0",
+    "sass-embedded": "npm:sass@1.107.0"
   },
   "browserslist": [
     "chrome 110"
