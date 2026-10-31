@@ -6155,6 +6155,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chalk@npm:^6.0.0":
+  version: 6.0.1
+  resolution: "chalk@npm:6.0.1"
+  checksum: 10c0/4c58238fa874f531b5201bf99ebd374742be31f8e306c7783d930856aec305f2dea3e07531a8805b2a7ba92807296e39ced52e9f673703e0264d96e83998a429
+  languageName: node
+  linkType: hard
+
 "chardet@npm:^2.1.1":
   version: 2.2.0
   resolution: "chardet@npm:2.2.0"
@@ -6171,7 +6178,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:^3.5.0, chokidar@npm:^3.5.1, chokidar@npm:^3.5.2":
+"chokidar@npm:^3.5.1, chokidar@npm:^3.5.2":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
   dependencies:
@@ -6830,12 +6837,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"date-time@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "date-time@npm:3.1.0"
+"date-time@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "date-time@npm:4.0.0"
   dependencies:
-    time-zone: "npm:^1.0.0"
-  checksum: 10c0/aa3e2e930d74b0b9e90f69de7a16d3376e30f21f1f4ce9a2311d8fec32d760e776efea752dafad0ce188187265235229013036202be053fc2d7979813bfb6ded
+    time-zone: "npm:^2.0.0"
+  checksum: 10c0/1c0a52ed738708e14df80d2488a2d78fb6deed5a882088bb4bf222f07291c2bb6221faaecac58289766c8fd86c709d56bc80bf3acd2f7c6b2515b0d394379266
   languageName: node
   linkType: hard
 
@@ -7233,13 +7240,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-is-dev@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "electron-is-dev@npm:1.2.0"
-  checksum: 10c0/56a4c8e9b9eb7d43da86ee63093b80b32e3fb92cc5e4a60a6b7cacafcdf456ec2c6102d90fa5919fb8b03c61848d4bfa2db820349c5abd9f19e73f7afd2dc22d
-  languageName: node
-  linkType: hard
-
 "electron-is-dev@npm:^3.0.1":
   version: 3.0.1
   resolution: "electron-is-dev@npm:3.0.1"
@@ -7304,16 +7304,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-reloader@npm:1.2.3":
-  version: 1.2.3
-  resolution: "electron-reloader@npm:1.2.3"
+"electron-reloader@npm:2.0.0":
+  version: 2.0.0
+  resolution: "electron-reloader@npm:2.0.0"
   dependencies:
-    chalk: "npm:^4.1.0"
-    chokidar: "npm:^3.5.0"
-    date-time: "npm:^3.1.0"
-    electron-is-dev: "npm:^1.2.0"
-    find-up: "npm:^5.0.0"
-  checksum: 10c0/a8640fe885219a6cf97d8da5f821e9540a95b4597d2d9a5a6c33eeaf80684486ba70614d9e4c2e39c482df5d1c61b79331a1fb6e451cdf5e06457348c0374ad3
+    chalk: "npm:^6.0.0"
+    chokidar: "npm:^5.0.0"
+    date-time: "npm:^4.0.0"
+    electron-is-dev: "npm:^3.0.1"
+    find-up: "npm:^8.0.0"
+  checksum: 10c0/d5802eee8be88235ed5b61ce32b85fd995d733fe9e9a932c9fd844cfc3e2709f952c75dbb5315803d22a3ea1960caf3ef57c851a5b24ec620399236abefdc286
   languageName: node
   linkType: hard
 
@@ -8213,6 +8213,16 @@ __metadata:
     locate-path: "npm:^6.0.0"
     path-exists: "npm:^4.0.0"
   checksum: 10c0/062c5a83a9c02f53cdd6d175a37ecf8f87ea5bbff1fdfb828f04bfa021441bc7583e8ebc0872a4c1baab96221fb8a8a275a19809fb93fbc40bd69ec35634069a
+  languageName: node
+  linkType: hard
+
+"find-up@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "find-up@npm:8.0.0"
+  dependencies:
+    locate-path: "npm:^8.0.0"
+    unicorn-magic: "npm:^0.3.0"
+  checksum: 10c0/4c6d2cb92f74bd42ec7344c881a46f6455010d3993f8f55b09bb64298c0a13e11e10200147624db8938590890a15ade69c40f0172698388d0999899f0f2a70a5
   languageName: node
   linkType: hard
 
@@ -9958,7 +9968,7 @@ __metadata:
     electron-json-storage: "npm:^4.6.0"
     electron-log: "npm:^5.4.4"
     electron-reload: "npm:^2.0.0-alpha.1"
-    electron-reloader: "npm:1.2.3"
+    electron-reloader: "npm:2.0.0"
     electron-updater: "npm:^6.8.12"
     eslint: "npm:^10.14.0"
     eslint-plugin-import: "npm:^2.32.0"
@@ -10317,6 +10327,15 @@ __metadata:
   dependencies:
     p-locate: "npm:^5.0.0"
   checksum: 10c0/d3972ab70dfe58ce620e64265f90162d247e87159b6126b01314dd67be43d50e96a50b517bce2d9452a79409c7614054c277b5232377de50416564a77ac7aad3
+  languageName: node
+  linkType: hard
+
+"locate-path@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "locate-path@npm:8.0.0"
+  dependencies:
+    p-locate: "npm:^6.0.0"
+  checksum: 10c0/4c837878b6d1b8557c5d1c624d11d6721d77f4627c14bd84182c85cbb9ec8fc01b5b5f089e21fab17b30fc5ecc14216a3d31f754dfcc5299f1fe9f4c83482fee
   languageName: node
   linkType: hard
 
@@ -11549,6 +11568,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"p-limit@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "p-limit@npm:4.0.0"
+  dependencies:
+    yocto-queue: "npm:^1.0.0"
+  checksum: 10c0/a56af34a77f8df2ff61ddfb29431044557fcbcb7642d5a3233143ebba805fc7306ac1d448de724352861cb99de934bc9ab74f0d16fe6a5460bdbdf938de875ad
+  languageName: node
+  linkType: hard
+
 "p-locate@npm:^4.1.0":
   version: 4.1.0
   resolution: "p-locate@npm:4.1.0"
@@ -11564,6 +11592,15 @@ __metadata:
   dependencies:
     p-limit: "npm:^3.0.2"
   checksum: 10c0/2290d627ab7903b8b70d11d384fee714b797f6040d9278932754a6860845c4d3190603a0772a663c8cb5a7b21d1b16acb3a6487ebcafa9773094edc3dfe6009a
+  languageName: node
+  linkType: hard
+
+"p-locate@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "p-locate@npm:6.0.0"
+  dependencies:
+    p-limit: "npm:^4.0.0"
+  checksum: 10c0/d72fa2f41adce59c198270aa4d3c832536c87a1806e0f69dffb7c1a7ca998fb053915ca833d90f166a8c082d3859eabfed95f01698a3214c20df6bb8de046312
   languageName: node
   linkType: hard
 
@@ -13803,10 +13840,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"time-zone@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "time-zone@npm:1.0.0"
-  checksum: 10c0/d00ebd885039109011b6e2423ebbf225160927333c2ade6d833e9cc4676db20759f1f3855fafde00d1bd668c243a6aa68938ce71fe58aab0d514e820d59c1d81
+"time-zone@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "time-zone@npm:2.0.0"
+  checksum: 10c0/6e2557f59752ec27bf827251ee5e9648ad1bedb636d65d65bd7c2694ff6c887ec550cb2973c3d9e22926d2ce05ce93ce1d6de2053b7d689302a131c482b57f64
   languageName: node
   linkType: hard
 
@@ -14257,6 +14294,13 @@ __metadata:
   version: 2.2.0
   resolution: "unicode-property-aliases-ecmascript@npm:2.2.0"
   checksum: 10c0/b338529831c988ac696f2bdbcd4579d1c5cc844b24eda7269973c457fa81989bdb49a366af37a448eb1a60f1dae89559ea2a5854db2797e972a0162eee0778c6
+  languageName: node
+  linkType: hard
+
+"unicorn-magic@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "unicorn-magic@npm:0.3.0"
+  checksum: 10c0/0a32a997d6c15f1c2a077a15b1c4ca6f268d574cf5b8975e778bb98e6f8db4ef4e86dfcae4e158cd4c7e38fb4dd383b93b13eefddc7f178dea13d3ac8a603271
   languageName: node
   linkType: hard
 
@@ -15073,6 +15117,13 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: 10c0/dceb44c28578b31641e13695d200d34ec4ab3966a5729814d5445b194933c096b7ced71494ce53a0e8820685d1d010df8b2422e5bf2cdea7e469d97ffbea306f
+  languageName: node
+  linkType: hard
+
+"yocto-queue@npm:^1.0.0":
+  version: 1.2.2
+  resolution: "yocto-queue@npm:1.2.2"
+  checksum: 10c0/36d4793e9cf7060f9da543baf67c55e354f4862c8d3d34de1a1b1d7c382d44171315cc54abf84d8900b8113d742b830108a1434f4898fb244f9b7e8426d4b8f5
   languageName: node
   linkType: hard
 
