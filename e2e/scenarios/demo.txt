@@ -1,6 +1,8 @@
 # Paths are relative to the desktop project root.
 fileOpen ../visualization-component/src/assets/mocks/kv/demo-visualization.json
+
 openTab Preparation
+callout .informations-main-values ceci :\nest une annotation
 # annotate preparation-view-informations-split
 annotate preparation-variables-list
 annotate variable-graph-details-comp
