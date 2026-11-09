@@ -1,0 +1,68 @@
+name: Screenshot Scenarios
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Scenario path relative to the desktop repository
+        required: true
+        default: e2e/scenarios/demo.txt
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      SCREENSHOT_SCENARIO: ${{ inputs.scenario }}
+      SCREENSHOT_OUTPUT: ${{ runner.temp }}/kvd-screenshots
+
+    steps:
+      - name: Checkout desktop repository
+        uses: actions/checkout@v4
+        with:
+          path: desktop
+
+      - name: Checkout visualization repository
+        uses: actions/checkout@v4
+        with:
+          repository: KhiopsML/khiops-visualization
+          path: visualization-component
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Install Playwright dependencies
+        run: yarn playwright install --with-deps chromium
+
+      - name: Build Electron main process
+        run: yarn electron:serve-tsc
+
+      - name: Start Angular dev server
+        run: |
+          yarn ng serve -c dev &
+          yarn wait-on http://localhost:4200 --timeout 120000
+
+      - name: Generate screenshots
+        run: xvfb-run --auto-servernum yarn e2e:screenshots
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-scenarios
+          path: ${{ runner.temp }}/kvd-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 30

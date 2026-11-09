@@ -4065,6 +4065,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@reviewjs/annotate@npm:1.6.0":
+  version: 1.6.0
+  resolution: "@reviewjs/annotate@npm:1.6.0"
+  checksum: 10c0/3cb52a547e99e15c1b17bb9603c61fb6a45d96a06389d6088d0504eec82c82e63dfa39cfbbf074176455746d429ebc9618dcebbeab6011578823d0bf8b3ed493
+  languageName: node
+  linkType: hard
+
 "@rolldown/binding-android-arm-eabi@npm:1.2.13":
   version: 1.2.13
   resolution: "@rolldown/binding-android-arm-eabi@npm:1.2.13"
@@ -9941,6 +9948,7 @@ __metadata:
     "@ngx-translate/core": "npm:^18.1.0"
     "@ngx-translate/http-loader": "npm:^18.1.0"
     "@playwright/test": "npm:^1.64.1"
+    "@reviewjs/annotate": "npm:1.6.0"
     "@types/jasmine": "npm:^7.0.0"
     "@types/jasminewd2": "npm:^2.0.13"
     "@types/node": "npm:^26.6.6"

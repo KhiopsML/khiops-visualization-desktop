@@ -3,6 +3,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: '.',
   testMatch: '*.spec.ts',
+  testIgnore: 'screenshot-scenario.spec.ts',
   // Serial execution prevents "app exited" errors from multiple webpack dev servers
   // competing for the same port and resources
   fullyParallel: false,
