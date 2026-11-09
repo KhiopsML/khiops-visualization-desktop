@@ -17,7 +17,7 @@ repository beside the desktop repository for the default scenario's input file.
 
 Scenario commands are one per line. Blank lines and lines beginning with `#`
 are ignored. `fileOpen` takes an absolute path or a path relative to the
-desktop project root. `openTab` takes the exact visible tab name. `annotate`
+desktop project root. `openTab` takes the exact visible tab name. `frame`
 takes an element ID without `#`, or a Playwright CSS selector, and queues a
 rectangle for the nearest `.kl-card` ancestor, including the element itself.
 If no card exists, the selected element is used. `screenshot` optionally takes a PNG filename;

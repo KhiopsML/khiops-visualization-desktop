@@ -8,10 +8,10 @@ import { clickMenuItem, mockOpenDialogAbsolute } from './electron-menu';
 const ANNOTATION_COLOR = '#f59e0b';
 // const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0.04)';
 const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
-const CALLOUT_FONT_SIZE = 14;
+const annotation_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'annotate' | 'callout' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'frame' | 'annotation' | 'screenshot';
   argument: string;
   line: number;
 };
@@ -44,14 +44,14 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'annotate', 'callout', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'frame', 'annotation', 'screenshot'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
     if (name !== 'screenshot' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
     }
-    if (name === 'callout' && !/^\S+\s+\S/.test(argument)) {
-      throw new Error(`Line ${index + 1}: callout requires a selector and text`);
+    if (name === 'annotation' && !/^\S+\s+\S/.test(argument)) {
+      throw new Error(`Line ${index + 1}: annotation requires a selector and text`);
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1 });
   }
@@ -67,7 +67,7 @@ export async function runScreenshotScenario(
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
   let annotations: Locator[] = [];
-  let callouts: { target: Locator; text: string }[] = [];
+  let annotations: { target: Locator; text: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
 
@@ -99,7 +99,7 @@ export async function runScreenshotScenario(
           await expect(tab).toHaveAttribute('aria-selected', 'true');
           break;
         }
-        case 'annotate': {
+        case 'frame': {
           const selector = /^[\w-]+$/.test(command.argument) ? `#${command.argument}` : command.argument;
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
           await expect(target).toHaveCount(1, { timeout: 30000 });
@@ -107,13 +107,13 @@ export async function runScreenshotScenario(
           annotations.push(target);
           break;
         }
-        case 'callout': {
+        case 'annotation': {
           const match = /^(\S+)\s+(.+)$/.exec(command.argument)!;
           const selector = /^[\w-]+$/.test(match[1]) ? `#${match[1]}` : match[1];
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
             .locator(selector).filter({ visible: true }).first();
           await expect(target).toBeVisible({ timeout: 30000 });
-          callouts.push({ target, text: match[2].replace(/\\n/g, '\n') });
+          annotations.push({ target, text: match[2].replace(/\\n/g, '\n') });
           break;
         }
         case 'screenshot': {
@@ -125,12 +125,12 @@ export async function runScreenshotScenario(
           await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
           if (annotations.length) {
             if (!annotationReady) {
-              const script = await fs.readFile(require.resolve('@reviewjs/annotate/annotate.js'), 'utf8');
+              const script = await fs.readFile(require.resolve('@reviewjs/frame/frame.js'), 'utf8');
               await firstWindow.addScriptTag({ content: `(function(module, exports) {\n${script}\n})(undefined, undefined);` });
               await firstWindow.evaluate(() => {
-                const annotate = (window as any).Annotate;
-                annotate.init({ project: 'kvd-screenshot-scenario', startOpen: true });
-                annotate.clear();
+                const frame = (window as any).frame;
+                frame.init({ project: 'kvd-screenshot-scenario', startOpen: true });
+                frame.clear();
               });
               await firstWindow.locator('#__an_overlay').evaluate((overlay) => {
                 const updateBadges = () => {
@@ -193,7 +193,7 @@ export async function runScreenshotScenario(
               };
             }, { targets: boxes, color: ANNOTATION_COLOR });
             const chooserPromise = firstWindow.waitForEvent('filechooser');
-            await firstWindow.evaluate(() => (window as any).Annotate.import());
+            await firstWindow.evaluate(() => (window as any).frame.import());
             const chooser = await chooserPromise;
             await chooser.setFiles({ name: 'annotations.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(payload)) });
             await expect(firstWindow.locator('#__an_overlay rect.an-hit')).toHaveCount(annotations.length);
@@ -203,16 +203,16 @@ export async function runScreenshotScenario(
               await expect(badges.nth(index)).toHaveText(/^[A-Z]+$/);
             }
           }
-          if (callouts.length) {
-            const items = await Promise.all(callouts.map(async ({ target, text }) => {
+          if (annotations.length) {
+            const items = await Promise.all(annotations.map(async ({ target, text }) => {
               await expect(target).toBeVisible();
               const box = await target.boundingBox();
-              if (!box || box.width <= 0 || box.height <= 0) throw new Error('Callout target has no visible area');
+              if (!box || box.width <= 0 || box.height <= 0) throw new Error('annotation target has no visible area');
               return { box, text };
             }));
             await firstWindow.evaluate(({ items, color, fontSize }) => {
               const overlay = document.createElement('div');
-              overlay.id = '__screenshot_callouts';
+              overlay.id = '__screenshot_annotations';
               overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647;';
               document.body.appendChild(overlay);
               for (const { box, text } of items) {
@@ -228,14 +228,14 @@ export async function runScreenshotScenario(
                 label.style.left = `${Math.max(4, Math.min(window.innerWidth - labelBox.width - 4, left))}px`;
                 label.style.top = `${Math.max(11, Math.min(window.innerHeight - labelBox.height - 4, box.y + box.height + 7))}px`;
               }
-            }, { items, color: ANNOTATION_COLOR, fontSize: CALLOUT_FONT_SIZE });
+            }, { items, color: ANNOTATION_COLOR, fontSize: annotation_FONT_SIZE });
           }
           const screenshot = await firstWindow.screenshot({ animations: 'disabled' });
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
-          if (annotationReady) await firstWindow.evaluate(() => (window as any).Annotate.clear());
-          if (callouts.length) await firstWindow.locator('#__screenshot_callouts').evaluate((overlay) => overlay.remove());
+          if (annotationReady) await firstWindow.evaluate(() => (window as any).frame.clear());
+          if (annotations.length) await firstWindow.locator('#__screenshot_annotations').evaluate((overlay) => overlay.remove());
           annotations = [];
-          callouts = [];
+          annotations = [];
           break;
         }
       }
@@ -243,6 +243,6 @@ export async function runScreenshotScenario(
       throw new Error(`${scenarioPath}:${command.line}: ${command.name} ${command.argument}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  if (annotations.length || callouts.length) throw new Error(`${scenarioPath}: annotations must be followed by a screenshot`);
+  if (annotations.length || annotations.length) throw new Error(`${scenarioPath}: annotations must be followed by a screenshot`);
   if (!screenshotCount) throw new Error(`${scenarioPath}: scenario contains no screenshot`);
 }
