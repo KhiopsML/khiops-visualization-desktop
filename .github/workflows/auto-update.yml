@@ -41,6 +41,7 @@ jobs:
           yarn install --no-immutable
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
 
       - name: Create Pull Request
         id: create-pr
@@ -52,7 +53,7 @@ jobs:
           body: |
             Automated dependency update.
 
-            This PR updates all dependencies in `package.json` and `yarn.lock`.
+            This PR updates dependencies and lockfiles in the root and app directories.
 
             Please review and merge if all checks pass.
           branch: chore/update-dependencies
