@@ -3243,15 +3243,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lucide/angular@npm:^1.66.0":
-  version: 1.66.0
-  resolution: "@lucide/angular@npm:1.66.0"
+"@lucide/angular@npm:^1.70.0":
+  version: 1.70.0
+  resolution: "@lucide/angular@npm:1.70.0"
   dependencies:
     tslib: "npm:^2.3.0"
   peerDependencies:
     "@angular/common": ">=17.0.0"
     "@angular/core": ">=17.0.0"
-  checksum: 10c0/9297accb9d571a99ca06a25a5c98235a74684ac8774411729a084bb78e3c9f4467f01473e0e1d95d545489b2a8e03d95f39c9cdbc3c1ef03783e295d53864e07
+  checksum: 10c0/fa422623fe792425f9a9fd77817512bff5af40da8263d426ca13bd2af2f559e9039086baf4a239217fddb532fbe96ab8ee3f47751193a1c4600d41a43124b3e5
   languageName: node
   linkType: hard
 
@@ -9944,7 +9944,7 @@ __metadata:
     "@electron/remote": "npm:^2.1.3"
     "@fontsource/jetbrains-mono": "npm:5.3.0"
     "@fontsource/poppins": "npm:^5.3.0"
-    "@lucide/angular": "npm:^1.66.0"
+    "@lucide/angular": "npm:^1.70.0"
     "@ngx-translate/core": "npm:^18.1.0"
     "@ngx-translate/http-loader": "npm:^18.1.0"
     "@playwright/test": "npm:^1.64.1"
