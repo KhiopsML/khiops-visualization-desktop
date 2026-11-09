@@ -543,15 +543,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/common@npm:^22.2.4":
-  version: 22.2.4
-  resolution: "@angular/common@npm:22.2.4"
+"@angular/common@npm:^22.2.5":
+  version: 22.2.5
+  resolution: "@angular/common@npm:22.2.5"
   dependencies:
     tslib: "npm:^2.3.0"
   peerDependencies:
-    "@angular/core": 22.2.4
+    "@angular/core": 22.2.5
     rxjs: ^6.5.3 || ^7.4.0
-  checksum: 10c0/10e3b54797722efc4521e663f42f211290948c249078c125f4b8f55218ee344c9f0fd43ecb05edd4f68ea0d6da6dc2bf690637b914f5ad76d812bb38c1d80b66
+  checksum: 10c0/8a4f87f067c7891ce54fa20b668d2a1bdc1c39b8bcd3efdb5e1257e900d1343b6830bc4ba0786750abc03a1b6323e97379ac995aa4de8c592ad11cc50045c252
   languageName: node
   linkType: hard
 
@@ -9931,7 +9931,7 @@ __metadata:
     "@angular-eslint/template-parser": "npm:^22.6.0"
     "@angular/build": "npm:^22.2.5"
     "@angular/cli": "npm:^22.2.5"
-    "@angular/common": "npm:^22.2.4"
+    "@angular/common": "npm:^22.2.5"
     "@angular/compiler": "npm:^22.2.4"
     "@angular/compiler-cli": "npm:^22.2.4"
     "@angular/core": "npm:^22.2.4"
