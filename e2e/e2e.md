@@ -22,6 +22,8 @@ are ignored. `fileOpen` takes an absolute path or a path relative to the
 desktop project root. `openTab` takes the exact visible tab name. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
 To scope the search to one table, include its ID: `clickRow preparation-variables-list R11`.
+`clickElt .kl-icon-cell-comp-btn` clicks the first visible element with that class;
+`clickElt kl-icon-cell-comp-btn` clicks the visible element with that ID.
 `clickChart distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
 `zoomOut` decreases the window's zoom by one step, like View > Zoom Out.
 `wait 500` pauses the scenario for 500 milliseconds.
@@ -33,7 +35,7 @@ rectangle around that element. Append `card` (for example, `frame variable-graph
 to frame the nearest `.kl-card` ancestor, including the element itself. If no card exists,
 the selected element is used. `screenshot` optionally takes a PNG filename;
 otherwise files are numbered. Annotations are cleared after each screenshot.
-Targets must be uniquely visible in the active visualization.
+Frame targets must be uniquely visible in the active visualization.
 
 ## yarn playwright test
 

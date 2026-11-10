@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'zoomOut' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'clickChart' | 'zoomOut' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'screenshot';
   argument: string;
   line: number;
 };
@@ -44,7 +44,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'zoomOut', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'clickChart', 'zoomOut', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
     if (name !== 'screenshot' && name !== 'zoomOut' && !argument) {
@@ -58,6 +58,9 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'annotation' && !/^\S+\s+\S/.test(argument)) {
       throw new Error(`Line ${index + 1}: annotation requires a selector and text`);
+    }
+    if (name === 'clickElt' && !/^\.?[\w-]+$/.test(argument)) {
+      throw new Error(`Line ${index + 1}: clickElt requires an ID or a class prefixed with .`);
     }
     if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
@@ -162,6 +165,16 @@ export async function runScreenshotScenario(
           const row = table.getByRole('row').filter({ hasText: match[2] || match[1], visible: true });
           await expect(row).toHaveCount(1, { timeout: 30000 });
           await row.click();
+          break;
+        }
+        case 'clickElt': {
+          const isClass = command.argument.startsWith('.');
+          const value = isClass ? command.argument.slice(1) : command.argument;
+          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(selector).filter({ visible: true }).first();
+          await expect(target).toBeVisible({ timeout: 30000 });
+          await target.click();
           break;
         }
         case 'clickChart': {

@@ -8,6 +8,12 @@ openTab Preparation
 screenshot ClassificationPreparation.png
 
 openTab Tree preparation
-
+clickElt .kl-icon-cell-comp-btn
+frame tree-preparation-hyper
+frame tree-preparation-select
+frame tree-details-comp
+frame tree-leaf-details-comp
+frame tree-leaf-rules-comp
+screenshot SupervisedTree.png
 
 
