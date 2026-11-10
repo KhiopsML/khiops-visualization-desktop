@@ -9,6 +9,8 @@ If port 4200 is occupied, start `yarn ng serve -c dev --port 4201` and set
 `E2E_APP_URL=http://localhost:4201` for the test process.
 Set `SCREENSHOT_SCENARIO` and `SCREENSHOT_OUTPUT` to override these paths;
 relative paths are resolved from the desktop project root.
+Set `screenshotWindowSize` in `e2e/screenshot-playwright.config.ts` to change
+the Electron window size used by screenshot scenarios.
 
 Screenshot scenarios are excluded from the standard E2E suite. On GitHub,
 run the **Screenshot Scenarios** workflow manually to generate a separate

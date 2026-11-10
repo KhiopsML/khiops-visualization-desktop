@@ -66,6 +66,7 @@ export async function runScreenshotScenario(
   firstWindow: Page,
   scenarioPath: string,
   outputDirectory: string,
+  windowSize: { width: number; height: number },
 ): Promise<void> {
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
@@ -76,11 +77,11 @@ export async function runScreenshotScenario(
 
   await fs.mkdir(outputDirectory, { recursive: true });
   await firstWindow.waitForLoadState('networkidle');
-  await app.evaluate(({ BrowserWindow }) => {
+  await app.evaluate(({ BrowserWindow }, { width, height }) => {
     const window = BrowserWindow.getAllWindows()[0];
-    window.setSize(1440, 900);
+    window.setSize(width, height);
     window.center();
-  });
+  }, windowSize);
 
   for (const command of commands) {
     try {
