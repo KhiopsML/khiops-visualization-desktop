@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'frame' | 'annotation' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'zoomOut' | 'frame' | 'annotation' | 'screenshot';
   argument: string;
   line: number;
 };
@@ -44,11 +44,14 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'frame', 'annotation', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'zoomOut', 'frame', 'annotation', 'screenshot'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
-    if (name !== 'screenshot' && !argument) {
+    if (name !== 'screenshot' && name !== 'zoomOut' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
+    }
+    if (name === 'zoomOut' && argument) {
+      throw new Error(`Line ${index + 1}: zoomOut does not take an argument`);
     }
     if (name === 'annotation' && !/^\S+\s+\S/.test(argument)) {
       throw new Error(`Line ${index + 1}: annotation requires a selector and text`);
@@ -101,6 +104,13 @@ export async function runScreenshotScenario(
           await expect(tab).toBeVisible({ timeout: 30000 });
           await tab.click();
           await expect(tab).toHaveAttribute('aria-selected', 'true');
+          break;
+        }
+        case 'zoomOut': {
+          await app.evaluate(({ BrowserWindow }) => {
+            const webContents = BrowserWindow.getAllWindows()[0].webContents;
+            webContents.setZoomLevel(webContents.getZoomLevel() - 0.5);
+          });
           break;
         }
         case 'clickRow': {

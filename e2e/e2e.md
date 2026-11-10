@@ -23,6 +23,7 @@ desktop project root. `openTab` takes the exact visible tab name. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
 To scope the search to one table, include its ID: `clickRow preparation-variables-list R11`.
 `clickChart distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
+`zoomOut` decreases the window's zoom by one step, like View > Zoom Out.
 `frame`
 takes an element ID without `#`, or a Playwright CSS selector, and queues a
 rectangle around that element. Append `card` (for example, `frame variable-graph-details-comp card`)

@@ -1,17 +1,19 @@
-# Paths are relative to the desktop project root.
-fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
+zoomOut
 
-openTab Preparation
-screenshot Opening.png
+# Paths are relative to the desktop project root.
+#fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
+
+#openTab Preparation
+#screenshot Opening.png
 
 fileOpen e2e/scenarios/src/AnalyseExploratoire/AllReports.khj
 
 openTab Preparation
 clickRow preparation-variables-list R11
 clickChart distribution-chart-0 1
-# frame preparation-view-informations-split
+frame preparation-view-informations-split
 frame preparation-variables-list
-#frame variable-graph-details-comp 
-#frame preparation-description-block-derivation
-#frame preparation-current-interval
+frame variable-graph-details-comp card
+frame preparation-description-block-derivation
+frame preparation-current-interval card
 screenshot UnsupervisedFivePanels.png
