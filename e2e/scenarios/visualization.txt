@@ -20,5 +20,6 @@ frame preparation-current-interval card
 screenshot UnsupervisedFivePanels.png
 
 clickRow preparation-variables-list R02
-wait 100 # for histogram rendering
+# wait for histogram rendering
+wait 100
 screenshot UnsupervisedFivePanelsNumerical.png
