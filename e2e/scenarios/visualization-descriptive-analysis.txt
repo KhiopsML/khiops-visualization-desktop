@@ -1,12 +1,6 @@
 ### Descriptive analysis visualization
 zoomOut
 
-# Paths are relative to the desktop project root.
-fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
-
-openTab Preparation
-screenshot Opening.png
-
 fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj
 
 openTab Preparation

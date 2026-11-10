@@ -24,8 +24,23 @@ clicks the unique visible row containing the supplied text, for example `clickRo
 To scope the search to one table, include its ID: `clickRow preparation-variables-list R11`.
 `clickElt .kl-icon-cell-comp-btn` clicks the first visible element with that class;
 `clickElt kl-icon-cell-comp-btn` clicks the visible element with that ID.
+`hideElt level-distribution-btn` hides the visible element with that ID;
+`hideElt .class-elt` hides all visible elements with that class. An optional `#`
+prefix is supported for IDs. Hidden elements no longer occupy layout space.
+`removeElt app-var-details-preparation-2d-comp-variables-lists` removes elements
+with that ID from the DOM. `removeElt .class-elt` removes all elements with that
+class, including hidden elements. An optional `#` prefix is supported for IDs.
+If the element is the only child of an Angular Split area, the area is also
+removed. When one area remains, it fills the split.
+`shotElt header-tools-comp TopRightButtons.png` captures the unique visible element
+with that ID to the named PNG file in the screenshot output directory. An optional
+`#` prefix is supported. `shotElt .ag-grid-comp-header-tools TopRightPanelAButtons.png`
+captures the first visible element with that class. Queued frames and annotations
+remain for the next `screenshot`.
 `clickChart distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
 `zoomOut` decreases the window's zoom by one step, like View > Zoom Out.
+`zoomIn` increases the window's zoom by one step, like View > Zoom In.
+`refreshDom` resizes the window briefly and restores its original size.
 `wait 500` pauses the scenario for 500 milliseconds.
 `resizeSplit app-var-details-preparation-comp 50 50` resizes the two areas of a vertical split;
 the percentages must total 100.

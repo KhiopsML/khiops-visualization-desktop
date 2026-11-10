@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'clickChart' | 'zoomOut' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
 };
@@ -44,14 +44,14 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'clickChart', 'zoomOut', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot', 'shotElt'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
-    if (name !== 'screenshot' && name !== 'zoomOut' && !argument) {
+    if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
     }
-    if (name === 'zoomOut' && argument) {
-      throw new Error(`Line ${index + 1}: zoomOut does not take an argument`);
+    if ((name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom') && argument) {
+      throw new Error(`Line ${index + 1}: ${name} does not take an argument`);
     }
     if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
@@ -61,6 +61,12 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'clickElt' && !/^\.?[\w-]+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickElt requires an ID or a class prefixed with .`);
+    }
+    if ((name === 'hideElt' || name === 'removeElt') && !/^[.#]?[\w-]+$/.test(argument)) {
+      throw new Error(`Line ${index + 1}: ${name} requires an ID or a class prefixed with .`);
+    }
+    if (name === 'shotElt' && !/^[.#]?[\w-]+\s+[\w.-]+\.png$/i.test(argument)) {
+      throw new Error(`Line ${index + 1}: shotElt requires an ID or a class prefixed with . and a PNG filename without directories`);
     }
     if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
@@ -126,6 +132,29 @@ export async function runScreenshotScenario(
           });
           break;
         }
+        case 'zoomIn': {
+          await browserWindow.evaluate((window: any) => {
+            const webContents = window.webContents;
+            webContents.setZoomLevel(webContents.getZoomLevel() + 0.5);
+          });
+          break;
+        }
+        case 'refreshDom': {
+          const [width, height] = await browserWindow.evaluate((window: any) => window.getSize() as [number, number]);
+          const originalViewport = await firstWindow.evaluate(() => [window.innerWidth, window.innerHeight]);
+          try {
+            await browserWindow.evaluate((window: any, size) => window.setSize(size.width + 32, size.height), { width, height });
+            await expect.poll(() => firstWindow.evaluate(() => [window.innerWidth, window.innerHeight]), { timeout: 5000 })
+              .not.toEqual(originalViewport);
+            await firstWindow.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+          } finally {
+            await browserWindow.evaluate((window: any, size) => window.setSize(size.width, size.height), { width, height });
+          }
+          await expect.poll(() => firstWindow.evaluate(() => [window.innerWidth, window.innerHeight]), { timeout: 5000 })
+            .toEqual(originalViewport);
+          await firstWindow.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+          break;
+        }
         case 'wait': {
           await firstWindow.waitForTimeout(Number(command.argument));
           break;
@@ -177,6 +206,46 @@ export async function runScreenshotScenario(
           await target.click();
           break;
         }
+        case 'hideElt': {
+          const isClass = command.argument.startsWith('.');
+          const value = command.argument.replace(/^[.#]/, '');
+          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const targets = firstWindow.locator(selector).filter({ visible: true });
+          await expect(targets.first()).toBeVisible({ timeout: 30000 });
+          await targets.evaluateAll((elements) => {
+            for (const element of elements) (element as HTMLElement).style.setProperty('display', 'none', 'important');
+          });
+          break;
+        }
+        case 'removeElt': {
+          const isClass = command.argument.startsWith('.');
+          const value = command.argument.replace(/^[.#]/, '');
+          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const targets = firstWindow.locator(selector);
+          await expect(targets.first()).toBeAttached({ timeout: 30000 });
+          await targets.evaluateAll((elements) => {
+            for (const element of elements) {
+              const parent = element.parentElement;
+              const area = element.matches('as-split-area') ? element :
+                parent?.matches('as-split-area') && parent.children.length === 1 ? parent : null;
+              const split = area?.parentElement;
+              if (!area || !split?.matches('as-split')) {
+                element.remove();
+                continue;
+              }
+              area.remove();
+              const remainingAreas = Array.from(split.children).filter((child) => child.matches('as-split-area'));
+              if (remainingAreas.length === 1) {
+                for (const gutter of split.querySelectorAll(':scope > .as-split-gutter')) gutter.remove();
+                (split as HTMLElement).style.setProperty('grid-template', '1fr / 1fr', 'important');
+                const remainingArea = remainingAreas[0] as HTMLElement;
+                remainingArea.style.setProperty('grid-row', '1', 'important');
+                remainingArea.style.setProperty('grid-column', '1', 'important');
+              }
+            }
+          });
+          break;
+        }
         case 'clickChart': {
           const [chartId, indexArgument] = command.argument.split(/\s+/);
           const index = Number(indexArgument);
@@ -220,6 +289,20 @@ export async function runScreenshotScenario(
             .locator(selector).filter({ visible: true }).first();
           await expect(target).toBeVisible({ timeout: 30000 });
           annotations.push({ target, text: match[2].replace(/\\n/g, '\n') });
+          break;
+        }
+        case 'shotElt': {
+          const [elementSelector, filename] = command.argument.split(/\s+/);
+          const isClass = elementSelector.startsWith('.');
+          const value = elementSelector.replace(/^[.#]/, '');
+          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const targets = firstWindow.locator(selector).filter({ visible: true });
+          if (!isClass) await expect(targets).toHaveCount(1, { timeout: 30000 });
+          const target = isClass ? targets.first() : targets;
+          await expect(target).toBeVisible({ timeout: 30000 });
+          const screenshot = await target.screenshot({ animations: 'disabled' });
+          await writeScreenshot(path.join(outputDirectory, filename), screenshot);
+          screenshotCount++;
           break;
         }
         case 'screenshot': {

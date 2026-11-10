@@ -1,0 +1,26 @@
+### Visualization elements screenshots
+zoomOut
+
+fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
+
+zoomIn
+
+openTab Preparation
+screenshot Opening.png
+
+shotElt header-tools-comp TopRightButtons.png
+shotElt .ag-grid-comp-header-tools TopRightPanelAButtons.png
+clickElt .btn-fullscreen-comp
+shotElt .btn-fullscreen-comp GoBack.png
+clickElt .btn-fullscreen-comp
+
+openTab Tree preparation
+shotElt .kl-slider-container ScaleChartButton.png
+
+openTab Preparation 2D
+# resizeSplit app-var-details-preparation-2d-comp 100 0
+removeElt app-var-details-preparation-2d-comp-variables-lists
+removeElt preparation-2d-target-distribution-graph
+refreshDom
+shotElt cooccurrence-matrix-comp-container Cooccurence.png
+wait 3000
