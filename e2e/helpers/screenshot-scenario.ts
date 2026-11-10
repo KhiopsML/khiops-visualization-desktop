@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'zoomOut' | 'resizeSplit' | 'frame' | 'annotation' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'zoomOut' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'screenshot';
   argument: string;
   line: number;
 };
@@ -44,7 +44,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'zoomOut', 'resizeSplit', 'frame', 'annotation', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'zoomOut', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
     if (name !== 'screenshot' && name !== 'zoomOut' && !argument) {
@@ -52,6 +52,9 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'zoomOut' && argument) {
       throw new Error(`Line ${index + 1}: zoomOut does not take an argument`);
+    }
+    if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
+      throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
     }
     if (name === 'annotation' && !/^\S+\s+\S/.test(argument)) {
       throw new Error(`Line ${index + 1}: annotation requires a selector and text`);
@@ -118,6 +121,10 @@ export async function runScreenshotScenario(
             const webContents = window.webContents;
             webContents.setZoomLevel(webContents.getZoomLevel() - 0.5);
           });
+          break;
+        }
+        case 'wait': {
+          await firstWindow.waitForTimeout(Number(command.argument));
           break;
         }
         case 'resizeSplit': {

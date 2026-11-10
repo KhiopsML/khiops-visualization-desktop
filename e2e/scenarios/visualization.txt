@@ -18,3 +18,7 @@ frame variable-graph-details-comp card
 frame preparation-description-block-derivation
 frame preparation-current-interval card
 screenshot UnsupervisedFivePanels.png
+
+clickRow preparation-variables-list R02
+wait 100 # for histogram rendering
+screenshot UnsupervisedFivePanelsNumerical.png
