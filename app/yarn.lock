@@ -5,12 +5,15 @@ __metadata:
   version: 10
   cacheKey: 10c0
 
-"@electron/remote@npm:^2.1.3":
-  version: 2.1.3
-  resolution: "@electron/remote@npm:2.1.3"
+"@electron/remote@npm:^2.1.4":
+  version: 2.1.4
+  resolution: "@electron/remote@npm:2.1.4"
   peerDependencies:
     electron: ">= 13.0.0"
-  checksum: 10c0/f91146c7fcb51bc7d5cfd0a276e76a84de8155249e66dfec444256e3c827da53159f9f92d3017b2d99983dbb33720f6c64fa19fdb2907c91901bfe135421a430
+  dependenciesMeta:
+    electron:
+      built: true
+  checksum: 10c0/fe0e92c60a5b22f33dc08599180913d8c0fad96592799d45d2bb027c6296bc3667cdd4f3f44d99751f94354ca898926f0d592c278308cbd60e6c7b1621002b56
   languageName: node
   linkType: hard
 
@@ -263,7 +266,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "khiops-visualization-desktop@workspace:."
   dependencies:
-    "@electron/remote": "npm:^2.1.3"
+    "@electron/remote": "npm:^2.1.4"
     custom-electron-titlebar: "npm:^4.4.1"
     electron-debug: "npm:^4.1.0"
     electron-json-storage: "npm:^4.6.0"
