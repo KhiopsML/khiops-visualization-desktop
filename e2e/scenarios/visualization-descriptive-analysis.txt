@@ -1,12 +1,14 @@
 zoomOut
 
+### Descriptive analysis visualization
+
 # Paths are relative to the desktop project root.
-#fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
+fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
 
-#openTab Preparation
-#screenshot Opening.png
+openTab Preparation
+screenshot Opening.png
 
-fileOpen e2e/scenarios/src/AnalyseExploratoire/AllReports.khj
+fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj
 
 openTab Preparation
 clickRow preparation-variables-list R11
@@ -23,3 +25,13 @@ clickRow preparation-variables-list R02
 # wait for histogram rendering
 wait 100
 screenshot UnsupervisedFivePanelsNumerical.png
+
+openTab Preparation 2D
+frame preparation-view-2d-informations-split
+frame preparation-2d-variables-list card
+frame cooccurrence-matrix-comp-container card
+frame app-var-details-preparation-2d-comp-variables-lists
+screenshot Unsupervised-2D.png
+
+openTab Project infos
+screenshot ProjectInfos.png
