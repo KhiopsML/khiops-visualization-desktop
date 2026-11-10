@@ -17,10 +17,15 @@ repository beside the desktop repository for the default scenario's input file.
 
 Scenario commands are one per line. Blank lines and lines beginning with `#`
 are ignored. `fileOpen` takes an absolute path or a path relative to the
-desktop project root. `openTab` takes the exact visible tab name. `frame`
+desktop project root. `openTab` takes the exact visible tab name. `clickRow`
+clicks the unique visible row containing the supplied text, for example `clickRow R11`.
+To scope the search to one table, include its ID: `clickRow preparation-variables-list R11`.
+`clickChart distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
+`frame`
 takes an element ID without `#`, or a Playwright CSS selector, and queues a
-rectangle for the nearest `.kl-card` ancestor, including the element itself.
-If no card exists, the selected element is used. `screenshot` optionally takes a PNG filename;
+rectangle around that element. Append `card` (for example, `frame variable-graph-details-comp card`)
+to frame the nearest `.kl-card` ancestor, including the element itself. If no card exists,
+the selected element is used. `screenshot` optionally takes a PNG filename;
 otherwise files are numbered. Annotations are cleared after each screenshot.
 Targets must be uniquely visible in the active visualization.
 

@@ -8,10 +8,10 @@ import { clickMenuItem, mockOpenDialogAbsolute } from './electron-menu';
 const ANNOTATION_COLOR = '#f59e0b';
 // const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0.04)';
 const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
-const annotation_FONT_SIZE = 14;
+const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'frame' | 'annotation' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'frame' | 'annotation' | 'screenshot';
   argument: string;
   line: number;
 };
@@ -44,7 +44,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'frame', 'annotation', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'frame', 'annotation', 'screenshot'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
     if (name !== 'screenshot' && !argument) {
@@ -52,6 +52,9 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'annotation' && !/^\S+\s+\S/.test(argument)) {
       throw new Error(`Line ${index + 1}: annotation requires a selector and text`);
+    }
+    if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
+      throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1 });
   }
@@ -66,7 +69,7 @@ export async function runScreenshotScenario(
 ): Promise<void> {
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
-  let annotations: Locator[] = [];
+  let frames: { target: Locator; card: boolean }[] = [];
   let annotations: { target: Locator; text: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
@@ -99,12 +102,49 @@ export async function runScreenshotScenario(
           await expect(tab).toHaveAttribute('aria-selected', 'true');
           break;
         }
+        case 'clickRow': {
+          const match = /^(\S+)(?:\s+(.+))?$/.exec(command.argument)!;
+          const activeView = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible');
+          const table = match[2] ? activeView.locator(`[id=${JSON.stringify(match[1].replace(/^#/, ''))}]`) : activeView;
+          const row = table.getByRole('row').filter({ hasText: match[2] || match[1], visible: true });
+          await expect(row).toHaveCount(1, { timeout: 30000 });
+          await row.click();
+          break;
+        }
+        case 'clickChart': {
+          const [chartId, indexArgument] = command.argument.split(/\s+/);
+          const index = Number(indexArgument);
+          if (!Number.isSafeInteger(index)) throw new Error('Chart index must be a safe integer');
+          const canvas = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(`[id=${JSON.stringify(chartId.replace(/^#/, ''))}]`).filter({ visible: true });
+          await expect(canvas).toHaveCount(1, { timeout: 30000 });
+          await canvas.scrollIntoViewIfNeeded();
+          let position: { x: number; y: number } | null = null;
+          await expect.poll(async () => {
+            position = await canvas.evaluate((element, barIndex) => {
+              const chart = (element.closest('kl-chart') as any)?.componentInstance?.chartManagerService?.getChart();
+              if (!chart || !chart.width || !chart.height) return null;
+              const bar = chart.data.datasets
+                .map((_dataset: unknown, datasetIndex: number) => chart.getDatasetMeta(datasetIndex).data[barIndex])
+                .find((entry: any) => entry && Math.abs(entry.base - entry.y) > 1);
+              if (!bar) return null;
+              const bounds = element.getBoundingClientRect();
+              return { x: bar.x * bounds.width / chart.width, y: (bar.y + bar.base) / 2 * bounds.height / chart.height };
+            }, index);
+            return position !== null;
+          }, { timeout: 30000, message: `Chart ${chartId} has no visible bar at index ${index}` }).toBe(true);
+          await canvas.click({ position: position! });
+          await firstWindow.mouse.move(0, 0);
+          break;
+        }
         case 'frame': {
-          const selector = /^[\w-]+$/.test(command.argument) ? `#${command.argument}` : command.argument;
+          const card = /\s+card$/.test(command.argument);
+          const frameSelector = card ? command.argument.replace(/\s+card$/, '') : command.argument;
+          const selector = /^[\w-]+$/.test(frameSelector) ? `#${frameSelector}` : frameSelector;
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
           await expect(target).toHaveCount(1, { timeout: 30000 });
           await expect(target).toBeVisible();
-          annotations.push(target);
+          frames.push({ target, card });
           break;
         }
         case 'annotation': {
@@ -123,14 +163,14 @@ export async function runScreenshotScenario(
             throw new Error('Screenshot name must be a PNG filename without directories');
           }
           await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
-          if (annotations.length) {
+          if (frames.length) {
             if (!annotationReady) {
-              const script = await fs.readFile(require.resolve('@reviewjs/frame/frame.js'), 'utf8');
+              const script = await fs.readFile(require.resolve('@reviewjs/annotate/annotate.js'), 'utf8');
               await firstWindow.addScriptTag({ content: `(function(module, exports) {\n${script}\n})(undefined, undefined);` });
               await firstWindow.evaluate(() => {
-                const frame = (window as any).frame;
-                frame.init({ project: 'kvd-screenshot-scenario', startOpen: true });
-                frame.clear();
+                const annotate = (window as any).Annotate;
+                annotate.init({ project: 'kvd-screenshot-scenario', startOpen: true });
+                annotate.clear();
               });
               await firstWindow.locator('#__an_overlay').evaluate((overlay) => {
                 const updateBadges = () => {
@@ -155,9 +195,10 @@ export async function runScreenshotScenario(
               ` });
               annotationReady = true;
             }
-            const boxes = await Promise.all(annotations.map(async (target) => {
+            const boxes = await Promise.all(frames.map(async ({ target, card: useCard }) => {
               await expect(target).toBeVisible();
-              const card = await target.evaluateHandle((element) => {
+              const card = await target.evaluateHandle((element, useCard) => {
+                if (!useCard) return element;
                 let current: Element | null = element;
                 while (current) {
                   if (current.classList.contains('kl-card')) return current;
@@ -169,7 +210,7 @@ export async function runScreenshotScenario(
                   }
                 }
                 return element;
-              });
+              }, useCard);
               try {
                 const box = await card.asElement()!.boundingBox();
                 if (!box || box.width <= 0 || box.height <= 0) throw new Error('Annotation target has no visible area');
@@ -193,13 +234,13 @@ export async function runScreenshotScenario(
               };
             }, { targets: boxes, color: ANNOTATION_COLOR });
             const chooserPromise = firstWindow.waitForEvent('filechooser');
-            await firstWindow.evaluate(() => (window as any).frame.import());
+            await firstWindow.evaluate(() => (window as any).Annotate.import());
             const chooser = await chooserPromise;
             await chooser.setFiles({ name: 'annotations.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(payload)) });
-            await expect(firstWindow.locator('#__an_overlay rect.an-hit')).toHaveCount(annotations.length);
+            await expect(firstWindow.locator('#__an_overlay rect.an-hit')).toHaveCount(frames.length);
             const badges = firstWindow.locator('#__an_overlay g > text');
-            await expect(badges).toHaveCount(annotations.length);
-            for (let index = 0; index < annotations.length; index++) {
+            await expect(badges).toHaveCount(frames.length);
+            for (let index = 0; index < frames.length; index++) {
               await expect(badges.nth(index)).toHaveText(/^[A-Z]+$/);
             }
           }
@@ -228,13 +269,13 @@ export async function runScreenshotScenario(
                 label.style.left = `${Math.max(4, Math.min(window.innerWidth - labelBox.width - 4, left))}px`;
                 label.style.top = `${Math.max(11, Math.min(window.innerHeight - labelBox.height - 4, box.y + box.height + 7))}px`;
               }
-            }, { items, color: ANNOTATION_COLOR, fontSize: annotation_FONT_SIZE });
+            }, { items, color: ANNOTATION_COLOR, fontSize: ANNOTATION_FONT_SIZE });
           }
           const screenshot = await firstWindow.screenshot({ animations: 'disabled' });
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
-          if (annotationReady) await firstWindow.evaluate(() => (window as any).frame.clear());
+          if (annotationReady) await firstWindow.evaluate(() => (window as any).Annotate.clear());
           if (annotations.length) await firstWindow.locator('#__screenshot_annotations').evaluate((overlay) => overlay.remove());
-          annotations = [];
+          frames = [];
           annotations = [];
           break;
         }
@@ -243,6 +284,6 @@ export async function runScreenshotScenario(
       throw new Error(`${scenarioPath}:${command.line}: ${command.name} ${command.argument}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  if (annotations.length || annotations.length) throw new Error(`${scenarioPath}: annotations must be followed by a screenshot`);
+  if (frames.length || annotations.length) throw new Error(`${scenarioPath}: annotations must be followed by a screenshot`);
   if (!screenshotCount) throw new Error(`${scenarioPath}: scenario contains no screenshot`);
 }

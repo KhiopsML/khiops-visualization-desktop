@@ -11,7 +11,7 @@ test.describe('Screenshot scenario', () => {
   });
 
   test('Generate screenshots', async ({ app, firstWindow }) => {
-    const scenario = path.resolve(process.env.SCREENSHOT_SCENARIO || 'e2e/scenarios/demo.txt');
+    const scenario = path.resolve(process.env.SCREENSHOT_SCENARIO || 'e2e/scenarios/visualization.txt');
     const output = path.resolve(process.env.SCREENSHOT_OUTPUT || 'e2e/screenshots');
     await runScreenshotScenario(app, firstWindow, scenario, output);
   });
