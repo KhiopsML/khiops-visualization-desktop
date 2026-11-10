@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'zoomOut' | 'frame' | 'annotation' | 'screenshot';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickChart' | 'zoomOut' | 'resizeSplit' | 'frame' | 'annotation' | 'screenshot';
   argument: string;
   line: number;
 };
@@ -44,7 +44,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     const argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'zoomOut', 'frame', 'annotation', 'screenshot'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickChart', 'zoomOut', 'resizeSplit', 'frame', 'annotation', 'screenshot'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
     if (name !== 'screenshot' && name !== 'zoomOut' && !argument) {
@@ -58,6 +58,12 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
+    }
+    if (name === 'resizeSplit') {
+      const match = /^(#?[\w-]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/.exec(argument);
+      if (!match || Math.abs(Number(match[2]) + Number(match[3]) - 100) > 1e-8) {
+        throw new Error(`Line ${index + 1}: resizeSplit requires a split ID and two percentages totaling 100`);
+      }
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1 });
   }
@@ -80,8 +86,9 @@ export async function runScreenshotScenario(
 
   await fs.mkdir(outputDirectory, { recursive: true });
   await firstWindow.waitForLoadState('networkidle');
-  await app.evaluate(({ BrowserWindow }, { width, height }) => {
-    const window = BrowserWindow.getAllWindows()[0];
+  const browserWindow = await app.browserWindow(firstWindow);
+  await browserWindow.evaluate((window: any, { width, height }) => {
+    window.webContents.setZoomLevel(0);
     window.setSize(width, height);
     window.center();
   }, windowSize);
@@ -107,10 +114,38 @@ export async function runScreenshotScenario(
           break;
         }
         case 'zoomOut': {
-          await app.evaluate(({ BrowserWindow }) => {
-            const webContents = BrowserWindow.getAllWindows()[0].webContents;
+          await browserWindow.evaluate((window: any) => {
+            const webContents = window.webContents;
             webContents.setZoomLevel(webContents.getZoomLevel() - 0.5);
           });
+          break;
+        }
+        case 'resizeSplit': {
+          const [splitId, firstPercentage] = command.argument.split(/\s+/);
+          const split = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(`[id=${JSON.stringify(splitId.replace(/^#/, ''))}]`).filter({ visible: true });
+          await expect(split).toHaveCount(1, { timeout: 30000 });
+          await expect(split).toHaveClass(/\bas-vertical\b/);
+          const areas = split.locator(':scope > as-split-area');
+          const gutter = split.locator(':scope > .as-split-gutter');
+          await expect(areas).toHaveCount(2);
+          await expect(gutter).toBeVisible();
+          const splitBox = await split.boundingBox();
+          const gutterBox = await gutter.boundingBox();
+          if (!splitBox || !gutterBox || splitBox.height <= gutterBox.height) throw new Error('Split has no visible height');
+          const targetY = splitBox.y + (splitBox.height - gutterBox.height) * Number(firstPercentage) / 100 + gutterBox.height / 2;
+          const gutterX = gutterBox.x + gutterBox.width / 2;
+          await firstWindow.mouse.move(gutterX, gutterBox.y + gutterBox.height / 2);
+          await firstWindow.mouse.down();
+          try {
+            await firstWindow.mouse.move(gutterX, targetY, { steps: 10 });
+          } finally {
+            await firstWindow.mouse.up();
+          }
+          await expect.poll(async () => {
+            const heights = await areas.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
+            return Math.abs(heights[0] / (heights[0] + heights[1]) * 100 - Number(firstPercentage));
+          }, { timeout: 30000, message: `Split ${splitId} could not reach the requested percentages` }).toBeLessThan(1);
           break;
         }
         case 'clickRow': {
@@ -282,7 +317,8 @@ export async function runScreenshotScenario(
               }
             }, { items, color: ANNOTATION_COLOR, fontSize: ANNOTATION_FONT_SIZE });
           }
-          const screenshot = await firstWindow.screenshot({ animations: 'disabled' });
+          const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
+          const screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height } });
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
           if (annotationReady) await firstWindow.evaluate(() => (window as any).Annotate.clear());
           if (annotations.length) await firstWindow.locator('#__screenshot_annotations').evaluate((overlay) => overlay.remove());

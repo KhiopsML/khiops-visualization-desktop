@@ -11,6 +11,7 @@ fileOpen e2e/scenarios/src/AnalyseExploratoire/AllReports.khj
 openTab Preparation
 clickRow preparation-variables-list R11
 clickChart distribution-chart-0 1
+resizeSplit app-var-details-preparation-comp 70 30
 frame preparation-view-informations-split
 frame preparation-variables-list
 frame variable-graph-details-comp card
