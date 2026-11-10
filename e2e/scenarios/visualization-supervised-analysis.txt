@@ -1,6 +1,5 @@
-zoomOut
-
 ### Supervised analysis visualization
+zoomOut
 
 fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
 
@@ -9,11 +8,41 @@ screenshot ClassificationPreparation.png
 
 openTab Tree preparation
 clickElt .kl-icon-cell-comp-btn
+wait 500
+frame tree-preparation-variable-graph-details
 frame tree-preparation-hyper
 frame tree-preparation-select
 frame tree-details-comp
 frame tree-leaf-details-comp
 frame tree-leaf-rules-comp
 screenshot SupervisedTree.png
+# ferme la dialog
+clickElt tree-analysis-close-button
+wait 500
 
+openTab Preparation 2D
+frame preparation-2d-target-variable-stats
+frame preparation-2d-variables-list
+frame cooccurrence-matrix-comp-container
+frame preparation-2d-target-distribution-graph
+frame app-var-details-preparation-2d-comp-variables-lists
+screenshot Supervised2D.png
+
+openTab Modeling
+clickRow modeling-variables-list occupation
+frame modeling-target-variable-stats
+frame modeling-variables-list
+frame variable-graph-details-comp
+frame preparation-current-interval
+screenshot SupervisedModeling.png
+
+openTab Evaluation
+frame evaluation-types-summary
+frame evaluation-predictor-evaluations
+frame evaluation-lift-curves
+frame evaluation-confusion-matrix
+screenshot SupervisedEvaluation.png
+
+openTab Project infos
+screenshot SupervisedProject.png
 
