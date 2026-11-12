@@ -3,19 +3,21 @@
 ## Screenshot scenarios
 
 Start the development server with `yarn ng:serve:dev`, then run
-`yarn e2e:screenshots`. The default scenario is
-`e2e/scenarios/demo.txt` and PNG files are written to `e2e/screenshots`.
+`yarn e2e:screenshots`. This runs the descriptive, supervised, elements,
+histograms, and regression visualization scenarios. PNG files are written
+to `e2e/screenshots`.
 If port 4200 is occupied, start `yarn ng serve -c dev --port 4201` and set
 `E2E_APP_URL=http://localhost:4201` for the test process.
-Set `SCREENSHOT_SCENARIO` and `SCREENSHOT_OUTPUT` to override these paths;
-relative paths are resolved from the desktop project root.
+Set `SCREENSHOT_SCENARIO` to run a single scenario and `SCREENSHOT_OUTPUT`
+to change the output directory; relative paths are resolved from the desktop
+project root.
 Set `screenshotWindowSize` in `e2e/screenshot-playwright.config.ts` to change
 the Electron window size used by screenshot scenarios.
 
 Screenshot scenarios are excluded from the standard E2E suite. On GitHub,
 run the **Screenshot Scenarios** workflow manually to generate a separate
-`screenshot-scenarios` artifact. The workflow checks out the visualization
-repository beside the desktop repository for the default scenario's input file.
+`screenshot-scenarios` artifact. The workflow accepts one scenario path and
+checks out the visualization repository beside the desktop repository.
 
 Scenario commands are one per line. Blank lines and lines beginning with `#`
 are ignored. `fileOpen` takes an absolute path or a path relative to the

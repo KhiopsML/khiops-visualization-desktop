@@ -1,0 +1,17 @@
+### Regression analysis visualization
+zoomOut
+
+fileOpen e2e/scenarios/src/RegressionModel/AllReports.khj
+
+openTab Preparation
+screenshot RegressionPreparation.png
+
+openTab Modeling
+screenshot RegressionModeling.png
+
+openTab Evaluation
+frame evaluation-types-summary
+frame evaluation-predictor-evaluations
+frame evaluation-lift-curves
+screenshot RegressionEvaluation.png
+

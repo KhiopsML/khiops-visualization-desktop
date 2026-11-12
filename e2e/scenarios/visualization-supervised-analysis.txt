@@ -21,7 +21,7 @@ clickElt tree-analysis-close-button
 wait 500
 
 openTab Preparation 2D
-frame preparation-2d-target-variable-stats
+frame preparation-view-2d-informations-split
 frame preparation-2d-variables-list
 frame cooccurrence-matrix-comp-container
 frame preparation-2d-target-distribution-graph
@@ -30,7 +30,7 @@ screenshot Supervised2D.png
 
 openTab Modeling
 clickRow modeling-variables-list occupation
-frame modeling-target-variable-stats
+frame modeling-view-informations-split
 frame modeling-variables-list
 frame variable-graph-details-comp
 frame preparation-current-interval

@@ -17,6 +17,11 @@ screenshot UnsupervisedFivePanels.png
 clickRow preparation-variables-list R02
 # wait for histogram rendering
 wait 100
+frame preparation-view-informations-split
+frame preparation-variables-list
+frame variable-graph-details-comp
+frame preparation-description-block-derivation
+frame preparation-current-interval
 screenshot UnsupervisedFivePanelsNumerical.png
 
 openTab Preparation 2D
