@@ -4,31 +4,31 @@ zoomOut
 fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj
 
 openTab Preparation
-clickRow preparation-variables-list R11
-clickChart distribution-chart-0 1
-resizeSplit app-var-details-preparation-comp 70 30
-frame preparation-view-informations-split
-frame preparation-variables-list
-frame variable-graph-details-comp
-frame preparation-description-block-derivation
-frame preparation-current-interval
+clickRow #preparation-variables-list R11
+clickChart #distribution-chart-0 1
+resizeSplit #app-var-details-preparation-comp 70 30
+frame #preparation-view-informations-split
+frame #preparation-variables-list
+frame #variable-graph-details-comp
+frame #preparation-description-block-derivation
+frame #preparation-current-interval
 screenshot "images-khiops-guides/visualization/UnsupervisedFivePanels.png"
 
-clickRow preparation-variables-list R02
+clickRow #preparation-variables-list R02
 # wait for histogram rendering
 wait 100
-frame preparation-view-informations-split
-frame preparation-variables-list
-frame variable-graph-details-comp
-frame preparation-description-block-derivation
-frame preparation-current-interval
+frame #preparation-view-informations-split
+frame #preparation-variables-list
+frame #variable-graph-details-comp
+frame #preparation-description-block-derivation
+frame #preparation-current-interval
 screenshot "images-khiops-guides/visualization/UnsupervisedFivePanelsNumerical.png"
 
 openTab Preparation 2D
-frame preparation-view-2d-informations-split
-frame preparation-2d-variables-list
-frame cooccurrence-matrix-comp-container
-frame app-var-details-preparation-2d-comp-variables-lists
+frame #preparation-view-2d-informations-split
+frame #preparation-2d-variables-list
+frame #cooccurrence-matrix-comp-container
+frame #app-var-details-preparation-2d-comp-variables-lists
 screenshot "images-khiops-guides/visualization/Unsupervised-2D.png"
 
 openTab Project infos

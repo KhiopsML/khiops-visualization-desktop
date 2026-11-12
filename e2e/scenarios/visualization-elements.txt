@@ -8,7 +8,7 @@ zoomIn
 openTab Preparation
 screenshot "images-khiops-guides/visualization/Opening.png"
 
-shotElt header-tools-comp "images-khiops-guides/visualization/TopRightButtons.png"
+shotElt #header-tools-comp "images-khiops-guides/visualization/TopRightButtons.png"
 shotElt .ag-grid-comp-header-tools "images-khiops-guides/visualization/TopRightPanelAButtons.png"
 clickElt .btn-fullscreen-comp
 shotElt .btn-fullscreen-comp "images-khiops-guides/visualization/GoBack.png"
@@ -19,7 +19,7 @@ shotElt .kl-slider-container "images-khiops-guides/visualization/ScaleChartButto
 
 openTab Preparation 2D
 # resizeSplit app-var-details-preparation-2d-comp 100 0
-removeElt app-var-details-preparation-2d-comp-variables-lists
-removeElt preparation-2d-target-distribution-graph
+removeElt #app-var-details-preparation-2d-comp-variables-lists
+removeElt #preparation-2d-target-distribution-graph
 refreshDom
-shotElt cooccurrence-matrix-comp-container "images-khiops-guides/visualization/Cooccurence.png"
+shotElt #cooccurrence-matrix-comp-container "images-khiops-guides/visualization/Cooccurence.png"

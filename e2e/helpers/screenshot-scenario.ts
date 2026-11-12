@@ -66,32 +66,38 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
     }
-    if (name === 'annotation' && !/^\S+\s+\S/.test(argument)) {
-      throw new Error(`Line ${index + 1}: annotation requires a selector and text`);
+    if (name === 'annotation') {
+      const annotation = /^(\S+)\s+\S/.exec(argument);
+      if (!annotation || /^[\w-]+$/.test(annotation[1])) {
+        throw new Error(`Line ${index + 1}: annotation requires a selector and text; IDs must start with #`);
+      }
     }
-    if (name === 'clickElt' && !/^\.?[\w-]+$/.test(argument)) {
-      throw new Error(`Line ${index + 1}: clickElt requires an ID or a class prefixed with .`);
+    if (name === 'frame' && /^[\w-]+$/.test(argument.replace(/\s+card$/, ''))) {
+      throw new Error(`Line ${index + 1}: frame IDs must start with #`);
     }
-    if ((name === 'hideElt' || name === 'removeElt') && !/^[.#]?[\w-]+$/.test(argument)) {
-      throw new Error(`Line ${index + 1}: ${name} requires an ID or a class prefixed with .`);
+    if (name === 'clickRow' && /\s/.test(argument) && !/^#[\w-]+\s+\S/.test(argument)) {
+      throw new Error(`Line ${index + 1}: clickRow table IDs must start with #`);
+    }
+    if ((name === 'clickElt' || name === 'hideElt' || name === 'removeElt') && !/^[.#][\w-]+$/.test(argument)) {
+      throw new Error(`Line ${index + 1}: ${name} requires an ID prefixed with # or a class prefixed with .`);
     }
     if (name === 'shotElt') {
-      const element = /^([.#]?[\w-]+)\s+(.+)$/.exec(argument);
+      const element = /^([.#][\w-]+)\s+(.+)$/.exec(argument);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID or a class prefixed with . and a PNG path`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG path`);
       }
       argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}`;
     }
     if (name === 'screenshot' && argument) {
       argument = parseScreenshotFilename(argument, index + 1, name);
     }
-    if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
-      throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
+    if (name === 'clickChart' && !/^#[\w-]+\s+\d+$/.test(argument)) {
+      throw new Error(`Line ${index + 1}: clickChart requires a chart ID prefixed with # and a zero-based index`);
     }
     if (name === 'resizeSplit') {
-      const match = /^(#?[\w-]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/.exec(argument);
+      const match = /^(#[\w-]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/.exec(argument);
       if (!match || Math.abs(Number(match[2]) + Number(match[3]) - 100) > 1e-8) {
-        throw new Error(`Line ${index + 1}: resizeSplit requires a split ID and two percentages totaling 100`);
+        throw new Error(`Line ${index + 1}: resizeSplit requires a split ID prefixed with # and two percentages totaling 100`);
       }
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1 });
@@ -230,7 +236,7 @@ export async function runScreenshotScenario(
         }
         case 'clickElt': {
           const isClass = command.argument.startsWith('.');
-          const value = isClass ? command.argument.slice(1) : command.argument;
+          const value = command.argument.slice(1);
           const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
             .locator(selector).filter({ visible: true }).first();
@@ -307,8 +313,7 @@ export async function runScreenshotScenario(
         case 'frame': {
           const card = /\s+card$/.test(command.argument);
           const frameSelector = card ? command.argument.replace(/\s+card$/, '') : command.argument;
-          const selector = /^[\w-]+$/.test(frameSelector) ? `#${frameSelector}` : frameSelector;
-          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
+          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(frameSelector).filter({ visible: true });
           await expect(target).toHaveCount(1, { timeout: 30000 });
           await expect(target).toBeVisible();
           frames.push({ target, card });
@@ -316,9 +321,8 @@ export async function runScreenshotScenario(
         }
         case 'annotation': {
           const match = /^(\S+)\s+(.+)$/.exec(command.argument)!;
-          const selector = /^[\w-]+$/.test(match[1]) ? `#${match[1]}` : match[1];
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(selector).filter({ visible: true }).first();
+            .locator(match[1]).filter({ visible: true }).first();
           await expect(target).toBeVisible({ timeout: 30000 });
           annotations.push({ target, text: match[2].replace(/\\n/g, '\n') });
           break;

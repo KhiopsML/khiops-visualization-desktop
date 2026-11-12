@@ -5,19 +5,19 @@ fileOpen e2e/scenarios/src/DatasetsHistograms/AdultUnsupervised.khj
 
 zoomIn
 
-clickRow preparation-variables-list capital_loss
+clickRow #preparation-variables-list capital_loss
 
-clickElt change-scale-button
-clickElt scale-toggle-group-xLog-button 
-clickElt scale-toggle-group-yLog-button 
-clickElt change-scale-dialog-apply-btn
-clickElt graph-header-fullscreen-btn
+clickElt #change-scale-button
+clickElt #scale-toggle-group-xLog-button 
+clickElt #scale-toggle-group-yLog-button 
+clickElt #change-scale-dialog-apply-btn
+clickElt #graph-header-fullscreen-btn
 
-shotElt app-histogram "images-khiops-guides/visualization/DefaultCapitalLossHistogram.png"
+shotElt #app-histogram "images-khiops-guides/visualization/DefaultCapitalLossHistogram.png"
 
 clickElt .button-increase-hierarchy
 frame .app-histogram-slider
-shotElt app-histogram "images-khiops-guides/visualization/FinestCapitalLossHistogram.png"
+shotElt #app-histogram "images-khiops-guides/visualization/FinestCapitalLossHistogram.png"
 
 clickElt .button-reduce-hierarchy
 clickElt .button-reduce-hierarchy
@@ -25,14 +25,14 @@ clickElt .button-reduce-hierarchy
 clickElt .button-reduce-hierarchy
 
 frame .app-histogram-slider
-shotElt app-histogram "images-khiops-guides/visualization/CoarsestCapitalLossHistogram.png"
+shotElt #app-histogram "images-khiops-guides/visualization/CoarsestCapitalLossHistogram.png"
 
 fileOpen e2e/scenarios/src/DatasetsHistograms/Cauchy_AnalysisResults.khj
 
-clickElt change-scale-button
-clickElt scale-toggle-group-xLog-button 
-clickElt scale-toggle-group-yLog-button 
-clickElt change-scale-dialog-apply-btn
-clickElt graph-header-fullscreen-btn
+clickElt #change-scale-button
+clickElt #scale-toggle-group-xLog-button 
+clickElt #scale-toggle-group-yLog-button 
+clickElt #change-scale-dialog-apply-btn
+clickElt #graph-header-fullscreen-btn
 
-shotElt app-histogram "images-khiops-guides/visualization/CauchyLogLog.png"
+shotElt #app-histogram "images-khiops-guides/visualization/CauchyLogLog.png"
