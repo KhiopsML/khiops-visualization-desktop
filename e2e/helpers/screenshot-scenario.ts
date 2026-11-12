@@ -90,27 +90,41 @@ function parsePaddingOption(body: string, line: number, command: string): FrameP
 }
 
 function parseFrameArgument(argument: string, line: number): {
-  selector: string; card: boolean; noId: boolean; padding: FramePadding; occurrence?: number;
+  selector: string; noId: boolean; padding: FramePadding; occurrence?: number;
 } {
   let selector = argument;
-  let card = false;
   let noId = false;
   let padding: FramePadding | undefined;
   let occurrence: number | undefined;
+  let optionsBlockSeen = false;
   while (true) {
-    const paddingOption = /^(.*?)\s+\{([^{}]*)\}$/.exec(selector);
-    if (paddingOption) {
-      if (padding) throw new Error(`Line ${line}: duplicate frame padding`);
-      padding = parsePaddingOption(paddingOption[2], line, 'frame');
-      selector = paddingOption[1];
+    const options = /^(.*?)\s+\{([^{}]*)\}$/.exec(selector);
+    if (options) {
+      // Only one brace block is allowed per frame line
+      if (optionsBlockSeen) throw new Error(`Line ${line}: only one frame options block is allowed`);
+      optionsBlockSeen = true;
+      const seen = new Set<string>();
+      for (const entry of options[2].split(',')) {
+        const option = /^\s*(\w+)\s*:(.*)$/.exec(entry);
+        const key = option?.[1];
+        if (!key || seen.has(key)) throw new Error(`Line ${line}: invalid or duplicate frame option ${entry.trim()}`);
+        seen.add(key);
+        if (key === 'noId') {
+          if (!/^\s*(true|false)\s*$/.test(option![2])) throw new Error(`Line ${line}: noId must be true or false`);
+          noId = option![2].trim() === 'true';
+        } else if (key === 'padding') {
+          padding = parsePaddingOption(entry, line, 'frame');
+        } else {
+          throw new Error(`Line ${line}: unknown frame option ${key}`);
+        }
+      }
+      selector = options[1];
       continue;
     }
     const suffix = /^(.*?)\s+(\S+)$/.exec(selector);
     if (!suffix) break;
-    if (suffix[2] === 'card' || suffix[2] === 'noId') {
-      if (suffix[2] === 'card' ? card : noId) throw new Error(`Line ${line}: duplicate frame option ${suffix[2]}`);
-      if (suffix[2] === 'card') card = true;
-      else noId = true;
+    if (suffix[2] === 'noId') {
+      throw new Error(`Line ${line}: noId must be written as {noId:true}`);
     } else if (/^[+-]?\d/.test(suffix[2])) {
       if (occurrence !== undefined || !/^[1-9]\d*$/.test(suffix[2]) || !Number.isSafeInteger(Number(suffix[2]))) {
         throw new Error(`Line ${line}: frame occurrence must be a positive integer`);
@@ -121,8 +135,8 @@ function parseFrameArgument(argument: string, line: number): {
     }
     selector = suffix[1];
   }
-  if (/\s+\{/.test(selector)) throw new Error(`Line ${line}: invalid frame padding`);
-  return { selector, card, noId, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
+  if (/\s+\{/.test(selector)) throw new Error(`Line ${line}: invalid frame options`);
+  return { selector, noId, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
 }
 
 function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string } {
@@ -257,7 +271,7 @@ export async function runScreenshotScenario(
 ): Promise<void> {
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
-  let frames: { target: Locator; card: boolean; noId: boolean; padding: FramePadding }[] = [];
+  let frames: { target: Locator; noId: boolean; padding: FramePadding }[] = [];
   let annotations: { target: Locator; text: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
@@ -606,11 +620,11 @@ export async function runScreenshotScenario(
           break;
         }
         case 'frame': {
-          const { selector, card, noId, padding, occurrence } = parseFrameArgument(command.argument, command.line);
+          const { selector, noId, padding, occurrence } = parseFrameArgument(command.argument, command.line);
           const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
           const target = targets.nth((occurrence || 1) - 1);
           await expect(target).toBeVisible();
-          frames.push({ target, card, noId, padding });
+          frames.push({ target, noId, padding });
           break;
         }
         case 'annotation': {
@@ -665,14 +679,23 @@ export async function runScreenshotScenario(
               });
               await firstWindow.locator('#__an_overlay').evaluate((overlay) => {
                 const updateBadges = () => {
+                  // 1-based comment indices of frames flagged {noId:true}; their badges stay hidden
+                  const hidden: number[] = (window as any).__kvdHiddenBadges || [];
                   for (const badge of overlay.querySelectorAll('g > text')) {
-                    let number = Number(badge.textContent);
+                    const number = Number(badge.textContent);
                     if (!Number.isInteger(number) || number < 1) continue;
+                    if (hidden.includes(number)) {
+                      (badge.parentElement as unknown as SVGElement).style.setProperty('display', 'none', 'important');
+                      badge.textContent = '';
+                      continue;
+                    }
+                    // Letters count only visible badges, so hidden ones do not shift the labels
+                    let visible = number - hidden.filter((value) => value < number).length;
                     let label = '';
-                    while (number > 0) {
-                      number--;
-                      label = String.fromCharCode(65 + number % 26) + label;
-                      number = Math.floor(number / 26);
+                    while (visible > 0) {
+                      visible--;
+                      label = String.fromCharCode(65 + visible % 26) + label;
+                      visible = Math.floor(visible / 26);
                     }
                     badge.textContent = label;
                   }
@@ -686,33 +709,15 @@ export async function runScreenshotScenario(
               ` });
               annotationReady = true;
             }
-            const boxes = await Promise.all(frames.map(async ({ target, card: useCard, padding }) => {
+            const boxes = await Promise.all(frames.map(async ({ target, padding }) => {
               await expect(target).toBeVisible();
-              const card = await target.evaluateHandle((element, useCard) => {
-                if (!useCard) return element;
-                let current: Element | null = element;
-                while (current) {
-                  if (current.classList.contains('kl-card')) return current;
-                  if (current.parentElement) {
-                    current = current.parentElement;
-                  } else {
-                    const root = current.getRootNode();
-                    current = root instanceof ShadowRoot ? root.host : null;
-                  }
-                }
-                return element;
-              }, useCard);
-              try {
-                const box = await card.asElement()!.boundingBox();
-                if (!box || box.width <= 0 || box.height <= 0) throw new Error('Annotation target has no visible area');
-                return {
-                  x: box.x - padding.left, y: box.y - padding.top,
-                  width: box.width + padding.left + padding.right,
-                  height: box.height + padding.top + padding.bottom,
-                };
-              } finally {
-                await card.dispose();
-              }
+              const box = await target.boundingBox();
+              if (!box || box.width <= 0 || box.height <= 0) throw new Error('Annotation target has no visible area');
+              return {
+                x: box.x - padding.left, y: box.y - padding.top,
+                width: box.width + padding.left + padding.right,
+                height: box.height + padding.top + padding.bottom,
+              };
             }));
             const payload = await firstWindow.evaluate(({ targets, color }) => {
               const body = document.body.getBoundingClientRect();
@@ -729,30 +734,15 @@ export async function runScreenshotScenario(
               };
             }, { targets: boxes, color: ANNOTATION_COLOR });
             const chooserPromise = firstWindow.waitForEvent('filechooser');
+            await firstWindow.evaluate((hidden) => { (window as any).__kvdHiddenBadges = hidden; },
+              frames.flatMap((frame, index) => (frame.noId ? [index + 1] : [])));
             await firstWindow.evaluate(() => (window as any).Annotate.import());
             const chooser = await chooserPromise;
             await chooser.setFiles({ name: 'annotations.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(payload)) });
             await expect(firstWindow.locator('#__an_overlay rect.an-hit')).toHaveCount(frames.length);
             const badges = firstWindow.locator('#__an_overlay g > text');
             await expect(badges).toHaveCount(frames.length);
-            let visibleIndex = 0;
-            for (let index = 0; index < frames.length; index++) {
-              const badge = badges.nth(index);
-              if (frames[index].noId) {
-                await badge.locator('..').evaluate((element) => (element as SVGElement).style.setProperty('display', 'none', 'important'));
-                await expect(badge).toBeHidden();
-              } else {
-                let number = ++visibleIndex;
-                let label = '';
-                while (number > 0) {
-                  number--;
-                  label = String.fromCharCode(65 + number % 26) + label;
-                  number = Math.floor(number / 26);
-                }
-                await badge.evaluate((element, text) => { element.textContent = text; }, label);
-                await expect(badge).toHaveText(label);
-              }
-            }
+            await expect(badges.filter({ hasText: /^\d+$/ })).toHaveCount(0);
           }
           if (annotations.length) {
             const items = await Promise.all(annotations.map(async ({ target, text }) => {

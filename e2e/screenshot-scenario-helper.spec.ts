@@ -101,15 +101,16 @@ test('Require quoted annotation text', () => {
 });
 
 test('Parse frame tag occurrences', () => {
-  for (const command of ['frame app-axis', 'frame app-axis 2', 'frame app-axis 2 card',
+  for (const command of ['frame app-axis', 'frame app-axis 2',
     'frame #axis', 'frame .axis', 'frame div .axis',
-    'frame .cdk-overlay-pane noId {padding: 10px 10px 10px 10px}',
-    'frame app-axis 2 card {padding: 1px 2px 3px} noId',
+    'frame .cdk-overlay-pane {noId:true, padding: 10px 10px 10px 10px}',
+    'frame app-axis 2 {padding: 1px 2px 3px, noId: false}', 'frame app-axis 2 {noId:true} ',
     'frame .axis {padding: 1.5px 2px;}', 'frame .axis {padding: 0px}']) {
     expect(parseScreenshotScenario(command)).toHaveLength(1);
   }
   for (const command of ['frame app-axis 0', 'frame app-axis -1', 'frame app-axis 1.5',
-    'frame app-axis 9007199254740992', 'frame .axis noId noId',
+    'frame app-axis 9007199254740992', 'frame .axis noId', 'frame .axis {noId:yes}',
+    'frame .axis {noId:true, noId:false}', 'frame .axis {padding: 1px, padding: 2px}',
     'frame .axis {padding: -1px}', 'frame .axis {padding: 10}',
     'frame .axis {padding: 1px 2px 3px 4px 5px}',
     'frame .axis {padding: 10px', 'frame .axis {margin: 10px}',
@@ -151,9 +152,9 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
   };
   try {
     await fs.writeFile(scenario, [
-      'frame .scenario-frame-test noId {padding: 10px 20px 30px 40px}',
+      'frame .scenario-frame-test {noId:true, padding: 10px 20px 30px 40px}',
       'frame .scenario-frame-test 2',
-      'frame .scenario-frame-test 3 noId {padding: 5px}',
+      'frame .scenario-frame-test 3 {noId:true, padding: 5px}',
       'frame .scenario-frame-test 4 {padding: 4px 8px}',
       'frame #scenario-frame-duplicate',
       'screenshot "frames.png"',

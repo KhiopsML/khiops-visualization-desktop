@@ -6,7 +6,7 @@ fileOpen e2e/scenarios/src/Covisualization/IV-AdultComplete.khcj
 setVisibility isCompositionChecked 1 false
 setVisibility isCompositionChecked 2 false
 
-frame #graph-header-tools noId
+frame #graph-header-tools {noId:true}
 shotElt .variable-graph-details-comp "images-khiops-guides/covisualization/DistributionZoom.png" {padding: 10px 10px 10px 10px}
 
 # unfod hierarchy

@@ -29,7 +29,7 @@ annotation #header-tools-comp-copy-paste "Copy data\nCopy image"
 screenshot "images-khiops-guides/covisualization/Screenshot.png"
 
 clickElt .mat-badge-accent
-frame .cdk-overlay-pane noId {padding: 10px 10px 0px 10px}
+frame .cdk-overlay-pane {noId:true, padding: 10px 10px 0px 10px}
 screenshot "images-khiops-guides/covisualization/FilterColumn.png.png"
 unfocus
 
@@ -57,6 +57,6 @@ shotElt .axis-comp  "images-khiops-guides/covisualization/CurrentClusterView.png
 clickElt .edit-button 3
 input .tree-leaf-text-input "NewName"
 clickElt .valid-rename
-frame .tree-leaf-text 3 noId {padding: 10px 10px 10px 30px}
+frame .tree-leaf-text 3 {noId:true, padding: 10px 10px 10px 30px}
 shotElt .hierarchy-details-comp "images-khiops-guides/covisualization/RenameCluster.png"
 

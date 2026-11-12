@@ -73,13 +73,12 @@ takes an element ID prefixed with `#`, a class prefixed with `.`, or a Playwrigh
 CSS selector. By default, `frame` selects the first visible match, including
 when multiple elements share the same ID. Add a 1-based occurrence number to
 select another visible match, for example `frame app-axis 2`. The command queues a rectangle around the
-selected element. Append `card` (for example, `frame #variable-graph-details-comp card`)
-to frame the nearest `.kl-card` ancestor, including the element itself. If no card exists,
-the selected element is used. Append `noId` to hide the orange letter badge, and
+selected element. Add `{noId:true}` to hide the orange letter badge, and
 `{padding: 10px 10px 10px 10px}` to expand the frame by the specified top, right,
-bottom, and left padding. Padding accepts one to four non-negative pixel values,
+bottom, and left padding. Options are comma-separated inside the braces, for example
+`{noId:true, padding: 10px 10px 10px 10px}`. Padding accepts one to four non-negative pixel values,
 using CSS shorthand rules. For example:
-`frame .cdk-overlay-pane noId {padding: 10px 10px 10px 10px}`.
+`frame .cdk-overlay-pane {noId:true, padding: 10px 10px 10px 10px}`.
 Frames without a badge do not consume a letter.
 `input .tree-leaf-text-input "NewName"` fills the text input inside the first visible
 element matching the ID or class (or the element itself, if it is an input). The text must be quoted;
