@@ -34,6 +34,27 @@ test('Parse element screenshot paths', () => {
   ]);
 });
 
+test('Parse element screenshot sizes', () => {
+  const commands = parseScreenshotScenario(
+    'shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" 600x200\nshotElt .chart "plot.png"',
+  );
+  expect(commands.map((command) => command.argument)).toEqual([
+    '#header-right images-khiops-guides/covisualization/UnfoldHierarchy.png 600x200',
+    '.chart plot.png',
+  ]);
+  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" 0x200')).toThrow(/Line 1/);
+  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" 600')).toThrow(/Line 1/);
+});
+
+test('Parse chained resizeSplit selectors', () => {
+  const commands = parseScreenshotScenario('resizeSplit .axis-comp > .as-horizontal 100 0\nresizeSplit .axis-comp>.as-horizontal 60 40');
+  expect(commands.map((command) => command.argument)).toEqual([
+    '.axis-comp>.as-horizontal 100 0',
+    '.axis-comp>.as-horizontal 60 40',
+  ]);
+  expect(() => parseScreenshotScenario('resizeSplit axis-comp>.as-horizontal 100 0')).toThrow(/Line 1/);
+});
+
 test('Require prefixes for ID references', () => {
   const commands = [
     ['annotation', 'target "text"', '#target "text"'],

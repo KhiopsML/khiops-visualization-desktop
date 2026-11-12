@@ -48,7 +48,9 @@ removed. When one area remains, it fills the split.
 `shotElt #header-tools-comp "images/Top Right Buttons.png"` captures the unique visible
 element with that ID to the relative PNG path in the screenshot output directory.
 `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
-captures the first visible element with that class. As with `screenshot`, directories
+captures the first visible element with that class. An optional `WxH` size after the
+path, such as `shotElt #header-right "UnfoldHierarchy.png" 600x200`, captures a region of exactly
+that size starting at the element's top-left corner instead of the element's bounds. As with `screenshot`, directories
 are created as needed and unquoted filenames without spaces are supported. Queued frames and annotations
 are applied to the capture and cleared, as with `screenshot`; only the portion
 within the captured element is visible.
@@ -58,8 +60,11 @@ within the captured element is visible.
 `refreshDom` resizes the window briefly and restores its original size.
 `unfocus` clicks the top-left corner of the window to remove focus from the current element.
 `wait 500` pauses the scenario for 500 milliseconds.
-`resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a vertical split;
-the percentages must total 100.
+`resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
+`resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
+`resizeSplit .as-horizontal 100 0` targets the first visible split with that class.
+Selectors can be chained with `>`, for example `resizeSplit .axis-comp>.as-horizontal 100 0`.
+The split may be vertical or horizontal; the percentages must total 100.
 `frame`
 takes an element ID prefixed with `#`, a class prefixed with `.`, or a Playwright
 CSS selector. By default, `frame` selects the first visible match, including

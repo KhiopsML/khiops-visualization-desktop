@@ -47,6 +47,33 @@ function parseScreenshotFilename(argument: string, line: number, command: string
 
 type FramePadding = { top: number; right: number; bottom: number; left: number };
 
+// Converts "#id" or ".class" segments, chained with ">", into a CSS selector.
+function toCssSelector(selector: string): string {
+  return selector.split('>')
+    .map((part) => part.startsWith('.') ? `[class~=${JSON.stringify(part.slice(1))}]` : `[id=${JSON.stringify(part.slice(1))}]`)
+    .join(' > ');
+}
+
+// Chromium screenshot clips use zoomed coordinates, unlike Playwright's element bounds.
+async function captureCssRect(page: Page, rect: { x: number; y: number; width: number; height: number }, zoomFactor: number): Promise<Buffer> {
+  const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+  const x = Math.floor((rect.x + scroll.x) * zoomFactor);
+  const y = Math.floor((rect.y + scroll.y) * zoomFactor);
+  const clip = {
+    x, y,
+    width: Math.ceil((rect.x + scroll.x + rect.width) * zoomFactor) - x,
+    height: Math.ceil((rect.y + scroll.y + rect.height) * zoomFactor) - y,
+    scale: 1,
+  };
+  const session = await page.context().newCDPSession(page);
+  try {
+    const image = await session.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true });
+    return Buffer.from(image.data, 'base64');
+  } finally {
+    await session.detach();
+  }
+}
+
 function parseFrameArgument(argument: string, line: number): {
   selector: string; card: boolean; noId: boolean; padding: FramePadding; occurrence?: number;
 } {
@@ -149,11 +176,15 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       throw new Error(`Line ${index + 1}: ${name} requires an ID prefixed with # or a class prefixed with .`);
     }
     if (name === 'shotElt') {
-      const element = /^([.#][\w-]+)\s+(.+)$/.exec(argument);
+      const element = /^([.#][\w-]+)\s+(.+?)(?:\s+(\d+)x(\d+))?$/.exec(argument);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG path`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG path, optionally followed by WxH`);
       }
-      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}`;
+      if (element[3] !== undefined && (Number(element[3]) === 0 || Number(element[4]) === 0)) {
+        throw new Error(`Line ${index + 1}: shotElt size must be greater than zero`);
+      }
+      const size = element[3] !== undefined ? ` ${element[3]}x${element[4]}` : '';
+      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}${size}`;
     }
     if (name === 'screenshot' && argument) {
       argument = parseScreenshotFilename(argument, index + 1, name);
@@ -162,10 +193,11 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       throw new Error(`Line ${index + 1}: clickChart requires a chart ID prefixed with # and a zero-based index`);
     }
     if (name === 'resizeSplit') {
-      const match = /^(#[\w-]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/.exec(argument);
+      const match = /^((?:[.#][\w-]+)(?:\s*>\s*[.#][\w-]+)*)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/.exec(argument);
       if (!match || Math.abs(Number(match[2]) + Number(match[3]) - 100) > 1e-8) {
-        throw new Error(`Line ${index + 1}: resizeSplit requires a split ID prefixed with # and two percentages totaling 100`);
+        throw new Error(`Line ${index + 1}: resizeSplit requires a split selector (#id or .class, optionally chained with >) and two percentages totaling 100`);
       }
+      argument = `${match[1].replace(/\s+/g, '')} ${match[2]} ${match[3]}`;
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1 });
   }
@@ -269,33 +301,90 @@ export async function runScreenshotScenario(
           break;
         }
         case 'resizeSplit': {
-          const [splitId, firstPercentage] = command.argument.split(/\s+/);
-          const split = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(`[id=${JSON.stringify(splitId.replace(/^#/, ''))}]`).filter({ visible: true });
-          await expect(split).toHaveCount(1, { timeout: 30000 });
-          await expect(split).toHaveClass(/\bas-vertical\b/);
+          const [splitSelector, firstPercentage] = command.argument.split(/\s+/);
+          const isClass = splitSelector.split('>').pop()!.startsWith('.');
+          const matches = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(toCssSelector(splitSelector)).filter({ visible: true });
+          if (!isClass) await expect(matches).toHaveCount(1, { timeout: 30000 });
+          const split = matches.first();
+          await expect(split).toBeVisible({ timeout: 30000 });
+          const vertical = await split.evaluate((element) => element.classList.contains('as-vertical'));
+          const horizontal = await split.evaluate((element) => element.classList.contains('as-horizontal'));
+          if (!vertical && !horizontal) throw new Error(`resizeSplit ${splitSelector} is not an as-split with a direction`);
           const areas = split.locator(':scope > as-split-area');
           const gutter = split.locator(':scope > .as-split-gutter');
           await expect(areas).toHaveCount(2);
-          await expect(gutter).toBeVisible();
+          // Drag along the split's own axis: y for vertical splits, x for horizontal splits.
+          const axisSize = vertical ? 'height' : 'width';
+          const readFirstPercentage = () => areas.evaluateAll((elements, size) => {
+            const sizes = elements.map((element) => element.getBoundingClientRect()[size as 'width' | 'height']);
+            return sizes[0] + sizes[1] > 0 ? sizes[0] / (sizes[0] + sizes[1]) * 100 : NaN;
+          }, axisSize);
+          const requested = Number(firstPercentage);
+          const isReached = async () => Math.abs((await readFirstPercentage()) - requested) < 1;
+          const waitForRatio = async (timeout: number) => {
+            const deadline = Date.now() + timeout;
+            while (Date.now() < deadline) {
+              if (await isReached()) return true;
+              await firstWindow.waitForTimeout(100);
+            }
+            return isReached();
+          };
+          if (await isReached()) break;
+          // An open Angular CDK menu or dialog leaves a backdrop that blocks the pointer: close it first.
+          const openBackdrops = firstWindow.locator('.cdk-overlay-backdrop-showing');
+          if (await openBackdrops.count()) {
+            await firstWindow.keyboard.press('Escape');
+            await expect(openBackdrops).toHaveCount(0, { timeout: 5000 });
+          }
+          await expect(gutter).toBeAttached();
           const splitBox = await split.boundingBox();
           const gutterBox = await gutter.boundingBox();
-          if (!splitBox || !gutterBox || splitBox.height <= gutterBox.height) throw new Error('Split has no visible height');
-          const targetY = splitBox.y + (splitBox.height - gutterBox.height) * Number(firstPercentage) / 100 + gutterBox.height / 2;
-          const gutterX = gutterBox.x + gutterBox.width / 2;
-          await firstWindow.mouse.move(gutterX, gutterBox.y + gutterBox.height / 2);
+          if (!splitBox || !gutterBox) throw new Error('Split has no visible area');
+          if (splitBox[axisSize] <= gutterBox[axisSize]) throw new Error('Split has no visible size on its axis');
+          const gutterCenterX = gutterBox.x + gutterBox.width / 2;
+          const gutterCenterY = gutterBox.y + gutterBox.height / 2;
+          // Diagnostic: which element receives pointer events at the gutter centre.
+          const gutterHit = await firstWindow.evaluate(([x, y]) => {
+            // elementFromPoint stops at shadow hosts, so descend into their shadow roots.
+            let element: Element | null = document.elementFromPoint(x, y);
+            while (element?.shadowRoot) {
+              const inner: Element | null = element.shadowRoot.elementFromPoint(x, y);
+              if (!inner || inner === element) break;
+              element = inner;
+            }
+            if (!element) return 'none';
+            const classes = String(element.getAttribute('class') ?? '').trim().split(/\s+/).filter(Boolean).join('.');
+            return `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${classes ? `.${classes}` : ''}`;
+          }, [gutterCenterX, gutterCenterY] as [number, number]);
+          const targetOffset = (splitBox[axisSize] - gutterBox[axisSize]) * requested / 100 + gutterBox[axisSize] / 2;
+          const targetX = vertical ? gutterCenterX : splitBox.x + targetOffset;
+          const targetY = vertical ? splitBox.y + targetOffset : gutterCenterY;
+          // First try a real mouse drag.
+          await firstWindow.mouse.move(gutterCenterX, gutterCenterY);
           await firstWindow.mouse.down();
           try {
-            await firstWindow.mouse.move(gutterX, targetY, { steps: 10 });
+            await firstWindow.mouse.move(targetX, targetY, { steps: 10 });
           } finally {
             await firstWindow.mouse.up();
           }
-          await expect.poll(async () => {
-            const heights = await areas.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
-            return Math.abs(heights[0] / (heights[0] + heights[1]) * 100 - Number(firstPercentage));
-          }, { timeout: 30000, message: `Split ${splitId} could not reach the requested percentages` }).toBeLessThan(1);
+          // Fallback: dispatch the drag events directly, in case the mouse hit-test landed on another element.
+          if (!(await waitForRatio(3000))) {
+            await gutter.evaluate((element, { startX, startY, endX, endY }) => {
+              const fire = (target: EventTarget, type: string, x: number, y: number, buttons: number) =>
+                target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons }));
+              fire(element, 'mousedown', startX, startY, 1);
+              fire(document, 'mousemove', endX, endY, 1);
+              fire(document, 'mouseup', endX, endY, 0);
+            }, { startX: gutterCenterX, startY: gutterCenterY, endX: targetX, endY: targetY });
+          }
+          if (!(await waitForRatio(30000))) {
+            const current = await readFirstPercentage();
+            throw new Error(`Split ${splitSelector} could not reach ${requested}/${100 - requested}: current first area is ${current.toFixed(1)}% (pointer hit-test at gutter: ${gutterHit})`);
+          }
           break;
         }
+
         case 'clickRow': {
           const match = /^(\S+)(?:\s+(.+))?$/.exec(command.argument)!;
           const activeView = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible');
@@ -472,8 +561,10 @@ export async function runScreenshotScenario(
         case 'screenshot': {
           let target: Locator | undefined;
           let filename: string;
+          let size: { width: number; height: number } | undefined;
           if (command.name === 'shotElt') {
-            const [, elementSelector, elementFilename] = /^(\S+)\s+(.+)$/.exec(command.argument)!;
+            const [, elementSelector, elementFilename, sizeWidth, sizeHeight] = /^(\S+)\s+(.+?)(?:\s+(\d+)x(\d+))?$/.exec(command.argument)!;
+            size = sizeWidth !== undefined ? { width: Number(sizeWidth), height: Number(sizeHeight) } : undefined;
             const isClass = elementSelector.startsWith('.');
             const value = elementSelector.replace(/^[.#]/, '');
             const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
@@ -518,7 +609,7 @@ export async function runScreenshotScenario(
                 updateBadges();
               });
               await firstWindow.addStyleTag({ content: `
-                #__an_root, #__an_launch, #__an_toasts, #__an_plus { display: none !important; }
+                #__an_host > :not(#__an_overlay):not(#__an_pins) { display: none !important; }
                 #__an_overlay rect.an-hit { fill: ${ANNOTATION_OVERLAY_COLOR}; }
               ` });
               annotationReady = true;
@@ -621,27 +712,17 @@ export async function runScreenshotScenario(
           let screenshot: Buffer;
           if (target) {
             const zoomFactor = await browserWindow.evaluate((window: any) => window.webContents.getZoomFactor() as number);
-            screenshot = await target.screenshot({ animations: 'disabled' });
-            if (zoomFactor !== 1) {
-              const box = await target.boundingBox();
-              if (!box || box.width <= 0 || box.height <= 0) throw new Error('Screenshot target has no visible area');
-              const scroll = await firstWindow.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
-              const x = Math.floor((box.x + scroll.x) * zoomFactor);
-              const y = Math.floor((box.y + scroll.y) * zoomFactor);
-              const clip = {
-                x, y,
-                width: Math.ceil((box.x + scroll.x + box.width) * zoomFactor) - x,
-                height: Math.ceil((box.y + scroll.y + box.height) * zoomFactor) - y,
-                scale: 1,
-              };
-              // Chromium screenshot clips use zoomed coordinates, unlike Playwright's element bounds.
-              const session = await firstWindow.context().newCDPSession(firstWindow);
-              try {
-                const image = await session.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true });
-                screenshot = Buffer.from(image.data, 'base64');
-              } finally {
-                await session.detach();
-              }
+            const box = await target.boundingBox();
+            if (!box || box.width <= 0 || box.height <= 0) throw new Error('Screenshot target has no visible area');
+            if (size) {
+              const rect = { x: box.x, y: box.y, width: size.width, height: size.height };
+              // Playwright clips are exact in CSS pixels at zoom 1; zoomed windows use the CDP clip path.
+              screenshot = zoomFactor === 1
+                ? await firstWindow.screenshot({ animations: 'disabled', clip: rect })
+                : await captureCssRect(firstWindow, rect, zoomFactor);
+            } else {
+              screenshot = await target.screenshot({ animations: 'disabled' });
+              if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor);
             }
           } else {
             const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
