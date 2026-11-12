@@ -17,6 +17,7 @@ export type ScreenshotCommand = {
 };
 
 async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<void> {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   const temporaryPath = `${filePath}.${randomUUID()}.tmp`;
   await fs.writeFile(temporaryPath, screenshot, { flag: 'wx' });
   try {
@@ -33,6 +34,15 @@ async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<vo
   } finally {
     await fs.rm(temporaryPath, { force: true });
   }
+}
+
+function parseScreenshotFilename(argument: string, line: number, command: string): string {
+  const quoted = /^"((?:[\w. -]+[\\/])*[\w. -]+\.png)"$/i.exec(argument);
+  if (quoted && quoted[1].split(/[\\/]/).slice(0, -1).every((part) => /[\w-]$/.test(part))) {
+    return quoted[1];
+  }
+  if (/^[\w.-]+\.png$/i.test(argument)) return argument;
+  throw new Error(`Line ${line}: ${command} requires a quoted relative PNG path without parent directories`);
 }
 
 export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
@@ -65,16 +75,15 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     if ((name === 'hideElt' || name === 'removeElt') && !/^[.#]?[\w-]+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: ${name} requires an ID or a class prefixed with .`);
     }
-    if (name === 'shotElt' && !/^[.#]?[\w-]+\s+[\w.-]+\.png$/i.test(argument)) {
-      throw new Error(`Line ${index + 1}: shotElt requires an ID or a class prefixed with . and a PNG filename without directories`);
+    if (name === 'shotElt') {
+      const element = /^([.#]?[\w-]+)\s+(.+)$/.exec(argument);
+      if (!element) {
+        throw new Error(`Line ${index + 1}: shotElt requires an ID or a class prefixed with . and a PNG path`);
+      }
+      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}`;
     }
     if (name === 'screenshot' && argument) {
-      const quoted = /^"([\w. -]+\.png)"$/i.exec(argument);
-      if (quoted) {
-        argument = quoted[1];
-      } else if (!/^[\w.-]+\.png$/i.test(argument)) {
-        throw new Error(`Line ${index + 1}: screenshot requires a quoted PNG filename without directories`);
-      }
+      argument = parseScreenshotFilename(argument, index + 1, name);
     }
     if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
@@ -319,7 +328,7 @@ export async function runScreenshotScenario(
           let target: Locator | undefined;
           let filename: string;
           if (command.name === 'shotElt') {
-            const [elementSelector, elementFilename] = command.argument.split(/\s+/);
+            const [, elementSelector, elementFilename] = /^(\S+)\s+(.+)$/.exec(command.argument)!;
             const isClass = elementSelector.startsWith('.');
             const value = elementSelector.replace(/^[.#]/, '');
             const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
@@ -328,12 +337,9 @@ export async function runScreenshotScenario(
             target = isClass ? targets.first() : targets;
             await expect(target).toBeVisible({ timeout: 30000 });
             await target.scrollIntoViewIfNeeded();
-            filename = elementFilename;
+            filename = elementFilename.replace(/[\\/]/g, path.sep);
           } else {
-            filename = command.argument || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
-            if (!/^[\w. -]+\.png$/i.test(filename)) {
-              throw new Error('Screenshot name must be a PNG filename without directories');
-            }
+            filename = command.argument.replace(/[\\/]/g, path.sep) || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
             await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
           }
           if (frames.length) {

@@ -35,10 +35,11 @@ with that ID from the DOM. `removeElt .class-elt` removes all elements with that
 class, including hidden elements. An optional `#` prefix is supported for IDs.
 If the element is the only child of an Angular Split area, the area is also
 removed. When one area remains, it fills the split.
-`shotElt header-tools-comp TopRightButtons.png` captures the unique visible element
-with that ID to the named PNG file in the screenshot output directory. An optional
-`#` prefix is supported. `shotElt .ag-grid-comp-header-tools TopRightPanelAButtons.png`
-captures the first visible element with that class. Queued frames and annotations
+`shotElt header-tools-comp "images/Top Right Buttons.png"` captures the unique visible
+element with that ID to the relative PNG path in the screenshot output directory.
+An optional `#` prefix is supported. `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
+captures the first visible element with that class. As with `screenshot`, directories
+are created as needed and unquoted filenames without spaces are supported. Queued frames and annotations
 are applied to the capture and cleared, as with `screenshot`; only the portion
 within the captured element is visible.
 `clickChart distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
@@ -52,9 +53,10 @@ the percentages must total 100.
 takes an element ID without `#`, or a Playwright CSS selector, and queues a
 rectangle around that element. Append `card` (for example, `frame variable-graph-details-comp card`)
 to frame the nearest `.kl-card` ancestor, including the element itself. If no card exists,
-the selected element is used. `screenshot "Visualization Adult Evaluation.png"`
-captures a PNG with the given filename; quotes allow spaces. Without a filename,
-files are numbered. Unquoted filenames without spaces are also supported.
+the selected element is used. `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
+captures a PNG under the screenshot output directory, creating subdirectories as
+needed. Paths must be relative and cannot contain parent-directory segments.
+Without a filename, files are numbered. Unquoted filenames without spaces are also supported.
 Annotations are cleared after each screenshot.
 Frame targets must be uniquely visible in the active visualization.
 
