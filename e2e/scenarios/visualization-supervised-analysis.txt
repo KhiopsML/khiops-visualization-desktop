@@ -4,7 +4,7 @@ zoomOut
 fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
 
 openTab Preparation
-screenshot ClassificationPreparation.png
+screenshot "ClassificationPreparation.png"
 
 openTab Tree preparation
 clickElt .kl-icon-cell-comp-btn
@@ -15,7 +15,7 @@ frame tree-preparation-select
 frame tree-details-comp
 frame tree-leaf-details-comp
 frame tree-leaf-rules-comp
-screenshot SupervisedTree.png
+screenshot "SupervisedTree.png"
 # ferme la dialog
 clickElt tree-analysis-close-button
 wait 500
@@ -26,7 +26,7 @@ frame preparation-2d-variables-list
 frame cooccurrence-matrix-comp-container
 frame preparation-2d-target-distribution-graph
 frame app-var-details-preparation-2d-comp-variables-lists
-screenshot Supervised2D.png
+screenshot "Supervised2D.png"
 
 openTab Modeling
 clickRow modeling-variables-list occupation
@@ -34,15 +34,15 @@ frame modeling-view-informations-split
 frame modeling-variables-list
 frame variable-graph-details-comp
 frame preparation-current-interval
-screenshot SupervisedModeling.png
+screenshot "SupervisedModeling.png"
 
 openTab Evaluation
 frame evaluation-types-summary
 frame evaluation-predictor-evaluations
 frame evaluation-lift-curves
 frame evaluation-confusion-matrix
-screenshot SupervisedEvaluation.png
+screenshot "SupervisedEvaluation.png"
 
 openTab Project infos
-screenshot SupervisedProject.png
+screenshot "SupervisedProject.png"
 

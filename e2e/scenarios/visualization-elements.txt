@@ -6,7 +6,7 @@ fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
 zoomIn
 
 openTab Preparation
-screenshot Opening.png
+screenshot "Opening.png"
 
 shotElt header-tools-comp TopRightButtons.png
 shotElt .ag-grid-comp-header-tools TopRightPanelAButtons.png

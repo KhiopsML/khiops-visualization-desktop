@@ -7,7 +7,7 @@ annotation .informations-main-values ceci :\nest une annotation
 frame preparation-variables-list
 frame variable-graph-details-comp
 frame preparation-current-interval
-screenshot preparation.png
+screenshot "preparation.png"
 
 openTab Tree preparation
-screenshot tree-preparation.png
+screenshot "tree-preparation.png"

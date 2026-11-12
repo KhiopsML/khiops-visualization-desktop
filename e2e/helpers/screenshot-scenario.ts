@@ -43,7 +43,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
 
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
-    const argument = (match![2] || '').trim();
+    let argument = (match![2] || '').trim();
     if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot', 'shotElt'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
@@ -67,6 +67,14 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'shotElt' && !/^[.#]?[\w-]+\s+[\w.-]+\.png$/i.test(argument)) {
       throw new Error(`Line ${index + 1}: shotElt requires an ID or a class prefixed with . and a PNG filename without directories`);
+    }
+    if (name === 'screenshot' && argument) {
+      const quoted = /^"([\w. -]+\.png)"$/i.exec(argument);
+      if (quoted) {
+        argument = quoted[1];
+      } else if (!/^[\w.-]+\.png$/i.test(argument)) {
+        throw new Error(`Line ${index + 1}: screenshot requires a quoted PNG filename without directories`);
+      }
     }
     if (name === 'clickChart' && !/^#?[\w-]+\s+\d+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickChart requires a chart ID and a zero-based index`);
@@ -323,7 +331,7 @@ export async function runScreenshotScenario(
             filename = elementFilename;
           } else {
             filename = command.argument || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
-            if (!/^[\w.-]+\.png$/i.test(filename) || filename === '..') {
+            if (!/^[\w. -]+\.png$/i.test(filename)) {
               throw new Error('Screenshot name must be a PNG filename without directories');
             }
             await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });

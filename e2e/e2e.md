@@ -52,8 +52,10 @@ the percentages must total 100.
 takes an element ID without `#`, or a Playwright CSS selector, and queues a
 rectangle around that element. Append `card` (for example, `frame variable-graph-details-comp card`)
 to frame the nearest `.kl-card` ancestor, including the element itself. If no card exists,
-the selected element is used. `screenshot` optionally takes a PNG filename;
-otherwise files are numbered. Annotations are cleared after each screenshot.
+the selected element is used. `screenshot "Visualization Adult Evaluation.png"`
+captures a PNG with the given filename; quotes allow spaces. Without a filename,
+files are numbered. Unquoted filenames without spaces are also supported.
+Annotations are cleared after each screenshot.
 Frame targets must be uniquely visible in the active visualization.
 
 ## yarn playwright test

@@ -12,7 +12,7 @@ frame preparation-variables-list
 frame variable-graph-details-comp
 frame preparation-description-block-derivation
 frame preparation-current-interval
-screenshot UnsupervisedFivePanels.png
+screenshot "UnsupervisedFivePanels.png"
 
 clickRow preparation-variables-list R02
 # wait for histogram rendering
@@ -22,14 +22,14 @@ frame preparation-variables-list
 frame variable-graph-details-comp
 frame preparation-description-block-derivation
 frame preparation-current-interval
-screenshot UnsupervisedFivePanelsNumerical.png
+screenshot "UnsupervisedFivePanelsNumerical.png"
 
 openTab Preparation 2D
 frame preparation-view-2d-informations-split
 frame preparation-2d-variables-list
 frame cooccurrence-matrix-comp-container
 frame app-var-details-preparation-2d-comp-variables-lists
-screenshot Unsupervised-2D.png
+screenshot "Unsupervised-2D.png"
 
 openTab Project infos
-screenshot ProjectInfos.png
+screenshot "ProjectInfos.png"
