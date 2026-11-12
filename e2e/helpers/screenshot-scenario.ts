@@ -111,10 +111,25 @@ export async function runScreenshotScenario(
         case 'fileOpen': {
           const filePath = path.resolve(projectRoot, command.argument.replace(/[\\/]/g, path.sep));
           await fs.access(filePath);
+          const tabTitles = await firstWindow.locator('.tab[title]').evaluateAll((tabs) =>
+            tabs.map((tab) => tab.getAttribute('title') || ''),
+          );
+          const comparablePath = process.platform === 'win32' ? filePath.toLowerCase() : filePath;
+          const alreadyOpen = tabTitles.some((title) => {
+            const separator = title.indexOf('\n');
+            if (separator < 0) return false;
+            const tabPath = path.normalize(title.slice(separator + 1));
+            return (process.platform === 'win32' ? tabPath.toLowerCase() : tabPath) === comparablePath;
+          });
+          const toast = firstWindow.locator('.mat-mdc-snack-bar-container:visible').first();
+          await toast.waitFor({ state: 'hidden', timeout: 15000 });
           await mockOpenDialogAbsolute(app, filePath);
           await clickMenuItem(app, 'File', 'Open');
-          await expect(firstWindow.locator('.tab.active')).toContainText(path.basename(filePath), { timeout: 30000 });
+          if (!alreadyOpen) await toast.waitFor({ state: 'visible', timeout: 30000 });
+          const filename = path.basename(filePath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          await expect(firstWindow.locator('.tab.active')).toHaveAttribute('title', new RegExp(`^${filename}(?:\\r?\\n|$)`), { timeout: 30000 });
           await expect(firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')).toBeVisible({ timeout: 30000 });
+          await toast.waitFor({ state: 'hidden', timeout: 15000 });
           break;
         }
         case 'openTab': {
@@ -291,27 +306,28 @@ export async function runScreenshotScenario(
           annotations.push({ target, text: match[2].replace(/\\n/g, '\n') });
           break;
         }
-        case 'shotElt': {
-          const [elementSelector, filename] = command.argument.split(/\s+/);
-          const isClass = elementSelector.startsWith('.');
-          const value = elementSelector.replace(/^[.#]/, '');
-          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
-          const targets = firstWindow.locator(selector).filter({ visible: true });
-          if (!isClass) await expect(targets).toHaveCount(1, { timeout: 30000 });
-          const target = isClass ? targets.first() : targets;
-          await expect(target).toBeVisible({ timeout: 30000 });
-          const screenshot = await target.screenshot({ animations: 'disabled' });
-          await writeScreenshot(path.join(outputDirectory, filename), screenshot);
-          screenshotCount++;
-          break;
-        }
+        case 'shotElt':
         case 'screenshot': {
-          screenshotCount++;
-          const filename = command.argument || `screenshot-${String(screenshotCount).padStart(3, '0')}.png`;
-          if (!/^[\w.-]+\.png$/i.test(filename) || filename === '..') {
-            throw new Error('Screenshot name must be a PNG filename without directories');
+          let target: Locator | undefined;
+          let filename: string;
+          if (command.name === 'shotElt') {
+            const [elementSelector, elementFilename] = command.argument.split(/\s+/);
+            const isClass = elementSelector.startsWith('.');
+            const value = elementSelector.replace(/^[.#]/, '');
+            const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+            const targets = firstWindow.locator(selector).filter({ visible: true });
+            if (!isClass) await expect(targets).toHaveCount(1, { timeout: 30000 });
+            target = isClass ? targets.first() : targets;
+            await expect(target).toBeVisible({ timeout: 30000 });
+            await target.scrollIntoViewIfNeeded();
+            filename = elementFilename;
+          } else {
+            filename = command.argument || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
+            if (!/^[\w.-]+\.png$/i.test(filename) || filename === '..') {
+              throw new Error('Screenshot name must be a PNG filename without directories');
+            }
+            await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
           }
-          await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
           if (frames.length) {
             if (!annotationReady) {
               const script = await fs.readFile(require.resolve('@reviewjs/annotate/annotate.js'), 'utf8');
@@ -420,9 +436,15 @@ export async function runScreenshotScenario(
               }
             }, { items, color: ANNOTATION_COLOR, fontSize: ANNOTATION_FONT_SIZE });
           }
-          const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
-          const screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height } });
+          let screenshot: Buffer;
+          if (target) {
+            screenshot = await target.screenshot({ animations: 'disabled' });
+          } else {
+            const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
+            screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height } });
+          }
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
+          screenshotCount++;
           if (annotationReady) await firstWindow.evaluate(() => (window as any).Annotate.clear());
           if (annotations.length) await firstWindow.locator('#__screenshot_annotations').evaluate((overlay) => overlay.remove());
           frames = [];

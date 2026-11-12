@@ -1,0 +1,38 @@
+### Visualization elements screenshots
+zoomOut
+
+fileOpen e2e/scenarios/src/DatasetsHistograms/AdultUnsupervised.khj
+
+zoomIn
+
+clickRow preparation-variables-list capital_loss
+
+clickElt change-scale-button
+clickElt scale-toggle-group-xLog-button 
+clickElt scale-toggle-group-yLog-button 
+clickElt change-scale-dialog-apply-btn
+clickElt graph-header-fullscreen-btn
+
+shotElt app-histogram DefaultCapitalLossHistogram.png
+
+clickElt .button-increase-hierarchy
+frame .app-histogram-slider
+shotElt app-histogram FinestCapitalLossHistogram.png
+
+clickElt .button-reduce-hierarchy
+clickElt .button-reduce-hierarchy
+clickElt .button-reduce-hierarchy
+clickElt .button-reduce-hierarchy
+
+frame .app-histogram-slider
+shotElt app-histogram CoarsestCapitalLossHistogram.png
+
+fileOpen e2e/scenarios/src/DatasetsHistograms/Cauchy_AnalysisResults.khj
+
+clickElt change-scale-button
+clickElt scale-toggle-group-xLog-button 
+clickElt scale-toggle-group-yLog-button 
+clickElt change-scale-dialog-apply-btn
+clickElt graph-header-fullscreen-btn
+
+shotElt app-histogram CauchyLogLog.png

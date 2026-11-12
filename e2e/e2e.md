@@ -19,7 +19,8 @@ repository beside the desktop repository for the default scenario's input file.
 
 Scenario commands are one per line. Blank lines and lines beginning with `#`
 are ignored. `fileOpen` takes an absolute path or a path relative to the
-desktop project root. `openTab` takes the exact visible tab name. `clickRow`
+desktop project root and waits for the load notification to disappear.
+`openTab` takes the exact visible tab name. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
 To scope the search to one table, include its ID: `clickRow preparation-variables-list R11`.
 `clickElt .kl-icon-cell-comp-btn` clicks the first visible element with that class;
@@ -36,7 +37,8 @@ removed. When one area remains, it fills the split.
 with that ID to the named PNG file in the screenshot output directory. An optional
 `#` prefix is supported. `shotElt .ag-grid-comp-header-tools TopRightPanelAButtons.png`
 captures the first visible element with that class. Queued frames and annotations
-remain for the next `screenshot`.
+are applied to the capture and cleared, as with `screenshot`; only the portion
+within the captured element is visible.
 `clickChart distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
 `zoomOut` decreases the window's zoom by one step, like View > Zoom Out.
 `zoomIn` increases the window's zoom by one step, like View > Zoom In.
