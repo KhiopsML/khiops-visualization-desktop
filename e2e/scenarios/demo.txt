@@ -2,7 +2,7 @@
 fileOpen ../visualization-component/src/assets/mocks/kv/demo-visualization.json
 
 openTab Preparation
-annotation .informations-main-values ceci :\nest une annotation
+annotation .informations-main-values "This is an annotation:\nwith two lines"
 # frame #preparation-view-informations-split
 frame #preparation-variables-list
 frame #variable-graph-details-comp

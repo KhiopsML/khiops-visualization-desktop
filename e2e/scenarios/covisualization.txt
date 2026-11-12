@@ -1,0 +1,58 @@
+### CoVisualization elements screenshots
+zoomOut
+
+fileOpen e2e/scenarios/src/Covisualization/1-Adult2varsEducationOccupation.khcj
+
+openTab Project infos
+screenshot "images-khiops-guides/covisualization/ProjetInfos.png"
+
+openTab Axis
+
+# open manage view dialog and disable distribution charts
+clickElt .button-manage-views
+clickElt .box-distribution
+clickElt .box-distribution 2
+clickElt #manage-views-save
+frame app-axis
+frame app-axis 2
+frame app-matrix-container
+screenshot "images-khiops-guides/covisualization/Axis.png"
+
+shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/ScreenshotButtons.png"
+
+clickElt .button-manage-views
+firstPlan .button-manage-views
+annotation .button-manage-views "Add or remove different view on each dimension"
+screenshot "images-khiops-guides/covisualization/AddRemoveView.png"
+clickElt #manage-views-save
+
+frame .matrix-container-comp-wrapper
+annotation #header-tools-comp-copy-paste "Copy data\nCopy image"
+screenshot "images-khiops-guides/covisualization/Screenshot.png"
+
+clickElt .mat-badge-accent
+frame .cdk-overlay-pane noId {padding: 10px 10px 0px 10px}
+screenshot "images-khiops-guides/covisualization/FilterColumn.png.png"
+unfocus
+
+# open manage view dialog and disable second axis
+# clickElt .button-manage-views
+# clickElt .mat-mdc-slide-toggle 2
+# clickElt #manage-views-save
+
+# edit selection name
+clickElt .edit-button 3
+input .tree-leaf-text-input "NewName"
+clickElt .valid-rename
+frame .tree-leaf-text 3 noId {padding: 10px 10px 10px 30px}
+shotElt .hierarchy-details-comp "images-khiops-guides/covisualization/RenameCluster.png"
+
+fileOpen e2e/scenarios/src/Covisualization/IV-AdultComplete.khcj
+
+clickElt .button-manage-views
+clickElt .box-composition
+clickElt .box-composition 2
+clickElt #manage-views-save
+
+frame #graph-header-tools noId
+shotElt .variable-graph-details-comp "images-khiops-guides/covisualization/DistributionZoom.png"

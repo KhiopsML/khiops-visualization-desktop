@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'input' | 'unfocus' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
 };
@@ -45,6 +45,64 @@ function parseScreenshotFilename(argument: string, line: number, command: string
   throw new Error(`Line ${line}: ${command} requires a quoted relative PNG path without parent directories`);
 }
 
+type FramePadding = { top: number; right: number; bottom: number; left: number };
+
+function parseFrameArgument(argument: string, line: number): {
+  selector: string; card: boolean; noId: boolean; padding: FramePadding; occurrence?: number;
+} {
+  let selector = argument;
+  let card = false;
+  let noId = false;
+  let padding: FramePadding | undefined;
+  let occurrence: number | undefined;
+  while (true) {
+    const paddingOption = /^(.*?)\s+\{([^{}]*)\}$/.exec(selector);
+    if (paddingOption) {
+      const declaration = /^\s*padding\s*:\s*(.*?)\s*;?\s*$/i.exec(paddingOption[2]);
+      const values = declaration?.[1].replace(/;$/, '').trim().split(/\s+/);
+      if (padding || !values || values.length < 1 || values.length > 4 ||
+          values.some((value) => !/^(?:\d+(?:\.\d+)?|\.\d+)px$/i.test(value) || !Number.isFinite(parseFloat(value)))) {
+        throw new Error(`Line ${line}: frame padding requires one to four non-negative pixel values`);
+      }
+      const numbers = values.map((value) => parseFloat(value));
+      padding = {
+        top: numbers[0], right: numbers[1] ?? numbers[0],
+        bottom: numbers[2] ?? numbers[0], left: numbers[3] ?? numbers[1] ?? numbers[0],
+      };
+      selector = paddingOption[1];
+      continue;
+    }
+    const suffix = /^(.*?)\s+(\S+)$/.exec(selector);
+    if (!suffix) break;
+    if (suffix[2] === 'card' || suffix[2] === 'noId') {
+      if (suffix[2] === 'card' ? card : noId) throw new Error(`Line ${line}: duplicate frame option ${suffix[2]}`);
+      if (suffix[2] === 'card') card = true;
+      else noId = true;
+    } else if (/^[+-]?\d/.test(suffix[2])) {
+      if (occurrence !== undefined || !/^[1-9]\d*$/.test(suffix[2]) || !Number.isSafeInteger(Number(suffix[2]))) {
+        throw new Error(`Line ${line}: frame occurrence must be a positive integer`);
+      }
+      occurrence = Number(suffix[2]);
+    } else {
+      break;
+    }
+    selector = suffix[1];
+  }
+  if (/\s+\{/.test(selector)) throw new Error(`Line ${line}: invalid frame padding`);
+  return { selector, card, noId, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
+}
+
+function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string } {
+  const annotation = /^(\S+)\s+"((?:[^"\\]|\\.)+)"$/.exec(argument);
+  if (!annotation || /^[\w-]+$/.test(annotation[1]) || !/\S/.test(annotation[2])) {
+    throw new Error(`Line ${line}: annotation requires a selector and quoted text; IDs must start with #`);
+  }
+  return {
+    selector: annotation[1],
+    text: annotation[2].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'),
+  };
+}
+
 export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
   const commands: ScreenshotCommand[] = [];
   for (const [index, rawLine] of source.split(/\r?\n/).entries()) {
@@ -54,31 +112,40 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     let argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit', 'wait', 'frame', 'annotation', 'screenshot', 'shotElt'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'input', 'unfocus', 'screenshot', 'shotElt'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
-    if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && !argument) {
+        if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
     }
-    if ((name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom') && argument) {
+        if ((name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus') && argument) {
       throw new Error(`Line ${index + 1}: ${name} does not take an argument`);
     }
     if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
     }
     if (name === 'annotation') {
-      const annotation = /^(\S+)\s+\S/.exec(argument);
-      if (!annotation || /^[\w-]+$/.test(annotation[1])) {
-        throw new Error(`Line ${index + 1}: annotation requires a selector and text; IDs must start with #`);
+      const { selector, text } = parseAnnotationArgument(argument, index + 1);
+      argument = `${selector} ${text}`;
+    }
+    if (name === 'input') {
+      const input = /^([.#][\w-]+)\s+"((?:[^"\\]|\\.)*)"$/.exec(argument);
+      if (!input) {
+        throw new Error(`Line ${index + 1}: input requires an ID prefixed with # or a class prefixed with . and quoted text`);
       }
+      argument = `${input[1]} ${input[2].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"')}`;
     }
-    if (name === 'frame' && /^[\w-]+$/.test(argument.replace(/\s+card$/, ''))) {
-      throw new Error(`Line ${index + 1}: frame IDs must start with #`);
-    }
+    if (name === 'frame') parseFrameArgument(argument, index + 1);
     if (name === 'clickRow' && /\s/.test(argument) && !/^#[\w-]+\s+\S/.test(argument)) {
       throw new Error(`Line ${index + 1}: clickRow table IDs must start with #`);
     }
-    if ((name === 'clickElt' || name === 'hideElt' || name === 'removeElt') && !/^[.#][\w-]+$/.test(argument)) {
+    if (name === 'clickElt') {
+      const element = /^(#[\w-]+|\.[\w-]+)(?:\s+([1-9]\d*))?$/.exec(argument);
+      if (!element || (element[2] && (!element[1].startsWith('.') || !Number.isSafeInteger(Number(element[2]))))) {
+        throw new Error(`Line ${index + 1}: clickElt requires an ID prefixed with # or a class prefixed with . and an optional positive occurrence number`);
+      }
+    }
+    if ((name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') && !/^[.#][\w-]+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: ${name} requires an ID prefixed with # or a class prefixed with .`);
     }
     if (name === 'shotElt') {
@@ -114,7 +181,7 @@ export async function runScreenshotScenario(
 ): Promise<void> {
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
-  let frames: { target: Locator; card: boolean }[] = [];
+  let frames: { target: Locator; card: boolean; noId: boolean; padding: FramePadding }[] = [];
   let annotations: { target: Locator; text: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
@@ -193,6 +260,10 @@ export async function runScreenshotScenario(
           await firstWindow.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
           break;
         }
+        case 'unfocus': {
+          await firstWindow.mouse.click(1, 1);
+          break;
+        }
         case 'wait': {
           await firstWindow.waitForTimeout(Number(command.argument));
           break;
@@ -235,13 +306,67 @@ export async function runScreenshotScenario(
           break;
         }
         case 'clickElt': {
+          const [elementSelector, occurrence] = command.argument.split(/\s+/);
+          const isClass = elementSelector.startsWith('.');
+          const value = elementSelector.slice(1);
+          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const index = occurrence ? Number(occurrence) - 1 : 0;
+          const matches = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector);
+          const visibleMatches = matches.filter({ visible: true });
+          await expect.poll(async () => (await visibleMatches.count()) > index || (await matches.count()) > index,
+            { timeout: 30000 }).toBe(true);
+          if ((await visibleMatches.count()) > index) {
+            // Fall back to a DOM click when another element covers the target and blocks the pointer click.
+            await visibleMatches.nth(index).click({ timeout: 3000 }).catch(() =>
+              visibleMatches.nth(index).evaluate((element) => (element as HTMLElement).click()));
+          } else {
+            await matches.nth(index).evaluate((element) => (element as HTMLElement).click());
+          }
+          break;
+        }
+        case 'firstPlan': {
           const isClass = command.argument.startsWith('.');
           const value = command.argument.slice(1);
           const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
-          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(selector).filter({ visible: true }).first();
+          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(selector).filter({ visible: true });
+          if (!isClass) await expect(targets).toHaveCount(1, { timeout: 30000 });
+          const target = targets.first();
           await expect(target).toBeVisible({ timeout: 30000 });
-          await target.click();
+          await target.evaluate((element) => {
+            if (!(element instanceof HTMLElement)) throw new Error('firstPlan requires an HTML element');
+            const box = element.getBoundingClientRect();
+            if (box.width <= 0 || box.height <= 0) throw new Error('firstPlan target has no visible area');
+            if (element.matches(':popover-open')) {
+              element.hidePopover();
+            } else {
+              const style = getComputedStyle(element);
+              if (style.position !== 'absolute' && style.position !== 'fixed') {
+                const placeholder = document.createElement('span');
+                placeholder.setAttribute('aria-hidden', 'true');
+                for (const [property, value] of Object.entries({
+                  display: style.display === 'inline' ? 'inline-block' : style.display,
+                  width: `${box.width}px`, height: `${box.height}px`, 'box-sizing': 'border-box',
+                  margin: style.margin, flex: style.flex, order: style.order,
+                  'align-self': style.alignSelf, 'vertical-align': style.verticalAlign,
+                  'grid-area': style.gridArea, visibility: 'hidden', 'pointer-events': 'none',
+                })) {
+                  placeholder.style.setProperty(property, value, 'important');
+                }
+                element.before(placeholder);
+              }
+            }
+            element.setAttribute('popover', 'manual');
+            for (const [property, value] of Object.entries({
+              position: 'fixed', inset: 'auto', top: `${box.top}px`, left: `${box.left}px`,
+              width: `${box.width}px`, height: `${box.height}px`, margin: '0',
+              'max-width': 'none', 'max-height': 'none', 'box-sizing': 'border-box',
+              background: 'white',
+            })) {
+              element.style.setProperty(property, value, 'important');
+            }
+            element.showPopover();
+          });
           break;
         }
         case 'hideElt': {
@@ -310,21 +435,37 @@ export async function runScreenshotScenario(
           await firstWindow.mouse.move(0, 0);
           break;
         }
+        case 'input': {
+          const separator = command.argument.indexOf(' ');
+          const selector = command.argument.slice(0, separator);
+          const text = command.argument.slice(separator + 1);
+          const isClass = selector.startsWith('.');
+          const value = selector.slice(1);
+          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(`[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`).filter({ visible: true }).first();
+          await expect(target).toBeVisible({ timeout: 30000 });
+          const isInput = await target.evaluate((element) => element instanceof HTMLInputElement);
+          const input = isInput ? target : target.locator('input').filter({ visible: true }).first();
+          await expect(input).toBeVisible({ timeout: 30000 });
+          await input.fill(text);
+          break;
+        }
         case 'frame': {
-          const card = /\s+card$/.test(command.argument);
-          const frameSelector = card ? command.argument.replace(/\s+card$/, '') : command.argument;
-          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(frameSelector).filter({ visible: true });
-          await expect(target).toHaveCount(1, { timeout: 30000 });
+          const { selector, card, noId, padding, occurrence } = parseFrameArgument(command.argument, command.line);
+          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
+          const target = targets.nth((occurrence || 1) - 1);
           await expect(target).toBeVisible();
-          frames.push({ target, card });
+          frames.push({ target, card, noId, padding });
           break;
         }
         case 'annotation': {
-          const match = /^(\S+)\s+(.+)$/.exec(command.argument)!;
+          const separator = command.argument.indexOf(' ');
+          const selector = command.argument.slice(0, separator);
+          const text = command.argument.slice(separator + 1);
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(match[1]).filter({ visible: true }).first();
+            .locator(selector).filter({ visible: true }).first();
           await expect(target).toBeVisible({ timeout: 30000 });
-          annotations.push({ target, text: match[2].replace(/\\n/g, '\n') });
+          annotations.push({ target, text });
           break;
         }
         case 'shotElt':
@@ -345,6 +486,10 @@ export async function runScreenshotScenario(
           } else {
             filename = command.argument.replace(/[\\/]/g, path.sep) || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
             await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
+          }
+          if (annotations.length) {
+            await firstWindow.mouse.move(0, 0);
+            await firstWindow.locator('.mat-mdc-tooltip:visible').first().waitFor({ state: 'hidden', timeout: 5000 });
           }
           if (frames.length) {
             if (!annotationReady) {
@@ -378,7 +523,7 @@ export async function runScreenshotScenario(
               ` });
               annotationReady = true;
             }
-            const boxes = await Promise.all(frames.map(async ({ target, card: useCard }) => {
+            const boxes = await Promise.all(frames.map(async ({ target, card: useCard, padding }) => {
               await expect(target).toBeVisible();
               const card = await target.evaluateHandle((element, useCard) => {
                 if (!useCard) return element;
@@ -397,7 +542,11 @@ export async function runScreenshotScenario(
               try {
                 const box = await card.asElement()!.boundingBox();
                 if (!box || box.width <= 0 || box.height <= 0) throw new Error('Annotation target has no visible area');
-                return box;
+                return {
+                  x: box.x - padding.left, y: box.y - padding.top,
+                  width: box.width + padding.left + padding.right,
+                  height: box.height + padding.top + padding.bottom,
+                };
               } finally {
                 await card.dispose();
               }
@@ -423,8 +572,23 @@ export async function runScreenshotScenario(
             await expect(firstWindow.locator('#__an_overlay rect.an-hit')).toHaveCount(frames.length);
             const badges = firstWindow.locator('#__an_overlay g > text');
             await expect(badges).toHaveCount(frames.length);
+            let visibleIndex = 0;
             for (let index = 0; index < frames.length; index++) {
-              await expect(badges.nth(index)).toHaveText(/^[A-Z]+$/);
+              const badge = badges.nth(index);
+              if (frames[index].noId) {
+                await badge.locator('..').evaluate((element) => (element as SVGElement).style.setProperty('display', 'none', 'important'));
+                await expect(badge).toBeHidden();
+              } else {
+                let number = ++visibleIndex;
+                let label = '';
+                while (number > 0) {
+                  number--;
+                  label = String.fromCharCode(65 + number % 26) + label;
+                  number = Math.floor(number / 26);
+                }
+                await badge.evaluate((element, text) => { element.textContent = text; }, label);
+                await expect(badge).toHaveText(label);
+              }
             }
           }
           if (annotations.length) {
@@ -456,7 +620,29 @@ export async function runScreenshotScenario(
           }
           let screenshot: Buffer;
           if (target) {
+            const zoomFactor = await browserWindow.evaluate((window: any) => window.webContents.getZoomFactor() as number);
             screenshot = await target.screenshot({ animations: 'disabled' });
+            if (zoomFactor !== 1) {
+              const box = await target.boundingBox();
+              if (!box || box.width <= 0 || box.height <= 0) throw new Error('Screenshot target has no visible area');
+              const scroll = await firstWindow.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+              const x = Math.floor((box.x + scroll.x) * zoomFactor);
+              const y = Math.floor((box.y + scroll.y) * zoomFactor);
+              const clip = {
+                x, y,
+                width: Math.ceil((box.x + scroll.x + box.width) * zoomFactor) - x,
+                height: Math.ceil((box.y + scroll.y + box.height) * zoomFactor) - y,
+                scale: 1,
+              };
+              // Chromium screenshot clips use zoomed coordinates, unlike Playwright's element bounds.
+              const session = await firstWindow.context().newCDPSession(firstWindow);
+              try {
+                const image = await session.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true });
+                screenshot = Buffer.from(image.data, 'base64');
+              } finally {
+                await session.detach();
+              }
+            }
           } else {
             const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
             screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height } });

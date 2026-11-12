@@ -3,8 +3,6 @@ zoomOut
 
 fileOpen e2e/scenarios/src/screenshots/C100_AllReports.json
 
-zoomIn
-
 openTab Modeling
 screenshot "images/Visualization Adult Modeling.png"
 

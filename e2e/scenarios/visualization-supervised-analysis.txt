@@ -4,6 +4,11 @@ zoomOut
 fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
 
 openTab Preparation
+frame #preparation-view-informations-split
+frame #preparation-variables-list
+frame #variable-graph-details-comp
+frame #preparation-description-block-derivation
+frame #preparation-current-interval
 screenshot "images-khiops-guides/visualization/ClassificationPreparation.png"
 
 openTab Tree preparation
