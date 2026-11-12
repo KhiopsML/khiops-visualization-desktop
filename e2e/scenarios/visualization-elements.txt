@@ -23,4 +23,3 @@ removeElt app-var-details-preparation-2d-comp-variables-lists
 removeElt preparation-2d-target-distribution-graph
 refreshDom
 shotElt cooccurrence-matrix-comp-container Cooccurence.png
-wait 3000

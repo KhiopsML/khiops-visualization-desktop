@@ -1,0 +1,12 @@
+### Visualization elements screenshots
+zoomOut
+
+fileOpen e2e/scenarios/src/screenshots/C100_AllReports.json
+
+zoomIn
+
+openTab Modeling
+screenshot Visualization Adult Modeling.png
+
+openTab Evaluation
+screenshot Visualization Adult Evaluation.png
