@@ -3,17 +3,15 @@ zoomOut
 
 fileOpen e2e/scenarios/src/Covisualization/IV-AdultComplete.khcj
 
-clickElt .button-manage-views
-clickElt .box-composition
-clickElt .box-composition 2
-clickElt #manage-views-save
+setVisibility isCompositionChecked 1 false
+setVisibility isCompositionChecked 2 false
 
 frame #graph-header-tools noId
-shotElt .variable-graph-details-comp "images-khiops-guides/covisualization/DistributionZoom.png"
+shotElt .variable-graph-details-comp "images-khiops-guides/covisualization/DistributionZoom.png" {padding: 10px 10px 10px 10px}
 
 # unfod hierarchy
 annotation .button-unfold-hierarchy "Select automatically the best unfolding"
-shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" 500x150
+shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" {size:500x150}
 
 clickElt .button-unfold-hierarchy
 screenshot "images-khiops-guides/covisualization/UnfoldHierarchyWindow.png"

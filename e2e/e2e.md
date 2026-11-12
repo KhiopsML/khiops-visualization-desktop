@@ -49,8 +49,10 @@ removed. When one area remains, it fills the split.
 element with that ID to the relative PNG path in the screenshot output directory.
 `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
 captures the first visible element with that class. An optional `WxH` size after the
-path, such as `shotElt #header-right "UnfoldHierarchy.png" 600x200`, captures a region of exactly
-that size starting at the element's top-left corner instead of the element's bounds. As with `screenshot`, directories
+path, such as `shotElt #header-right "UnfoldHierarchy.png" {size:600x200}`, captures a region of exactly
+that size starting at the element's top-left corner instead of the element's bounds. An optional
+`{padding: 10px 10px 10px 10px}` (CSS shorthand, pixels) grows the captured area around the element by those
+amounts; it cannot be combined with `{size:WxH}`. As with `screenshot`, directories
 are created as needed and unquoted filenames without spaces are supported. Queued frames and annotations
 are applied to the capture and cleared, as with `screenshot`; only the portion
 within the captured element is visible.
@@ -59,12 +61,13 @@ within the captured element is visible.
 `zoomIn` increases the window's zoom by one step, like View > Zoom In.
 `refreshDom` resizes the window briefly and restores its original size.
 `unfocus` clicks the top-left corner of the window to remove focus from the current element.
+`setVisibility <property> [occurrence] <true|false>` sets a view-layout flag (for example `isHierarchyChecked`, `isClustersChecked`, `isCompositionChecked`) in the manage-views dialog. The `#sym:` prefix is optional. The occurrence is 1-based and defaults to 1. The command opens the dialog only when a change is needed, then saves it.
 `wait 500` pauses the scenario for 500 milliseconds.
 `resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
 `resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
 `resizeSplit .as-horizontal 100 0` targets the first visible split with that class.
 Selectors can be chained with `>`, for example `resizeSplit .axis-comp>.as-horizontal 100 0`.
-The split may be vertical or horizontal; the percentages must total 100.
+The split may be vertical or horizontal; the percentages must total 100. Open CDK overlays (such as a filter menu) are closed with `Escape` first, because their backdrop would otherwise block the drag.
 `frame`
 takes an element ID prefixed with `#`, a class prefixed with `.`, or a Playwright
 CSS selector. By default, `frame` selects the first visible match, including

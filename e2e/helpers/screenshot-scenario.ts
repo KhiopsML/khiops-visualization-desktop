@@ -11,7 +11,7 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'input' | 'unfocus' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
 };
@@ -74,6 +74,21 @@ async function captureCssRect(page: Page, rect: { x: number; y: number; width: n
   }
 }
 
+// Parses the body of a "{padding: ...}" option using CSS shorthand order (top, right, bottom, left).
+function parsePaddingOption(body: string, line: number, command: string): FramePadding {
+  const declaration = /^\s*padding\s*:\s*(.*?)\s*;?\s*$/i.exec(body);
+  const values = declaration?.[1].replace(/;$/, '').trim().split(/\s+/);
+  if (!values || values.length < 1 || values.length > 4 ||
+      values.some((value) => !/^(?:\d+(?:\.\d+)?|\.\d+)px$/i.test(value) || !Number.isFinite(parseFloat(value)))) {
+    throw new Error(`Line ${line}: ${command} padding requires one to four non-negative pixel values`);
+  }
+  const numbers = values.map((value) => parseFloat(value));
+  return {
+    top: numbers[0], right: numbers[1] ?? numbers[0],
+    bottom: numbers[2] ?? numbers[0], left: numbers[3] ?? numbers[1] ?? numbers[0],
+  };
+}
+
 function parseFrameArgument(argument: string, line: number): {
   selector: string; card: boolean; noId: boolean; padding: FramePadding; occurrence?: number;
 } {
@@ -85,17 +100,8 @@ function parseFrameArgument(argument: string, line: number): {
   while (true) {
     const paddingOption = /^(.*?)\s+\{([^{}]*)\}$/.exec(selector);
     if (paddingOption) {
-      const declaration = /^\s*padding\s*:\s*(.*?)\s*;?\s*$/i.exec(paddingOption[2]);
-      const values = declaration?.[1].replace(/;$/, '').trim().split(/\s+/);
-      if (padding || !values || values.length < 1 || values.length > 4 ||
-          values.some((value) => !/^(?:\d+(?:\.\d+)?|\.\d+)px$/i.test(value) || !Number.isFinite(parseFloat(value)))) {
-        throw new Error(`Line ${line}: frame padding requires one to four non-negative pixel values`);
-      }
-      const numbers = values.map((value) => parseFloat(value));
-      padding = {
-        top: numbers[0], right: numbers[1] ?? numbers[0],
-        bottom: numbers[2] ?? numbers[0], left: numbers[3] ?? numbers[1] ?? numbers[0],
-      };
+      if (padding) throw new Error(`Line ${line}: duplicate frame padding`);
+      padding = parsePaddingOption(paddingOption[2], line, 'frame');
       selector = paddingOption[1];
       continue;
     }
@@ -130,6 +136,19 @@ function parseAnnotationArgument(argument: string, line: number): { selector: st
   };
 }
 
+// Views manager checkbox (box) of each ViewLayoutVO / DimensionViewLayoutModel visibility property.
+const visibilityBoxSelectors = new Map<string, string>([
+  ['isDimensionsChecked', '.box-dimensions'],
+  ['isCooccurrenceChecked', '.box-cooccurrence'],
+  ['isChecked', '.box-dimension'],
+  ['isHierarchyChecked', '.box-hierarchy'],
+  ['isClustersChecked', '.box-clusters'],
+  ['isAnnotationChecked', '.box-annotation'],
+  ['isCompositionChecked', '.box-composition'],
+  ['isExternalDataChecked', '.box-external-data'],
+  ['isDistributionChecked', '.box-distribution'],
+]);
+
 export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
   const commands: ScreenshotCommand[] = [];
   for (const [index, rawLine] of source.split(/\r?\n/).entries()) {
@@ -139,7 +158,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     let argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'input', 'unfocus', 'screenshot', 'shotElt'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
         if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && !argument) {
@@ -175,16 +194,41 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     if ((name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') && !/^[.#][\w-]+$/.test(argument)) {
       throw new Error(`Line ${index + 1}: ${name} requires an ID prefixed with # or a class prefixed with .`);
     }
+    if (name === 'setVisibility') {
+      const visibility = /^(?:#sym:)?(\w+)(?:\s+([1-9]\d*))?\s+(true|false)$/.exec(argument);
+      if (!visibility || !visibilityBoxSelectors.has(visibility[1])) {
+        throw new Error(`Line ${index + 1}: setVisibility requires a known visibility property, an optional positive occurrence number, and true or false`);
+      }
+      argument = `${visibility[1]} ${visibility[2] ?? '1'} ${visibility[3]}`;
+    }
     if (name === 'shotElt') {
-      const element = /^([.#][\w-]+)\s+(.+?)(?:\s+(\d+)x(\d+))?$/.exec(argument);
+      let shotPadding: FramePadding | undefined;
+      let shotSize: { width: number; height: number } | undefined;
+      let rest = argument;
+      for (let option = /^(.*?)\s+\{([^{}]*)\}$/.exec(rest); option; option = /^(.*?)\s+\{([^{}]*)\}$/.exec(rest)) {
+        const sizeOption = /^\s*size\s*:\s*(\d+)x(\d+)\s*$/i.exec(option[2]);
+        if (sizeOption) {
+          if (shotSize) throw new Error(`Line ${index + 1}: duplicate shotElt size`);
+          if (Number(sizeOption[1]) === 0 || Number(sizeOption[2]) === 0) {
+            throw new Error(`Line ${index + 1}: shotElt size must be greater than zero`);
+          }
+          shotSize = { width: Number(sizeOption[1]), height: Number(sizeOption[2]) };
+        } else {
+          if (shotPadding) throw new Error(`Line ${index + 1}: duplicate shotElt padding`);
+          shotPadding = parsePaddingOption(option[2], index + 1, 'shotElt');
+        }
+        rest = option[1];
+      }
+      const element = /^([.#][\w-]+)\s+(.+)$/.exec(rest);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG path, optionally followed by WxH`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG path, optionally followed by {size: WxH} and {padding: ...}`);
       }
-      if (element[3] !== undefined && (Number(element[3]) === 0 || Number(element[4]) === 0)) {
-        throw new Error(`Line ${index + 1}: shotElt size must be greater than zero`);
+      if (shotSize && shotPadding) {
+        throw new Error(`Line ${index + 1}: shotElt cannot combine size with padding`);
       }
-      const size = element[3] !== undefined ? ` ${element[3]}x${element[4]}` : '';
-      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}${size}`;
+      const size = shotSize ? ` {size:${shotSize.width}x${shotSize.height}}` : '';
+      const padding = shotPadding ? ` {padding:${[shotPadding.top, shotPadding.right, shotPadding.bottom, shotPadding.left].join(' ')}}` : '';
+      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}${size}${padding}`;
     }
     if (name === 'screenshot' && argument) {
       argument = parseScreenshotFilename(argument, index + 1, name);
@@ -524,6 +568,28 @@ export async function runScreenshotScenario(
           await firstWindow.mouse.move(0, 0);
           break;
         }
+        case 'setVisibility': {
+          const [property, occurrence, value] = command.argument.split(/\s+/);
+          const box = visibilityBoxSelectors.get(property)!;
+          const wanted = value === 'true';
+          const activeView = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible');
+          const openButton = activeView.locator('[class~="button-manage-views"]').filter({ visible: true }).first();
+          await expect(openButton).toBeVisible({ timeout: 30000 });
+          await openButton.click().catch(() => openButton.evaluate((element) => (element as HTMLElement).click()));
+          const save = activeView.locator('#manage-views-save').filter({ visible: true }).first();
+          await expect(save).toBeVisible({ timeout: 30000 });
+          // A checkbox is unchecked when its block carries the "disabled" class.
+          const target = activeView.locator(`[class~="${box.slice(1)}"]`).filter({ visible: true }).nth(Number(occurrence) - 1);
+          await expect(target).toBeVisible({ timeout: 30000 });
+          const isChecked = () => target.evaluate((element) => !element.classList.contains('disabled'));
+          if ((await isChecked()) !== wanted) {
+            await target.click().catch(() => target.evaluate((element) => (element as HTMLElement).click()));
+          }
+          await expect.poll(isChecked, { timeout: 5000 }).toBe(wanted);
+          await save.click();
+          await expect(save).toBeHidden({ timeout: 30000 });
+          break;
+        }
         case 'input': {
           const separator = command.argument.indexOf(' ');
           const selector = command.argument.slice(0, separator);
@@ -562,9 +628,15 @@ export async function runScreenshotScenario(
           let target: Locator | undefined;
           let filename: string;
           let size: { width: number; height: number } | undefined;
+          let shotPadding: FramePadding | undefined;
           if (command.name === 'shotElt') {
-            const [, elementSelector, elementFilename, sizeWidth, sizeHeight] = /^(\S+)\s+(.+?)(?:\s+(\d+)x(\d+))?$/.exec(command.argument)!;
+            const [, elementSelector, elementFilename, sizeWidth, sizeHeight, paddingText] =
+              /^(\S+)\s+(.+?)(?:\s+\{size:(\d+)x(\d+)\})?(?:\s+\{padding:([\d. ]+)\})?$/.exec(command.argument)!;
             size = sizeWidth !== undefined ? { width: Number(sizeWidth), height: Number(sizeHeight) } : undefined;
+            if (paddingText !== undefined) {
+              const [top, right, bottom, left] = paddingText.split(' ').map(Number);
+              shotPadding = { top, right, bottom, left };
+            }
             const isClass = elementSelector.startsWith('.');
             const value = elementSelector.replace(/^[.#]/, '');
             const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
@@ -720,6 +792,14 @@ export async function runScreenshotScenario(
               screenshot = zoomFactor === 1
                 ? await firstWindow.screenshot({ animations: 'disabled', clip: rect })
                 : await captureCssRect(firstWindow, rect, zoomFactor);
+            } else if (shotPadding) {
+              // Padding can extend past the element, so the clip is always taken through CDP.
+              const rect = {
+                x: box.x - shotPadding.left, y: box.y - shotPadding.top,
+                width: box.width + shotPadding.left + shotPadding.right,
+                height: box.height + shotPadding.top + shotPadding.bottom,
+              };
+              screenshot = await captureCssRect(firstWindow, rect, zoomFactor);
             } else {
               screenshot = await target.screenshot({ animations: 'disabled' });
               if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor);

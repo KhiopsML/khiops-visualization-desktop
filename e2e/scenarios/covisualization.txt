@@ -9,10 +9,8 @@ screenshot "images-khiops-guides/covisualization/ProjetInfos.png"
 openTab Axis
 
 # open manage view dialog and disable distribution charts
-clickElt .button-manage-views
-clickElt .box-distribution
-clickElt .box-distribution 2
-clickElt #manage-views-save
+setVisibility isDistributionChecked 1 false
+setVisibility isDistributionChecked 2 false
 frame app-axis
 frame app-axis 2
 frame app-matrix-container
@@ -36,25 +34,14 @@ screenshot "images-khiops-guides/covisualization/FilterColumn.png.png"
 unfocus
 
 # open manage view dialog and disable second axis
-# clickElt .button-manage-views
-# clickElt .mat-mdc-slide-toggle 2
-# clickElt #manage-views-save
-
-# edit selection name
-clickElt .edit-button 3
-input .tree-leaf-text-input "NewName"
-clickElt .valid-rename
-frame .tree-leaf-text 3 noId {padding: 10px 10px 10px 30px}
-shotElt .hierarchy-details-comp "images-khiops-guides/covisualization/RenameCluster.png"
+# setVisibility isChecked 2 false
 
 ## clusters and hierarchy
 ###open manage view dialog and disable distribution charts
-clickElt .button-manage-views
-clickElt .box-clusters
-clickElt .box-composition
-clickElt .box-dimensions
-clickElt .box-cooccurrence
-clickElt #manage-views-save
+setVisibility isClustersChecked 1 true
+setVisibility isCompositionChecked 1 false
+setVisibility isDimensionsChecked 1 false
+setVisibility isCooccurrenceChecked 1 false
 ### open filters
 clickElt .mat-badge-accent
 clickElt .mat-mdc-menu-item 2
@@ -65,4 +52,11 @@ resizeSplit .axis-comp>.as-horizontal 35 65
 clickElt .kl-grid-btn-fit-columns 
 clickElt .tree-leaf-text
 shotElt .axis-comp  "images-khiops-guides/covisualization/CurrentClusterView.png"
+
+# edit selection name
+clickElt .edit-button 3
+input .tree-leaf-text-input "NewName"
+clickElt .valid-rename
+frame .tree-leaf-text 3 noId {padding: 10px 10px 10px 30px}
+shotElt .hierarchy-details-comp "images-khiops-guides/covisualization/RenameCluster.png"
 

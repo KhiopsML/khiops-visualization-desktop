@@ -36,14 +36,23 @@ test('Parse element screenshot paths', () => {
 
 test('Parse element screenshot sizes', () => {
   const commands = parseScreenshotScenario(
-    'shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" 600x200\nshotElt .chart "plot.png"',
+    'shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" {size:600x200}\nshotElt .chart "plot.png"',
   );
   expect(commands.map((command) => command.argument)).toEqual([
-    '#header-right images-khiops-guides/covisualization/UnfoldHierarchy.png 600x200',
+    '#header-right images-khiops-guides/covisualization/UnfoldHierarchy.png {size:600x200}',
     '.chart plot.png',
   ]);
-  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" 0x200')).toThrow(/Line 1/);
-  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" 600')).toThrow(/Line 1/);
+  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" {size:0x200}')).toThrow(/Line 1/);
+  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" 600x200')).toThrow(/Line 1/);
+});
+
+test('Parse element screenshot padding', () => {
+  const commands = parseScreenshotScenario(
+    'shotElt .variable-graph-details-comp "images/DistributionZoom.png" {padding: 10px 5px}',
+  );
+  expect(commands[0].argument).toBe('.variable-graph-details-comp images/DistributionZoom.png {padding:10 5 10 5}');
+  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" {size:600x200} {padding: 10px}')).toThrow(/Line 1/);
+  expect(() => parseScreenshotScenario('shotElt #chart "plot.png" {padding: 10em}')).toThrow(/Line 1/);
 });
 
 test('Parse chained resizeSplit selectors', () => {
@@ -193,6 +202,18 @@ test('Parse input commands', () => {
 test('Parse unfocus command', () => {
   expect(parseScreenshotScenario('unfocus').map((command) => command.name)).toEqual(['unfocus']);
   expect(() => parseScreenshotScenario('unfocus .target')).toThrow(/Line 1/);
+});
+
+test('Parse setVisibility commands', () => {
+  const commands = parseScreenshotScenario('setVisibility isHierarchyChecked true\nsetVisibility #sym:isClustersChecked 2 false');
+  expect(commands.map((command) => command.argument)).toEqual([
+    'isHierarchyChecked 1 true',
+    'isClustersChecked 2 false',
+  ]);
+  for (const invalid of ['setVisibility unknownFlag true', 'setVisibility isChecked 0 true',
+    'setVisibility isChecked yes', 'setVisibility isChecked']) {
+    expect(() => parseScreenshotScenario(invalid)).toThrow(/Line 1/);
+  }
 });
 
 test('Parse class click occurrences', () => {
