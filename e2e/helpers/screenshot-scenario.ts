@@ -9,6 +9,8 @@ const ANNOTATION_COLOR = '#f59e0b';
 // const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0.04)';
 const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
+// const ANNOTATION_FONT_COLOR = '#553300';
+const ANNOTATION_FONT_COLOR = '#000000';
 
 type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
 
@@ -971,7 +973,7 @@ export async function runScreenshotScenario(
               if (!box || box.width <= 0 || box.height <= 0) throw new Error('annotation target has no visible area');
               return { box, text, position };
             }));
-            await firstWindow.evaluate(({ items, color, fontSize }) => {
+            await firstWindow.evaluate(({ items, color, fontSize, fontColor }) => {
               const overlay = document.createElement('div');
               overlay.id = '__screenshot_annotations';
               overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647;';
@@ -979,7 +981,7 @@ export async function runScreenshotScenario(
               for (const { box, text, position } of items) {
                 const label = document.createElement('div');
                 label.textContent = text;
-                label.style.cssText = `position:absolute;max-width:180px;box-sizing:border-box;padding:6px 9px;border-radius:4px;background:${color};box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:pre-wrap;overflow-wrap:anywhere;font:600 ${fontSize}px/1.35 sans-serif;color:#553300;`;
+                label.style.cssText = `position:absolute;max-width:180px;box-sizing:border-box;padding:6px 9px;border-radius:4px;background:${color};box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:pre-wrap;overflow-wrap:anywhere;font:600 ${fontSize}px/1.35 sans-serif;color:${fontColor};`;
                 const caret = document.createElement('span');
                 const caretStyles = {
                   bottom: `left:50%;top:-7px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${color};`,
@@ -998,7 +1000,7 @@ export async function runScreenshotScenario(
                 label.style.left = `${Math.max(4, Math.min(window.innerWidth - labelBox.width - 4, left))}px`;
                 label.style.top = `${Math.max(11, Math.min(window.innerHeight - labelBox.height - 4, top))}px`;
               }
-            }, { items, color: ANNOTATION_COLOR, fontSize: ANNOTATION_FONT_SIZE });
+            }, { items, color: ANNOTATION_COLOR, fontSize: ANNOTATION_FONT_SIZE, fontColor: ANNOTATION_FONT_COLOR });
           }
           let screenshot: Buffer;
           if (target) {
