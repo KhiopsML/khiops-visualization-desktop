@@ -40,6 +40,7 @@ unfocus
 resizeSplit .axis-comp>.as-horizontal 35 65
 clickElt .kl-grid-btn-fit-columns 
 clickElt .tree-leaf-text
+unfocus
 shotElt .axis-comp  "images-khiops-guides/covisualization/CurrentClusterView.png"
 
 # edit selection name
@@ -60,6 +61,7 @@ resizeSplit .axis-comp 2>.as-horizontal 35 65
 clickElt 2 .mat-badge-accent
 clickElt .mat-mdc-menu-item 2
 clickElt .mat-mdc-menu-item 3
+unfocus
 clickElt .kl-grid-btn-fit-columns 2 
 unfocus
 shotElt .axis-comp 2 "images-khiops-guides/covisualization/Composition.png"
