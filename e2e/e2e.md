@@ -93,7 +93,7 @@ The chart target may also be a class or element name, such as `clickChart canvas
 Selectors can be chained with `>`, for example `resizeSplit .axis-comp>as-split 100 0`.
 To select a particular parent before following the chain, add its occurrence there:
 `resizeSplit .axis-comp 2>.as-horizontal 35 65` selects the split inside the second visible `.axis-comp`.
-The split may be vertical or horizontal; the percentages must total 100. Open CDK overlays (such as a filter menu) are closed with `Escape` first, because their backdrop would otherwise block the drag.
+The split may be vertical or horizontal; the percentages must total 100. Open CDK overlays (such as a filter menu) are closed with `Escape` first, because their backdrop would otherwise block the drag. After resizing, or if the requested ratio is already reached, `resizeSplit` also performs `unfocus`.
 `frame`
 takes an element ID prefixed with `#`, a class prefixed with `.`, or a Playwright
 CSS selector. By default, `frame` selects the first visible match, including

@@ -11,14 +11,6 @@ openTab Axis
 # open manage view dialog and disable distribution charts
 setVisibility isDistributionChecked 1 false
 setVisibility isDistributionChecked 2 false
-frame app-axis
-frame app-axis 2
-frame app-matrix-container
-screenshot "images-khiops-guides/covisualization/Axis.png"
-
-frame .matrix-container-comp-wrapper  {noId:true}
-annotation #header-tools-comp-copy-paste "Copy data\nCopy image"
-screenshot "images-khiops-guides/covisualization/Screenshot.png"
 
 clickElt .mat-badge-accent
 frame .cdk-overlay-pane {noId:true, padding: 10px 10px 0px 10px}

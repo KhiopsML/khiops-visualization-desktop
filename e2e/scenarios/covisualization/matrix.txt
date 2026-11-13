@@ -1,0 +1,33 @@
+### CoVisualization elements screenshots
+zoomOut
+
+fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj
+
+openTab Axis
+
+# open manage view dialog and disable distribution charts
+setVisibility isDistributionChecked 1 false
+setVisibility isDistributionChecked 2 false
+frame app-axis
+frame app-axis 2
+frame app-matrix-container
+screenshot "images-khiops-guides/covisualization/Axis.png"
+
+frame .matrix-container-comp-wrapper  {noId:true}
+annotation #header-tools-comp-copy-paste "Copy data\nCopy image"
+screenshot "images-khiops-guides/covisualization/Screenshot.png"
+
+resizeSplit .matrix-container-comp>.as-vertical 30 70
+
+# Contrast
+input #contrast 10
+shotElt .matrix-comp-container "images-khiops-guides/covisualization/Contrast-1.png" {padding: 5px 5px 5px 5px}
+input #contrast 70
+shotElt .matrix-comp-container "images-khiops-guides/covisualization/Contrast-2.png" {padding: 5px 5px 5px 5px}
+
+resizeSplit .axis-view-comp>.as-horizontal 20 80
+shotElt .matrix-container-comp-wrapper "images-khiops-guides/covisualization/CooccurenceMatrix.png" {padding: 15px 15px 15px 15px}
+
+clickElt .matrix-mode-comp-option
+frame .mat-mdc-menu-content {noId: true, padding: 5px 5px 5px 5px}
+shotElt .mat-mdc-menu-panel "images-khiops-guides/covisualization/Criteria.png" {padding: 100px 200px 100px 200px, fade:40px}

@@ -43,15 +43,3 @@ shotElt .button-manage-views "images-khiops-guides/covisualization/ViewButton.pn
 
 # matrix-option-toggle
 shotElt #matrix-option-toggle "images-khiops-guides/covisualization/StandardFrequency.png" {padding: 5px 5px 5px 5px}
-
-# Open new file for more displayed values
-fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj
-
-
-resizeSplit .matrix-container-comp>.as-vertical 30 70
-
-# Contrast
-input #contrast 10
-shotElt .matrix-comp-container "images-khiops-guides/covisualization/Contrast-1.png" {padding: 5px 5px 5px 5px}
-input #contrast 70
-shotElt .matrix-comp-container "images-khiops-guides/covisualization/Contrast-2.png" {padding: 5px 5px 5px 5px}

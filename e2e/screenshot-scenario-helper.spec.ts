@@ -117,6 +117,10 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
+    const focusTarget = document.createElement('input');
+    focusTarget.className = 'scenario-split-focus';
+    focusTarget.style.cssText = 'position:fixed;left:100px;top:350px;z-index:2147483647';
+    root.appendChild(focusTarget);
     for (let index = 0; index < 2; index++) {
       const parent = document.createElement('scenario-split-group');
       parent.className = 'scenario-split-group';
@@ -143,7 +147,25 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
     }
   });
   await fs.writeFile(scenario, 'resizeSplit scenario-split-group 2>as-split 35 65\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  const focusTarget = firstWindow.locator('.scenario-split-focus');
+  const mouseClick = firstWindow.mouse.click;
+  const clicks: { x: number; y: number }[] = [];
+  firstWindow.mouse.click = async (x, y, options) => {
+    clicks.push({ x, y });
+    await mouseClick.call(firstWindow.mouse, x, y, options);
+  };
+  try {
+    await focusTarget.focus();
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await expect(focusTarget).not.toBeFocused();
+    await focusTarget.focus();
+    await expect(focusTarget).toBeFocused();
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await expect(focusTarget).not.toBeFocused();
+  } finally {
+    firstWindow.mouse.click = mouseClick;
+  }
+  expect(clicks).toEqual([{ x: 1, y: 1 }, { x: 1, y: 1 }]);
   const ratios = await firstWindow.locator('.scenario-split-group as-split').evaluateAll((splits) => splits.map((split) => {
     const areas = split.querySelectorAll(':scope > as-split-area');
     const first = areas[0].getBoundingClientRect().width;

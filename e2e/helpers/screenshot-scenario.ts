@@ -505,7 +505,10 @@ export async function runScreenshotScenario(
             }
             return isReached();
           };
-          if (await isReached()) break;
+          if (await isReached()) {
+            await firstWindow.mouse.click(1, 1);
+            break;
+          }
           // An open Angular CDK menu or dialog leaves a backdrop that blocks the pointer: close it first.
           const openBackdrops = firstWindow.locator('.cdk-overlay-backdrop-showing');
           if (await openBackdrops.count()) {
@@ -557,6 +560,7 @@ export async function runScreenshotScenario(
             const current = await readFirstPercentage();
             throw new Error(`Split ${splitSelector} could not reach ${requested}/${100 - requested}: current first area is ${current.toFixed(1)}% (pointer hit-test at gutter: ${gutterHit})`);
           }
+          await firstWindow.mouse.click(1, 1);
           break;
         }
 
