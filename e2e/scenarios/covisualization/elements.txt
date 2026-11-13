@@ -1,0 +1,41 @@
+### CoVisualization elements screenshots
+zoomOut
+
+fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj
+
+# ScreenshotButtons
+shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/ScreenshotButtons.png" {padding: 5px 5px 5px 0px}
+
+# unfod hierarchy
+annotation .button-unfold-hierarchy "Select automatically the best unfolding"
+shotElt .button-unfold-hierarchy "images-khiops-guides/covisualization/UnfoldHierarchy.png" {padding: 30px 150px 100px 150px}
+
+# Table filter
+shotElt .mat-badge-accent "images-khiops-guides/covisualization/ColumnsButton.png" {padding: 5px 5px 5px 5px}
+
+# CTRL shortcut
+shotElt kl-keyboard-tooltip "images-khiops-guides/covisualization/CTRL.png" {padding: 5px 5px 0px 5px}
+
+# tree icons
+clickElt .tree-expando
+shotElt .folder-close "images-khiops-guides/covisualization/FoldedCluster.png" {padding: 10px 6px 0px 6px}
+shotElt .folder-open "images-khiops-guides/covisualization/UnfoldedCluster.png" {padding: 10px 6px 0px 6px}
+shotElt .is-leaf "images-khiops-guides/covisualization/TerminalCluster.png" {padding: 10px 6px 0px 6px}
+
+# invert-axis button
+shotElt .invert-axis "images-khiops-guides/covisualization/image33.png" {padding: 5px 8px 0px 8px}
+
+# search button
+shotElt .search-input-btn "images-khiops-guides/covisualization/Image-searchbox.png" {padding: 5px 5px 5px 5px}
+
+# external datas
+annotation .button-import-external-datas "Import external datas"
+shotElt .button-import-external-datas "images-khiops-guides/covisualization/ImportExternalDataButton.png" {padding: 30px 150px 100px 150px}
+
+# button-manage-views 
+shotElt .button-manage-views "images-khiops-guides/covisualization/ViewButton.png" {padding: 3px 3px 3px 3px}
+
+# matrix-option-toggle
+shotElt #matrix-option-toggle "images-khiops-guides/covisualization/StandardFrequency.png" {padding: 5px 5px 5px 5px}
+
+

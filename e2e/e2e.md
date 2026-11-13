@@ -48,7 +48,9 @@ removed. When one area remains, it fills the split.
 `shotElt #header-tools-comp "images/Top Right Buttons.png"` captures the unique visible
 element with that ID to the relative PNG or JPEG path in the screenshot output directory.
 `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
-captures the first visible element with that class. An optional `WxH` size after the
+captures the first visible element with that class. An unprefixed element name, such as
+`shotElt kl-keyboard-tooltip "CTRL.png"`, captures the first visible matching HTML element.
+An optional `WxH` size after the
 path, such as `shotElt #header-right "UnfoldHierarchy.png" {size:600x200}`, captures a region of exactly
 that size starting at the element's top-left corner instead of the element's bounds. An optional
 `{padding: 10px 10px 10px 10px}` (CSS shorthand, pixels) grows the captured area around the element by those

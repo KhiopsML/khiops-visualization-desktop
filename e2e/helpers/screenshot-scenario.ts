@@ -238,9 +238,9 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
         }
         rest = option[1];
       }
-      const element = /^([.#][\w-]+)\s+(.+)$/.exec(rest);
+      const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)\s+(.+)$/.exec(rest);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG or JPEG path, optionally followed by {size: WxH} and {padding: ...}`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with #, a class prefixed with ., or an element name and a PNG or JPEG path, optionally followed by {size: WxH} and {padding: ...}`);
       }
       if (shotSize && shotPadding) {
         throw new Error(`Line ${index + 1}: shotElt cannot combine size with padding`);
@@ -678,11 +678,14 @@ export async function runScreenshotScenario(
               shotPadding = { top, right, bottom, left };
             }
             const isClass = elementSelector.startsWith('.');
-            const value = elementSelector.replace(/^[.#]/, '');
-            const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+            const isId = elementSelector.startsWith('#');
+            const value = elementSelector.slice(1);
+            const selector = isClass || isId
+              ? `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`
+              : elementSelector;
             const targets = firstWindow.locator(selector).filter({ visible: true });
-            if (!isClass) await expect(targets).toHaveCount(1, { timeout: 30000 });
-            target = isClass ? targets.first() : targets;
+            if (isId) await expect(targets).toHaveCount(1, { timeout: 30000 });
+            target = isId ? targets : targets.first();
             await expect(target).toBeVisible({ timeout: 30000 });
             await target.scrollIntoViewIfNeeded();
             filename = elementFilename.replace(/[\\/]/g, path.sep);

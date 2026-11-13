@@ -9,10 +9,6 @@ setVisibility isCompositionChecked 2 false
 frame #graph-header-tools {noId:true}
 shotElt .variable-graph-details-comp "images-khiops-guides/covisualization/DistributionZoom.png" {padding: 10px 10px 10px 10px}
 
-# unfod hierarchy
-annotation .button-unfold-hierarchy "Select automatically the best unfolding"
-shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" {size:500x150}
-
 clickElt .button-unfold-hierarchy
 screenshot "images-khiops-guides/covisualization/UnfoldHierarchyWindow.png"
 

@@ -51,9 +51,12 @@ test('Parse element screenshot sizes', () => {
 
 test('Parse element screenshot padding', () => {
   const commands = parseScreenshotScenario(
-    'shotElt .variable-graph-details-comp "images/DistributionZoom.png" {padding: 10px 5px}',
+    'shotElt .variable-graph-details-comp "images/DistributionZoom.png" {padding: 10px 5px}\n'
+    + 'shotElt kl-keyboard-tooltip "images-khiops-guides/covisualization/CTRL.png" {padding: 5px 5px 5px 5px}',
   );
   expect(commands[0].argument).toBe('.variable-graph-details-comp images/DistributionZoom.png {padding:10 5 10 5}');
+  expect(commands[1].argument).toBe('kl-keyboard-tooltip images-khiops-guides/covisualization/CTRL.png {padding:5 5 5 5}');
+  expect(() => parseScreenshotScenario('shotElt 123invalid "plot.png"')).toThrow(/Line 1/);
   expect(() => parseScreenshotScenario('shotElt #chart "plot.png" {size:600x200} {padding: 10px}')).toThrow(/Line 1/);
   expect(() => parseScreenshotScenario('shotElt #chart "plot.png" {padding: 10em}')).toThrow(/Line 1/);
 });
@@ -74,7 +77,6 @@ test('Require prefixes for ID references', () => {
     ['hideElt', 'target', '#target'],
     ['removeElt', 'target', '#target'],
     ['firstPlan', 'target', '#target'],
-    ['shotElt', 'target image.png', '#target image.png'],
     ['clickRow', 'table row', '#table row'],
     ['clickChart', 'chart 0', '#chart 0'],
     ['resizeSplit', 'split 50 50', '#split 50 50'],
@@ -286,14 +288,23 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
-    const target = document.createElement('div');
+    const root = host.shadowRoot || host;
+    const decoy = document.createElement('div');
+    decoy.id = 'scenario-zoom-target';
+    decoy.style.cssText = 'position:fixed;left:10px;top:80px;width:75px;height:31px;background:blue';
+    root.appendChild(decoy);
+    const target = document.createElement('scenario-zoom-target');
     target.className = 'scenario-zoom-test';
     target.style.cssText = 'position:fixed;right:10px;top:80px;width:75px;height:31px;background:rgb(255,0,0);z-index:2147483647';
-    (host.shadowRoot || host).appendChild(target);
+    root.appendChild(target);
+    const second = document.createElement('scenario-zoom-target');
+    second.style.cssText = 'position:fixed;left:100px;top:80px;width:75px;height:31px;background:blue';
+    root.appendChild(second);
   });
   await fs.writeFile(scenario, [
     'zoomOut', 'shotElt .scenario-zoom-test "zoom-out.png"',
     'zoomIn', 'shotElt .scenario-zoom-test "normal.png"',
+    'shotElt scenario-zoom-target "tag.png" {padding:5px}',
     'zoomIn', 'shotElt .scenario-zoom-test "zoom-in.png"',
     'zoomOut', 'screenshot "full.jpg"',
     'shotElt .scenario-zoom-test "element.JPEG"',
@@ -302,7 +313,7 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     'zoomOut', 'shotElt .scenario-zoom-test "zoom.jpg"',
   ].join('\n'));
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
-  for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png']) {
+  for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png', 'tag.png']) {
     const image = (await fs.readFile(path.join(output, filename))).toString('base64');
     const pixel = await firstWindow.evaluate(async (encoded) => {
       const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))], { type: 'image/png' }));

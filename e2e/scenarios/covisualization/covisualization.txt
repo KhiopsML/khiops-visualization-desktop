@@ -16,8 +16,6 @@ frame app-axis 2
 frame app-matrix-container
 screenshot "images-khiops-guides/covisualization/Axis.png"
 
-shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/ScreenshotButtons.png" {padding: 5px 5px 5px 0px}
-
 clickElt .button-manage-views
 firstPlan .button-manage-views
 annotation .button-manage-views "Add or remove different view on each dimension"
