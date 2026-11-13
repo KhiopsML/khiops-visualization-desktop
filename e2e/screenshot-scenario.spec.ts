@@ -7,7 +7,8 @@ const scenarios = process.env.SCREENSHOT_SCENARIO
   ? [process.env.SCREENSHOT_SCENARIO]
   : [
       // 'e2e/scenarios/covisualization/elements.txt',
-      'e2e/scenarios/covisualization/matrix.txt',
+      // 'e2e/scenarios/covisualization/matrix.txt',
+      'e2e/scenarios/covisualization/behaviors.txt',
       // 'e2e/scenarios/covisualization/covisualization.txt',
       // 'e2e/scenarios/covisualization/covisualization-2.txt',
       // 'e2e/scenarios/covisualization/covisualization-3.txt',

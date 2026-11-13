@@ -135,6 +135,11 @@ bounding rectangle. The command requires one visible matrix by default; add a
 component build that exposes matrix selection bounds. After updating the component,
 run `yarn ng build khiops-webcomponent` in the adjacent visualization-component
 repository and restart the desktop development server.
+`annotationSelectedChart #distribution-chart-0 1 "Selected bar" {position:top}`
+annotates the bar at zero-based index 1 without clicking or changing the selection.
+The selector and optional 1-based chart occurrence follow `clickChart`; when multiple
+datasets have a non-zero-height bar at that index, the first is used. Position defaults to
+`bottom`, as with `annotation`.
 `clean` discards all queued frames and annotations without taking a screenshot.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
 captures a PNG or JPEG under the screenshot output directory, creating subdirectories as

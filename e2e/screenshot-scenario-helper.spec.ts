@@ -271,6 +271,104 @@ test('Parse selected cell annotations', () => {
   }
 });
 
+test('Parse chart bar annotations', () => {
+  const commands = parseScreenshotScenario('annotationSelectedChart #chart 0 "First"\n'
+    + 'annotationSelectedChart 2 .chart 3 "Second\\nbar" {position:right}\n'
+    + 'annotationSelectedChart canvas 4 5 "Third" {position:top}');
+  expect(commands.map(({ argument, occurrence, chartIndex, annotationPosition }) =>
+    ({ argument, occurrence, chartIndex, annotationPosition }))).toEqual([
+    { argument: '#chart First', occurrence: undefined, chartIndex: 0, annotationPosition: undefined },
+    { argument: '.chart Second\nbar', occurrence: 2, chartIndex: 3, annotationPosition: 'right' },
+    { argument: 'canvas Third', occurrence: 4, chartIndex: 5, annotationPosition: 'top' },
+  ]);
+  for (const command of ['annotationSelectedChart #chart "Label"', 'annotationSelectedChart #chart -1 "Label"',
+    'annotationSelectedChart #chart 1.5 "Label"', 'annotationSelectedChart #chart 9007199254740992 "Label"',
+    'annotationSelectedChart #chart 1 Label', 'annotationSelectedChart #chart 1 "Label" {position:center}',
+    'annotationSelectedChart 2 #chart 3 1 "Label"']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
+  }
+});
+
+test('Annotate a chart bar without selecting it', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('annotation-chart-bar.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const chart = document.createElement('kl-chart');
+    const canvas = document.createElement('canvas');
+    canvas.id = 'scenario-chart';
+    canvas.width = 200;
+    canvas.height = 100;
+    canvas.style.cssText = 'position:fixed;left:300px;top:300px;width:400px;height:200px;z-index:2147483647';
+    canvas.addEventListener('click', (event) => {
+      canvas.dataset.click = `${event.offsetX},${event.offsetY}`;
+    });
+    Object.assign(chart, {
+      componentInstance: {
+        chartManagerService: {
+          getChart: () => ({
+            width: 200, height: 100, data: { datasets: [{}, {}] },
+            getDatasetMeta: (dataset: number) => ({
+              data: [undefined, dataset === 0
+                ? { x: 50, y: 40, base: 40, width: 20 }
+                : { x: 50, y: 80, base: 40, width: 20 }],
+            }),
+          }),
+        },
+      },
+    });
+    chart.appendChild(canvas);
+    (host.shadowRoot || host).appendChild(chart);
+  });
+  const canvas = firstWindow.locator('#scenario-chart');
+  const canvasBox = await canvas.boundingBox();
+  expect(canvasBox).not.toBeNull();
+  let labelBox: { x: number; y: number; width: number; height: number } | null = null;
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    labelBox = await firstWindow.locator('#__screenshot_annotations > div').boundingBox();
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, 'annotationSelectedChart #scenario-chart 1 "Bar" {position:right}\nscreenshot');
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(labelBox).not.toBeNull();
+  expect(labelBox!.x).toBeCloseTo(canvasBox!.x + 127, 1);
+  expect(labelBox!.y + labelBox!.height / 2).toBeCloseTo(canvasBox!.y + 120, 1);
+  await expect(canvas).not.toHaveAttribute('data-click');
+  await fs.writeFile(scenario, 'clickChart #scenario-chart 1');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(canvas).toHaveAttribute('data-click', '100,120');
+});
+
+test('Annotate a distribution chart bar', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('real-chart-annotation.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario,
+    'fileOpen e2e/mocks/src-screenshots/DatasetsHistograms/AdultUnsupervised.khj\n'
+    + 'openTab Preparation\nclickRow #preparation-variables-list R11');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  let text: string | null = null;
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    text = await firstWindow.locator('#__screenshot_annotations > div').textContent();
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, 'annotationSelectedChart #distribution-chart-0 1 "Distribution bar" {position:top}\nscreenshot');
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(text).toBe('Distribution bar');
+});
+
 test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }, testInfo) => {
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('annotation-selected-cell.txt');

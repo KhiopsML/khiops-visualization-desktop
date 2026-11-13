@@ -13,13 +13,15 @@ const ANNOTATION_FONT_SIZE = 14;
 const ANNOTATION_FONT_COLOR = '#000000';
 
 type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
+type ChartBarGeometry = { x: number; y: number; width: number; height: number; offsetX: number; offsetY: number };
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
   annotationPosition?: AnnotationPosition;
+  chartIndex?: number;
 };
 
 async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<void> {
@@ -57,6 +59,36 @@ function toElementSelector(selector: string): string {
   if (selector.startsWith('.')) return `[class~=${JSON.stringify(selector.slice(1))}]`;
   if (selector.startsWith('#')) return `[id=${JSON.stringify(selector.slice(1))}]`;
   return selector;
+}
+
+async function getChartBarGeometry(canvas: Locator, index: number, selector: string, requireWidth = false): Promise<ChartBarGeometry> {
+  let geometry: ChartBarGeometry | null = null;
+  await expect.poll(async () => {
+    geometry = await canvas.evaluate((element, barIndex) => {
+      type Bar = { x: number; y: number; base: number; width?: number };
+      type Chart = { width: number; height: number; data: { datasets: unknown[] }; getDatasetMeta: (index: number) => { data: Bar[] } };
+      const host = element.closest('kl-chart') as (HTMLElement & {
+        componentInstance?: { chartManagerService?: { getChart: () => Chart | undefined } };
+      }) | null;
+      const chart = host?.componentInstance?.chartManagerService?.getChart();
+      if (!chart || !chart.width || !chart.height) return null;
+      const bar = chart.data.datasets
+        .map((_dataset, datasetIndex) => chart.getDatasetMeta(datasetIndex).data[barIndex])
+        .find((entry) => entry && Math.abs(entry.base - entry.y) > 1);
+      if (!bar) return null;
+      const bounds = element.getBoundingClientRect();
+      const scaleX = bounds.width / chart.width;
+      const scaleY = bounds.height / chart.height;
+      const width = typeof bar.width === 'number' && Number.isFinite(bar.width) ? Math.abs(bar.width) * scaleX : 0;
+      const offsetX = bar.x * scaleX;
+      const offsetY = (bar.y + bar.base) / 2 * scaleY;
+      return { x: bounds.x + offsetX - width / 2, y: bounds.y + Math.min(bar.y, bar.base) * scaleY,
+        width, height: Math.abs(bar.base - bar.y) * scaleY, offsetX, offsetY };
+    }, index);
+    return geometry !== null && (!requireWidth || geometry.width > 0);
+  }, { timeout: 30000, message: `Chart ${selector} has no visible bar at index ${index}` }).toBe(true);
+  if (!geometry) throw new Error(`Chart ${selector} has no visible bar at index ${index}`);
+  return geometry;
 }
 
 function parseSplitSelector(selector: string, line: number): { selector: string; occurrence?: number }[] {
@@ -236,7 +268,8 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     let argument = (match![2] || '').trim();
     let occurrence: number | undefined;
     let annotationPosition: AnnotationPosition | undefined;
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    let chartIndex: number | undefined;
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
         if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
@@ -252,7 +285,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
           occurrence = Number(value);
         };
         if (['openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
-          'resizeSplit', 'frame', 'annotation', 'annotationSelectedCell', 'input', 'shotElt', 'setVisibility'].includes(name)) {
+          'resizeSplit', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'input', 'shotElt', 'setVisibility'].includes(name)) {
           const prefix = /^([+-]?\d\S*)\s+(.+)$/.exec(argument);
           if (prefix) {
             setOccurrence(prefix[1]);
@@ -267,6 +300,17 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
         name === 'annotation' ? argument : `#matrix-selected ${argument}`, index + 1);
       argument = name === 'annotation' ? `${selector} ${text}` : text;
       if (annotationOccurrence !== undefined) setOccurrence(String(annotationOccurrence));
+      annotationPosition = position;
+    }
+    if (name === 'annotationSelectedChart') {
+      const chart = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?\s+(\d+)\s+(.+)$/.exec(argument);
+      if (!chart || !Number.isSafeInteger(Number(chart[3]))) {
+        throw new Error(`Line ${index + 1}: annotationSelectedChart requires a chart selector, a zero-based bar index, and quoted text`);
+      }
+      if (chart[2]) setOccurrence(chart[2]);
+      const { text, position } = parseAnnotationArgument(`${chart[1]} ${chart[4]}`, index + 1);
+      argument = `${chart[1]} ${text}`;
+      chartIndex = Number(chart[3]);
       annotationPosition = position;
     }
     if (name === 'input') {
@@ -381,7 +425,8 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1,
       ...(occurrence !== undefined ? { occurrence } : {}),
-      ...(annotationPosition !== undefined ? { annotationPosition } : {}) });
+      ...(annotationPosition !== undefined ? { annotationPosition } : {}),
+      ...(chartIndex !== undefined ? { chartIndex } : {}) });
   }
   return commands;
 }
@@ -396,7 +441,7 @@ export async function runScreenshotScenario(
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
   let frames: { target: Locator; noId: boolean; badge: 'letter' | 'number'; padding: FramePadding }[] = [];
-  let annotations: { target: Locator; text: string; position: AnnotationPosition; selectedCell?: boolean }[] = [];
+  let annotations: { target: Locator; text: string; position: AnnotationPosition; selectedCell?: boolean; chartIndex?: number; chartSelector?: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
 
@@ -722,21 +767,8 @@ export async function runScreenshotScenario(
             ? canvases : canvases.nth((command.occurrence ?? 1) - 1);
           await expect(canvas).toBeVisible({ timeout: 30000 });
           await canvas.scrollIntoViewIfNeeded();
-          let position: { x: number; y: number } | null = null;
-          await expect.poll(async () => {
-            position = await canvas.evaluate((element, barIndex) => {
-              const chart = (element.closest('kl-chart') as any)?.componentInstance?.chartManagerService?.getChart();
-              if (!chart || !chart.width || !chart.height) return null;
-              const bar = chart.data.datasets
-                .map((_dataset: unknown, datasetIndex: number) => chart.getDatasetMeta(datasetIndex).data[barIndex])
-                .find((entry: any) => entry && Math.abs(entry.base - entry.y) > 1);
-              if (!bar) return null;
-              const bounds = element.getBoundingClientRect();
-              return { x: bar.x * bounds.width / chart.width, y: (bar.y + bar.base) / 2 * bounds.height / chart.height };
-            }, index);
-            return position !== null;
-          }, { timeout: 30000, message: `Chart ${chartId} has no visible bar at index ${index}` }).toBe(true);
-          await canvas.click({ position: position! });
+          const bar = await getChartBarGeometry(canvas, index, chartId);
+          await canvas.click({ position: { x: bar.offsetX, y: bar.offsetY } });
           await firstWindow.mouse.move(0, 0);
           break;
         }
@@ -823,6 +855,19 @@ export async function runScreenshotScenario(
           const target = targets.nth((command.occurrence ?? 1) - 1);
           await expect(target).toBeVisible({ timeout: 30000 });
           annotations.push({ target, text: command.argument, position: command.annotationPosition ?? 'bottom', selectedCell: true });
+          break;
+        }
+        case 'annotationSelectedChart': {
+          const separator = command.argument.indexOf(' ');
+          const chartSelector = command.argument.slice(0, separator);
+          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(toElementSelector(chartSelector)).filter({ visible: true });
+          if (chartSelector.startsWith('#') && command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
+          const target = targets.nth((command.occurrence ?? 1) - 1);
+          await expect(target).toBeVisible({ timeout: 30000 });
+          if (command.chartIndex === undefined) throw new Error('Chart bar index is missing');
+          annotations.push({ target, text: command.argument.slice(separator + 1), position: command.annotationPosition ?? 'bottom',
+            chartIndex: command.chartIndex, chartSelector });
           break;
         }
         case 'clean': {
@@ -942,9 +987,12 @@ export async function runScreenshotScenario(
             await expect(badges).toHaveText(labels);
           }
           if (annotations.length) {
-            const items = await Promise.all(annotations.map(async ({ target, text, position, selectedCell }) => {
+            const items = await Promise.all(annotations.map(async ({ target, text, position, selectedCell, chartIndex, chartSelector }) => {
               await expect(target).toBeVisible();
-              const box = selectedCell ? await target.evaluate((element) => {
+              if (chartIndex !== undefined && !chartSelector) throw new Error('Chart selector is missing');
+              const box = chartIndex !== undefined
+                ? await getChartBarGeometry(target, chartIndex, chartSelector!, true)
+                : selectedCell ? await target.evaluate((element) => {
                 if (!(element instanceof HTMLCanvasElement)) throw new Error('Selected matrix target must be a canvas');
                 const canvas = element as HTMLCanvasElement & {
                   getSelectedCellBounds?: () => { x: number; y: number; width: number; height: number } | undefined;

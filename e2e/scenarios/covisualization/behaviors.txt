@@ -1,0 +1,24 @@
+### behavior interactions
+zoomOut
+
+fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj
+
+openTab Axis
+
+clickElt "{Machine-op-inspct, Transport-moving, Handlers-cleaners}"
+clickElt "{11th, 10th, 9th, ...}"
+
+annotation .tree-selected "A mouse click on a cluster propagate to all view on the same dimension"
+annotation ag-grid-angular "Selected composition" {position:top}
+annotation ag-grid-angular 3 "Current clusters" {position:top}
+annotationSelectedCell "Selected cell"
+annotationSelectedChart #distribution-chart-1 4 "Selected distribution" {position:bottom}
+screenshot "images-khiops-guides/covisualization/InteractionsCluster.png"
+
+annotation .tree-selected "Selected Cluster"
+annotation ag-grid-angular "Selected composition" {position:top}
+annotation ag-grid-angular 3 "Current clusters" {position:top}
+annotationSelectedCell "A mouse click on a cell propagates to all views"
+annotationSelectedChart #distribution-chart-1 4 "Selected distribution" {position:bottom}
+screenshot "images-khiops-guides/covisualization/InteractionsCell.png"
+
