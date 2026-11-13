@@ -1,7 +1,7 @@
 ### Regression analysis visualization
 zoomOut
 
-fileOpen e2e/scenarios/src/RegressionModel/AllReports.khj
+fileOpen e2e/mocks/src-screenshots/RegressionModel/AllReports.khj
 
 openTab Preparation
 screenshot "images-khiops-guides/visualization/RegressionPreparation.png"

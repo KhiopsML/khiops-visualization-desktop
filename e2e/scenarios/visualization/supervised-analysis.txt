@@ -1,7 +1,7 @@
 ### Supervised analysis visualization
 zoomOut
 
-fileOpen e2e/scenarios/src/ClassificationModel/AllReports.khj
+fileOpen e2e/mocks/src-screenshots/ClassificationModel/AllReports.khj
 
 openTab Preparation
 frame #preparation-view-informations-split

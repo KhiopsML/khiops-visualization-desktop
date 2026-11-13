@@ -1,7 +1,7 @@
 ### Visualization elements screenshots
 zoomOut
 
-fileOpen e2e/scenarios/src/screenshots/C100_AllReports.json
+fileOpen e2e/mocks/src-screenshots/screenshots/C100_AllReports.json
 
 openTab Modeling
 screenshot "images/Visualization Adult Modeling.png"

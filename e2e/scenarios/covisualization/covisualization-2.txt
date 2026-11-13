@@ -1,7 +1,7 @@
 ### CoVisualization elements screenshots
 zoomOut
 
-fileOpen e2e/scenarios/src/Covisualization/IV-AdultComplete.khcj
+fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj
 
 setVisibility isCompositionChecked 1 false
 setVisibility isCompositionChecked 2 false

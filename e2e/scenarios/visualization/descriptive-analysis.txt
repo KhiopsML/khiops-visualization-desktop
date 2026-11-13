@@ -1,7 +1,7 @@
 ### Descriptive analysis visualization
 zoomOut
 
-fileOpen e2e/scenarios/src/DatasetsHistograms/AdultUnsupervised.khj
+fileOpen e2e/mocks/src-screenshots/DatasetsHistograms/AdultUnsupervised.khj
 
 openTab Preparation
 clickRow #preparation-variables-list R11

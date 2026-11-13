@@ -123,7 +123,7 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('frames.txt');
   const output = testInfo.outputPath('screenshots');
-  await fs.writeFile(scenario, 'fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     for (let index = 0; index < 4; index++) {
@@ -231,7 +231,7 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('zoom.txt');
   const output = testInfo.outputPath('screenshots');
-  await fs.writeFile(scenario, 'fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const target = document.createElement('div');
@@ -264,7 +264,7 @@ test('Bring an element above a modal dialog', async ({ app, firstWindow }, testI
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('foreground.txt');
   const output = testInfo.outputPath('screenshots');
-  await fs.writeFile(scenario, 'fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const container = document.createElement('div');

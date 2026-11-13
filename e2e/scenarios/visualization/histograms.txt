@@ -1,7 +1,7 @@
 ### Visualization elements screenshots
 zoomOut
 
-fileOpen e2e/scenarios/src/DatasetsHistograms/AdultUnsupervised.khj
+fileOpen e2e/mocks/src-screenshots/DatasetsHistograms/AdultUnsupervised.khj
 
 zoomIn
 
@@ -27,7 +27,7 @@ clickElt .button-reduce-hierarchy
 frame .app-histogram-slider
 shotElt #app-histogram "images-khiops-guides/visualization/CoarsestCapitalLossHistogram.png"
 
-fileOpen e2e/scenarios/src/DatasetsHistograms/Cauchy_AnalysisResults.khj
+fileOpen e2e/mocks/src-screenshots/DatasetsHistograms/Cauchy_AnalysisResults.khj
 
 clickElt #change-scale-button
 clickElt #scale-toggle-group-xLog-button 
