@@ -37,6 +37,21 @@ test('Parse element screenshot paths', () => {
   ]);
 });
 
+test('Parse element screenshot occurrences', () => {
+  const commands = parseScreenshotScenario('shotElt .axis-comp 2 "images/Composition.png" {padding:2px, fade:1px}\n'
+    + 'shotElt kl-chart 3 "images/Chart With Spaces.png"\nshotElt #chart 1 chart.png\nshotElt .chart chart.png');
+  expect(commands.map((command) => command.occurrence)).toEqual([2, 3, 1, undefined]);
+  expect(commands.map((command) => command.argument)).toEqual([
+    '.axis-comp images/Composition.png {padding:2 2 2 2} {fade:1}',
+    'kl-chart images/Chart With Spaces.png',
+    '#chart chart.png',
+    '.chart chart.png',
+  ]);
+  for (const occurrence of ['0', '-1', '+2', '1.5', '9007199254740992']) {
+    expect(() => parseScreenshotScenario(`shotElt .axis-comp ${occurrence} "image.png"`)).toThrow(/Line 1/);
+  }
+});
+
 test('Parse element screenshot sizes', () => {
   const commands = parseScreenshotScenario(
     'shotElt #header-right "images-khiops-guides/covisualization/UnfoldHierarchy.png" {size:600x200}\nshotElt .chart "plot.png"',
@@ -78,12 +93,65 @@ test('Parse element screenshot fade', () => {
 });
 
 test('Parse chained resizeSplit selectors', () => {
-  const commands = parseScreenshotScenario('resizeSplit .axis-comp > .as-horizontal 100 0\nresizeSplit .axis-comp>.as-horizontal 60 40');
+  const commands = parseScreenshotScenario('resizeSplit .axis-comp > .as-horizontal 100 0\n'
+    + 'resizeSplit .axis-comp>.as-horizontal 60 40\n'
+    + 'resizeSplit .axis-comp 2>.as-horizontal 35 65\n'
+    + 'resizeSplit .axis-comp 2 > .group 3 > .as-horizontal 40 60');
   expect(commands.map((command) => command.argument)).toEqual([
     '.axis-comp>.as-horizontal 100 0',
     '.axis-comp>.as-horizontal 60 40',
+    '.axis-comp 2>.as-horizontal 35 65',
+    '.axis-comp 2>.group 3>.as-horizontal 40 60',
   ]);
   expect(() => parseScreenshotScenario('resizeSplit axis-comp>.as-horizontal 100 0')).toThrow(/Line 1/);
+  for (const occurrence of ['0', '-1', '1.5', '9007199254740992']) {
+    expect(() => parseScreenshotScenario(`resizeSplit .axis-comp ${occurrence}>.as-horizontal 35 65`)).toThrow(/Line 1/);
+  }
+});
+
+test('Resize the split inside the selected parent occurrence', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('split-parent-occurrence.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const root = host.shadowRoot || host;
+    for (let index = 0; index < 2; index++) {
+      const parent = document.createElement('div');
+      parent.className = 'scenario-split-group';
+      parent.style.cssText = `position:fixed;left:${100 + index * 400}px;top:200px;z-index:2147483647`;
+      const split = document.createElement('as-split');
+      split.className = 'as-horizontal';
+      split.style.cssText = 'display:grid;grid-template-columns:1fr 8px 1fr;width:300px;height:80px;background:white';
+      const first = document.createElement('as-split-area');
+      const gutter = document.createElement('div');
+      gutter.className = 'as-split-gutter';
+      const second = document.createElement('as-split-area');
+      let dragging = false;
+      gutter.addEventListener('mousedown', () => { dragging = true; });
+      document.addEventListener('mousemove', (event) => {
+        if (!dragging) return;
+        const box = split.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (event.clientX - box.left - 4) / (box.width - 8)));
+        split.style.gridTemplateColumns = `${ratio}fr 8px ${1 - ratio}fr`;
+      });
+      document.addEventListener('mouseup', () => { dragging = false; });
+      split.append(first, gutter, second);
+      parent.appendChild(split);
+      root.appendChild(parent);
+    }
+  });
+  await fs.writeFile(scenario, 'resizeSplit .scenario-split-group 2>.as-horizontal 35 65\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  const ratios = await firstWindow.locator('.scenario-split-group as-split').evaluateAll((splits) => splits.map((split) => {
+    const areas = split.querySelectorAll(':scope > as-split-area');
+    const first = areas[0].getBoundingClientRect().width;
+    const second = areas[1].getBoundingClientRect().width;
+    return first / (first + second) * 100;
+  }));
+  expect(ratios[0]).toBeCloseTo(50, 0);
+  expect(Math.abs(ratios[1] - 35)).toBeLessThan(1);
 });
 
 test('Require prefixes for ID references', () => {
@@ -160,7 +228,7 @@ test('Annotate the requested visible occurrence', async ({ app, firstWindow }, t
     return screenshot.call(firstWindow, options);
   };
   try {
-    await fs.writeFile(scenario, 'annotation .scenario-annotation-occurrence 3 "Third"\nscreenshot');
+    await fs.writeFile(scenario, 'annotation 3 .scenario-annotation-occurrence "Third"\nscreenshot');
     await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   } finally {
     firstWindow.screenshot = screenshot;
@@ -337,7 +405,7 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
   try {
     await fs.writeFile(scenario, [
       'frame .scenario-frame-test {noId:true, padding: 10px 20px 30px 40px}',
-      'frame .scenario-frame-test 2',
+      'frame 2 .scenario-frame-test',
       'frame .scenario-frame-test 3 {noId:true, padding: 5px}',
       'frame .scenario-frame-test 4 {padding: 4px 8px}',
       'frame #scenario-frame-duplicate',
@@ -449,22 +517,91 @@ test('Parse setVisibility commands', () => {
 });
 
 test('Parse class click occurrences', () => {
-  for (const command of ['clickElt .box-distribution', 'clickElt .box-distribution 1', 'clickElt .box-distribution 2']) {
+  for (const command of ['clickElt .box-distribution', 'clickElt .box-distribution 1',
+    'clickElt .box-distribution 2', 'clickElt 2 .box-distribution', 'clickElt #box-distribution 2']) {
     expect(parseScreenshotScenario(command)).toHaveLength(1);
   }
   for (const command of ['clickElt .box-distribution 0', 'clickElt .box-distribution -1',
-    'clickElt .box-distribution 1.5', 'clickElt .box-distribution 9007199254740992', 'clickElt #box-distribution 2']) {
+    'clickElt .box-distribution 1.5', 'clickElt .box-distribution 9007199254740992', 'clickElt 2 .box-distribution 2']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
 });
 
 test('Parse text click commands', () => {
-  for (const command of ['clickElt "C1"', 'clickElt "Say \\"hi\\"\\nnow"']) {
+  for (const command of ['clickElt "C1"', 'clickElt "C1" 2', 'clickElt 2 "C1"', 'clickElt "Say \\"hi\\"\\nnow"']) {
     expect(parseScreenshotScenario(command)).toHaveLength(1);
   }
-  for (const command of ['clickElt ""', 'clickElt "   "', 'clickElt "\\n"', 'clickElt "C1', 'clickElt "C1" 2']) {
+  for (const command of ['clickElt ""', 'clickElt "   "', 'clickElt "\\n"', 'clickElt "C1', 'clickElt 2 "C1" 2']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
+});
+
+test('Parse target occurrence prefixes', () => {
+  for (const command of [
+    'openTab 2 Context', 'clickRow 2 #table R11', 'clickElt 2 .target',
+    'hideElt 2 .target', 'removeElt 2 .target', 'firstPlan 2 .target',
+    'clickChart 2 #chart 0', 'resizeSplit 2 .split 50 50', 'frame 2 .target',
+    'annotation 2 .target "Label"', 'input 2 .target 6', 'shotElt 2 .target "image.png"',
+    'setVisibility 2 isChecked true',
+  ]) {
+    expect(parseScreenshotScenario(command)[0].occurrence, command).toBe(2);
+  }
+  for (const command of [
+    'clickElt 0 .target', 'removeElt -1 .target', 'input 1.5 .target "value"',
+    'shotElt 9007199254740992 .target "image.png"', 'frame 2 .target 3',
+    'annotation 2 .target 3 "Label"', 'input 2 .target 3 "value"',
+    'resizeSplit 2 .split 3 50 50', 'setVisibility 2 isChecked 3 true',
+  ]) {
+    expect(() => parseScreenshotScenario(command), command).toThrow(/Line 1/);
+  }
+  expect(parseScreenshotScenario('input .target 6')[0].argument).toBe('.target 6');
+  expect(parseScreenshotScenario('clickChart #chart 2')[0].argument).toBe('#chart 2');
+});
+
+test('Apply target occurrences to click, input, hide and remove', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('target-occurrences.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const root = host.shadowRoot || host;
+    for (let index = 0; index < 3; index++) {
+      const container = document.createElement('div');
+      container.style.cssText = `position:fixed;left:${200 + index * 200}px;top:200px;z-index:2147483647;background:white`;
+      const button = document.createElement('button');
+      button.className = 'occurrence-click';
+      button.textContent = `Click ${index}`;
+      button.addEventListener('click', () => { document.body.dataset.occurrenceClick = String(index); });
+      const input = document.createElement('input');
+      input.className = 'occurrence-input';
+      const hidden = document.createElement('div');
+      hidden.className = 'occurrence-hide';
+      hidden.textContent = `Hide ${index}`;
+      const removed = document.createElement('div');
+      removed.className = 'occurrence-remove';
+      removed.textContent = `Remove ${index}`;
+      container.append(button, input, hidden, removed);
+      root.appendChild(container);
+    }
+  });
+  await fs.writeFile(scenario, [
+    'clickElt 2 .occurrence-click',
+    'input .occurrence-input 2 "second"',
+    'hideElt 2 .occurrence-hide',
+    'removeElt .occurrence-remove 2',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(firstWindow.locator('body')).toHaveAttribute('data-occurrence-click', '1');
+  const inputs = firstWindow.locator('.occurrence-input');
+  await expect(inputs.nth(0)).toHaveValue('');
+  await expect(inputs.nth(1)).toHaveValue('second');
+  const hidden = firstWindow.locator('.occurrence-hide');
+  await expect(hidden.nth(0)).toBeVisible();
+  await expect(hidden.nth(1)).toBeHidden();
+  await expect(hidden.nth(2)).toBeVisible();
+  await expect(firstWindow.locator('.occurrence-remove')).toHaveText(['Remove 0', 'Remove 2']);
 });
 
 test('Click the element containing matching text', async ({ app, firstWindow }, testInfo) => {
@@ -523,17 +660,25 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     decoy.id = 'scenario-zoom-target';
     decoy.style.cssText = 'position:fixed;left:10px;top:80px;width:75px;height:31px;background:blue';
     root.appendChild(decoy);
+    const hidden = document.createElement('scenario-zoom-target');
+    hidden.className = 'scenario-zoom-test';
+    hidden.style.display = 'none';
+    root.appendChild(hidden);
     const target = document.createElement('scenario-zoom-target');
     target.className = 'scenario-zoom-test';
     target.style.cssText = 'position:fixed;right:10px;top:80px;width:75px;height:31px;background:rgb(255,0,0);z-index:2147483647';
     root.appendChild(target);
     const second = document.createElement('scenario-zoom-target');
-    second.style.cssText = 'position:fixed;left:100px;top:80px;width:75px;height:31px;background:blue';
+    second.className = 'scenario-zoom-test';
+    second.style.cssText = 'position:fixed;left:100px;top:80px;width:75px;height:31px;background:blue;z-index:2147483647';
     root.appendChild(second);
   });
   await fs.writeFile(scenario, [
     'zoomOut', 'shotElt .scenario-zoom-test "zoom-out.png"',
     'zoomIn', 'shotElt .scenario-zoom-test "normal.png"',
+    'shotElt 2 .scenario-zoom-test "second.png"',
+    'shotElt .scenario-zoom-test 2 "second-padded.png" {padding:2px}',
+    'shotElt scenario-zoom-target 2 "tag-second.png" {size:30x20}',
     'shotElt scenario-zoom-target "tag.png" {padding:5px}',
     'zoomIn', 'shotElt .scenario-zoom-test "zoom-in.png"',
     'zoomOut', 'screenshot "full.jpg"',
@@ -543,7 +688,8 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     'zoomOut', 'shotElt .scenario-zoom-test "zoom.jpg"',
   ].join('\n'));
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
-  for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png', 'tag.png']) {
+  for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png', 'tag.png',
+    'second.png', 'second-padded.png', 'tag-second.png']) {
     const image = (await fs.readFile(path.join(output, filename))).toString('base64');
     const pixel = await firstWindow.evaluate(async (encoded) => {
       const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))], { type: 'image/png' }));
@@ -554,7 +700,7 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
       context.drawImage(bitmap, 0, 0);
       return Array.from(context.getImageData(Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2), 1, 1).data);
     }, image);
-    expect(pixel, filename).toEqual([255, 0, 0, 255]);
+    expect(pixel, filename).toEqual(filename.includes('second') ? [0, 0, 255, 255] : [255, 0, 0, 255]);
   }
   for (const filename of ['full.jpg', 'element.JPEG', 'size.jpg', 'padding.jpg', 'zoom.jpg']) {
     const image = await fs.readFile(path.join(output, filename));

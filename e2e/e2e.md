@@ -22,7 +22,14 @@ The scenario helper tests run with the standard E2E suite; run them separately
 with `yarn e2e screenshot-scenario-helper`.
 
 Scenario commands are one per line. Blank lines and lines beginning with `#`
-are ignored. `fileOpen` takes an absolute path or a path relative to the
+are ignored. Commands that select a target accept a 1-based occurrence immediately
+after the command, for example `clickElt 2 .mat-badge-accent`,
+`removeElt 2 .class-elt`, or `clickRow 2 #table R11`. Existing occurrence positions
+after the target are also supported where unambiguous. Without an occurrence,
+each command retains its usual behavior. Occurrences select visible matches, except
+`removeElt` counts attached matches, including hidden elements; `clickElt` and
+`input` fall back to attached matches if there are not enough visible ones.
+`fileOpen` takes an absolute path or a path relative to the
 desktop project root and waits for the load notification to disappear.
 `openTab` takes the exact visible tab name. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
@@ -53,6 +60,9 @@ element with that ID to the relative PNG or JPEG path in the screenshot output d
 `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
 captures the first visible element with that class. An unprefixed element name, such as
 `shotElt kl-keyboard-tooltip "CTRL.png"`, captures the first visible matching HTML element.
+Add a 1-based occurrence before the path to capture a different visible match, for example
+`shotElt .axis-comp 2 "Composition.png"`. This also works for element names and IDs;
+without an occurrence, an ID must match exactly one visible element.
 An optional `WxH` size after the
 path, such as `shotElt #header-right "UnfoldHierarchy.png" {size:600x200}`, captures a region of exactly
 that size starting at the element's top-left corner instead of the element's bounds. An optional
@@ -76,6 +86,8 @@ within the captured element is visible.
 `resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
 `resizeSplit .as-horizontal 100 0` targets the first visible split with that class.
 Selectors can be chained with `>`, for example `resizeSplit .axis-comp>.as-horizontal 100 0`.
+To select a particular parent before following the chain, add its occurrence there:
+`resizeSplit .axis-comp 2>.as-horizontal 35 65` selects the split inside the second visible `.axis-comp`.
 The split may be vertical or horizontal; the percentages must total 100. Open CDK overlays (such as a filter menu) are closed with `Escape` first, because their backdrop would otherwise block the drag.
 `frame`
 takes an element ID prefixed with `#`, a class prefixed with `.`, or a Playwright

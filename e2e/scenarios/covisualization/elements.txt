@@ -3,6 +3,12 @@ zoomOut
 
 fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj
 
+clickElt .button-manage-views
+firstPlan .button-manage-views
+annotation .button-manage-views "Add or remove different view on each dimension"
+screenshot "images-khiops-guides/covisualization/AddRemoveView.png"
+clickElt #manage-views-save
+
 # ScreenshotButtons
 shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/ScreenshotButtons.png" {padding: 5px 5px 5px 0px}
 
