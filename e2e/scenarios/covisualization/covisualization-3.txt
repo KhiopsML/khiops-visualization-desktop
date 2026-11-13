@@ -13,7 +13,19 @@ openTab Context
 clickElt "C1"
 openTab Axis
 
+resizeSplit .axis-view-comp>.as-horizontal 40 60
+
 frame app-selected-clusters {noId:true}
-annotation app-selected-clusters "3 dimensions\n2 main, 1 contextual"
+annotation app-selected-clusters "3 dimensions :\n2 main, 1 contextual"
 screenshot "images-khiops-guides/covisualization/3DimAxis.png"
+
+openTab Context
+
+# Clean previous frames
+clean
+
+annotation .hierarchy-select-comp-button 3 "\"Class\" is the contextual dimension.The axes of the matrix are the other two dimensions"
+annotation .conditionnal-checkbox "Indicators are computed according to the entire dataset or conditionally to the context"
+
+screenshot "images-khiops-guides/covisualization/3DimContext.png"
 

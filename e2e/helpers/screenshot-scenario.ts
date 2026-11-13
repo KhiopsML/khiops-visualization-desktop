@@ -11,9 +11,10 @@ const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
+  occurrence?: number;
 };
 
 async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<void> {
@@ -177,14 +178,18 @@ function parseFrameArgument(argument: string, line: number): {
   return { selector, noId, badge, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
 }
 
-function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string } {
-  const annotation = /^(\S+)\s+"((?:[^"\\]|\\.)+)"$/.exec(argument);
-  if (!annotation || (/^[\w-]+$/.test(annotation[1]) && !/^[a-zA-Z][\w-]*$/.test(annotation[1])) || !/\S/.test(annotation[2])) {
-    throw new Error(`Line ${line}: annotation requires a selector or element name and quoted text; IDs must start with #`);
+function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string; occurrence?: number } {
+  const annotation = /^(\S+)(?:\s+(\S+))?\s+"((?:[^"\\]|\\.)+)"$/.exec(argument);
+  if (!annotation || (/^[\w-]+$/.test(annotation[1]) && !/^[a-zA-Z][\w-]*$/.test(annotation[1])) || !/\S/.test(annotation[3])) {
+    throw new Error(`Line ${line}: annotation requires a selector or element name, an optional occurrence, and quoted text; IDs must start with #`);
+  }
+  if (annotation[2] && (!/^[1-9]\d*$/.test(annotation[2]) || !Number.isSafeInteger(Number(annotation[2])))) {
+    throw new Error(`Line ${line}: annotation occurrence must be a positive integer`);
   }
   return {
     selector: annotation[1],
-    text: annotation[2].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'),
+    text: annotation[3].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'),
+    occurrence: annotation[2] ? Number(annotation[2]) : undefined,
   };
 }
 
@@ -210,21 +215,23 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const match = /^(\S+)(?:\s+(.+))?$/.exec(line);
     const name = match![1];
     let argument = (match![2] || '').trim();
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    let occurrence: number | undefined;
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
-        if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && !argument) {
+        if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
     }
-        if ((name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus') && argument) {
+        if ((name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus' || name === 'clean') && argument) {
       throw new Error(`Line ${index + 1}: ${name} does not take an argument`);
     }
     if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
     }
     if (name === 'annotation') {
-      const { selector, text } = parseAnnotationArgument(argument, index + 1);
+      const { selector, text, occurrence: annotationOccurrence } = parseAnnotationArgument(argument, index + 1);
       argument = `${selector} ${text}`;
+      occurrence = annotationOccurrence;
     }
     if (name === 'input') {
       const input = /^([.#][\w-]+)\s+(?:"((?:[^"\\]|\\.)*)"|([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?))$/.exec(argument);
@@ -309,7 +316,8 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       }
       argument = `${match[1].replace(/\s+/g, '')} ${match[2]} ${match[3]}`;
     }
-    commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1 });
+    commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1,
+      ...(occurrence !== undefined ? { occurrence } : {}) });
   }
   return commands;
 }
@@ -719,9 +727,14 @@ export async function runScreenshotScenario(
           const selector = command.argument.slice(0, separator);
           const text = command.argument.slice(separator + 1);
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(selector).filter({ visible: true }).first();
+            .locator(selector).filter({ visible: true }).nth((command.occurrence ?? 1) - 1);
           await expect(target).toBeVisible({ timeout: 30000 });
           annotations.push({ target, text });
+          break;
+        }
+        case 'clean': {
+          frames = [];
+          annotations = [];
           break;
         }
         case 'shotElt':

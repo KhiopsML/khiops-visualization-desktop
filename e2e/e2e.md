@@ -100,7 +100,10 @@ If no visible match exists, the first attached match is used, including hidden t
 `annotation .button-manage-views "Add or remove views"`
 queues a text label on the first visible match. A DOM element name also works, for example
 `annotation app-selected-clusters "Selected clusters"`; IDs must be prefixed with `#`.
+Add a 1-based occurrence before the text to select another visible match, for example
+`annotation .hierarchy-select-comp-button 3 "Context dimension"`.
 The text must be quoted. Use `\n` for a line break and `\"` for a quote within the text.
+`clean` discards all queued frames and annotations without taking a screenshot.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
 captures a PNG or JPEG under the screenshot output directory, creating subdirectories as
 needed. Paths must be relative and cannot contain parent-directory segments.

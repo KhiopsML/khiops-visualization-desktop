@@ -123,6 +123,104 @@ test('Require quoted annotation text', () => {
   }
 });
 
+test('Parse annotation occurrences', () => {
+  const commands = parseScreenshotScenario('annotation .target 3 "\\"Class\\" is contextual\\nMore text"\nannotation .target "Default"');
+  expect(commands[0].argument).toBe('.target "Class" is contextual\nMore text');
+  expect(commands[0].occurrence).toBe(3);
+  expect(commands[1].occurrence).toBeUndefined();
+  for (const occurrence of ['0', '-1', '1.5', '9007199254740992', 'other']) {
+    expect(() => parseScreenshotScenario(`annotation .target ${occurrence} "Label"`)).toThrow(/Line 1/);
+  }
+});
+
+test('Annotate the requested visible occurrence', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('annotation-occurrence.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    for (let index = 0; index < 4; index++) {
+      const target = document.createElement('div');
+      target.className = 'scenario-annotation-occurrence';
+      target.style.cssText = `position:fixed;left:${150 + index * 200}px;top:200px;width:100px;height:40px;${index === 0 ? 'display:none;' : ''}`;
+      (host.shadowRoot || host).appendChild(target);
+    }
+  });
+  const target = firstWindow.locator('.scenario-annotation-occurrence').filter({ visible: true }).nth(2);
+  const targetBox = await target.boundingBox();
+  expect(targetBox).not.toBeNull();
+  let labelCenter: number | undefined;
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    labelCenter = await firstWindow.locator('#__screenshot_annotations > div').evaluate((label) => {
+      const box = label.getBoundingClientRect();
+      return box.left + box.width / 2;
+    });
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, 'annotation .scenario-annotation-occurrence 3 "Third"\nscreenshot');
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(labelCenter).toBeDefined();
+  expect(labelCenter!).toBeCloseTo(targetBox!.x + targetBox!.width / 2, 1);
+});
+
+test('Parse clean command', () => {
+  expect(parseScreenshotScenario('clean')[0].name).toBe('clean');
+  expect(() => parseScreenshotScenario('clean .target')).toThrow(/Line 1/);
+});
+
+test('Clean queued frames and annotations', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('clean.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const target = document.createElement('div');
+    target.className = 'scenario-clean-target';
+    target.style.cssText = 'position:fixed;left:200px;top:200px;width:100px;height:40px';
+    (host.shadowRoot || host).appendChild(target);
+  });
+  const snapshots: { frames: number; annotation: string | null }[] = [];
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    snapshots.push(await firstWindow.evaluate(() => ({
+      frames: document.querySelectorAll('#__an_overlay rect.an-hit').length,
+      annotation: document.querySelector('#__screenshot_annotations')?.textContent ?? null,
+    })));
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, [
+      'frame .scenario-clean-target',
+      'annotation .scenario-clean-target "Discarded"',
+      'clean',
+      'clean',
+      'screenshot "clean-before.png"',
+      'frame .scenario-clean-target',
+      'annotation .scenario-clean-target "Kept"',
+      'screenshot "kept.png"',
+      'frame .scenario-clean-target',
+      'annotation .scenario-clean-target "Discarded again"',
+      'clean',
+      'screenshot "clean-after.png"',
+    ].join('\n'));
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(snapshots).toEqual([
+    { frames: 0, annotation: null },
+    { frames: 1, annotation: 'Kept' },
+    { frames: 0, annotation: null },
+  ]);
+});
+
 test('Keep the annotation caret attached at different zoom levels', async ({ app, firstWindow }, testInfo) => {
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('annotation-caret.txt');
