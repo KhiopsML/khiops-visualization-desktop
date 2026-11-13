@@ -258,6 +258,82 @@ test('Parse annotation positions', () => {
   }
 });
 
+test('Parse selected cell annotations', () => {
+  const commands = parseScreenshotScenario('annotationSelectedCell "Selected\\ncell"\n'
+    + 'annotationSelectedCell 2 "Selection" {position:right}');
+  expect(commands.map(({ argument, occurrence, annotationPosition }) => ({ argument, occurrence, annotationPosition }))).toEqual([
+    { argument: 'Selected\ncell', occurrence: undefined, annotationPosition: undefined },
+    { argument: 'Selection', occurrence: 2, annotationPosition: 'right' },
+  ]);
+  for (const command of ['annotationSelectedCell', 'annotationSelectedCell " "',
+    'annotationSelectedCell 0 "Cell"', 'annotationSelectedCell "Cell" {position:center}']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
+  }
+});
+
+test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('annotation-selected-cell.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('#matrix-selected').evaluateAll((canvases) => {
+    for (const canvas of canvases) (canvas as HTMLElement).style.display = 'none';
+  });
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'matrix-selected';
+    canvas.width = 200;
+    canvas.height = 100;
+    canvas.style.cssText = 'position:fixed;left:300px;top:300px;width:400px;height:200px;z-index:2147483647';
+    canvas.getContext('2d')!.setTransform(1, 0, 0, -1, 0, 100);
+    Object.assign(canvas, { getSelectedCellBounds: () => ({ x: 40, y: 20, width: 50, height: 30 }) });
+    (host.shadowRoot || host).appendChild(canvas);
+  });
+  const canvas = firstWindow.locator('#matrix-selected').filter({ visible: true });
+  await expect(canvas).toHaveCount(1);
+  const canvasBox = await canvas.boundingBox();
+  expect(canvasBox).not.toBeNull();
+  let labelBox: { x: number; y: number; width: number; height: number } | null = null;
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    labelBox = await firstWindow.locator('#__screenshot_annotations > div').boundingBox();
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, 'annotationSelectedCell "Selection" {position:right}\nscreenshot');
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(labelBox).not.toBeNull();
+  expect(labelBox!.x).toBeCloseTo(canvasBox!.x + 180 + 7, 1);
+  expect(labelBox!.y + labelBox!.height / 2).toBeCloseTo(canvasBox!.y + 130, 1);
+});
+
+test('Annotate a selected matrix cell', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('real-matrix-selection.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario,
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\nopenTab Axis\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('#matrix-selected').filter({ visible: true }).click();
+  let text: string | null = null;
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    text = await firstWindow.locator('#__screenshot_annotations > div').textContent();
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, 'annotationSelectedCell "Selected cell" {position:right}\nscreenshot');
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(text).toBe('Selected cell');
+});
+
 test('Position annotation labels and carets around their target', async ({ app, firstWindow }, testInfo) => {
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('annotation-positions.txt');

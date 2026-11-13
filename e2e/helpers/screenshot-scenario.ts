@@ -13,7 +13,7 @@ const ANNOTATION_FONT_SIZE = 14;
 type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
@@ -234,7 +234,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     let argument = (match![2] || '').trim();
     let occurrence: number | undefined;
     let annotationPosition: AnnotationPosition | undefined;
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
         if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
@@ -250,7 +250,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
           occurrence = Number(value);
         };
         if (['openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
-          'resizeSplit', 'frame', 'annotation', 'input', 'shotElt', 'setVisibility'].includes(name)) {
+          'resizeSplit', 'frame', 'annotation', 'annotationSelectedCell', 'input', 'shotElt', 'setVisibility'].includes(name)) {
           const prefix = /^([+-]?\d\S*)\s+(.+)$/.exec(argument);
           if (prefix) {
             setOccurrence(prefix[1]);
@@ -260,9 +260,10 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
     }
-    if (name === 'annotation') {
-      const { selector, text, occurrence: annotationOccurrence, position } = parseAnnotationArgument(argument, index + 1);
-      argument = `${selector} ${text}`;
+    if (name === 'annotation' || name === 'annotationSelectedCell') {
+      const { selector, text, occurrence: annotationOccurrence, position } = parseAnnotationArgument(
+        name === 'annotation' ? argument : `#matrix-selected ${argument}`, index + 1);
+      argument = name === 'annotation' ? `${selector} ${text}` : text;
       if (annotationOccurrence !== undefined) setOccurrence(String(annotationOccurrence));
       annotationPosition = position;
     }
@@ -393,7 +394,7 @@ export async function runScreenshotScenario(
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
   let frames: { target: Locator; noId: boolean; badge: 'letter' | 'number'; padding: FramePadding }[] = [];
-  let annotations: { target: Locator; text: string; position: AnnotationPosition }[] = [];
+  let annotations: { target: Locator; text: string; position: AnnotationPosition; selectedCell?: boolean }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
 
@@ -813,6 +814,15 @@ export async function runScreenshotScenario(
           annotations.push({ target, text, position: command.annotationPosition ?? 'bottom' });
           break;
         }
+        case 'annotationSelectedCell': {
+          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator('#matrix-selected').filter({ visible: true });
+          if (command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
+          const target = targets.nth((command.occurrence ?? 1) - 1);
+          await expect(target).toBeVisible({ timeout: 30000 });
+          annotations.push({ target, text: command.argument, position: command.annotationPosition ?? 'bottom', selectedCell: true });
+          break;
+        }
         case 'clean': {
           frames = [];
           annotations = [];
@@ -930,9 +940,34 @@ export async function runScreenshotScenario(
             await expect(badges).toHaveText(labels);
           }
           if (annotations.length) {
-            const items = await Promise.all(annotations.map(async ({ target, text, position }) => {
+            const items = await Promise.all(annotations.map(async ({ target, text, position, selectedCell }) => {
               await expect(target).toBeVisible();
-              const box = await target.boundingBox();
+              const box = selectedCell ? await target.evaluate((element) => {
+                if (!(element instanceof HTMLCanvasElement)) throw new Error('Selected matrix target must be a canvas');
+                const canvas = element as HTMLCanvasElement & {
+                  getSelectedCellBounds?: () => { x: number; y: number; width: number; height: number } | undefined;
+                };
+                if (!canvas.getSelectedCellBounds) throw new Error('Matrix selection bounds are unavailable; rebuild the visualization component');
+                const bounds = canvas.getSelectedCellBounds();
+                if (!bounds || ![bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite) ||
+                    bounds.width <= 0 || bounds.height <= 0) throw new Error('No valid matrix cell selection is available');
+                const context = canvas.getContext('2d');
+                if (!context || !canvas.width || !canvas.height) throw new Error('Matrix canvas has no drawing area');
+                const matrix = context.getTransform();
+                const corners = [
+                  new DOMPoint(bounds.x, bounds.y), new DOMPoint(bounds.x + bounds.width, bounds.y),
+                  new DOMPoint(bounds.x, bounds.y + bounds.height),
+                  new DOMPoint(bounds.x + bounds.width, bounds.y + bounds.height),
+                ].map((point) => point.matrixTransform(matrix));
+                const xs = corners.map((point) => point.x);
+                const ys = corners.map((point) => point.y);
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = rect.width / canvas.width;
+                const scaleY = rect.height / canvas.height;
+                return { x: rect.x + Math.min(...xs) * scaleX, y: rect.y + Math.min(...ys) * scaleY,
+                  width: (Math.max(...xs) - Math.min(...xs)) * scaleX,
+                  height: (Math.max(...ys) - Math.min(...ys)) * scaleY };
+              }) : await target.boundingBox();
               if (!box || box.width <= 0 || box.height <= 0) throw new Error('annotation target has no visible area');
               return { box, text, position };
             }));

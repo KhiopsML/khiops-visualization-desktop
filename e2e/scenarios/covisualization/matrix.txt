@@ -49,7 +49,7 @@ annotation .zoom-tools-comp "Zoom in and Zoom out" {position:right}
 annotation .invert-axis "Switch abscissa and ordinate" {position:right}
 annotation #contrast "To modify the contrast" {position:left}
 annotation #legend "Scale of the matrix" {position:left}
-
+annotationSelectedCell "Selected cell"
 
 shotElt .matrix-container-comp-wrapper "images-khiops-guides/covisualization/Summary.png" {padding: 15px 15px 15px 15px}
 

@@ -128,6 +128,13 @@ The text must be quoted. Use `\n` for a line break and `\"` for a quote within t
 Labels appear below the target by default. Add `{position:top}`, `{position:right}`,
 `{position:bottom}`, or `{position:left}` after the text to select another side;
 the caret points back toward the target.
+`annotationSelectedCell "Selected cell" {position:right}` annotates the selected
+matrix cell instead of the entire canvas. Multiple selected cells use their combined
+bounding rectangle. The command requires one visible matrix by default; add a
+1-based occurrence before the text to select another. It requires a visualization
+component build that exposes matrix selection bounds. After updating the component,
+run `yarn ng build khiops-webcomponent` in the adjacent visualization-component
+repository and restart the desktop development server.
 `clean` discards all queued frames and annotations without taking a screenshot.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
 captures a PNG or JPEG under the screenshot output directory, creating subdirectories as
