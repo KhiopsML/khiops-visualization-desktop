@@ -28,7 +28,7 @@ screenshot "images-khiops-guides/covisualization/Screenshot.png"
 
 clickElt .mat-badge-accent
 frame .cdk-overlay-pane {noId:true, padding: 10px 10px 0px 10px}
-screenshot "images-khiops-guides/covisualization/FilterColumn.png.png"
+screenshot "images-khiops-guides/covisualization/FilterColumn.png"
 unfocus
 
 # open manage view dialog and disable second axis
