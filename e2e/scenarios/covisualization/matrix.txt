@@ -31,3 +31,25 @@ shotElt .matrix-container-comp-wrapper "images-khiops-guides/covisualization/Coo
 clickElt .matrix-mode-comp-option
 frame .mat-mdc-menu-content {noId: true, padding: 5px 5px 5px 5px}
 shotElt .mat-mdc-menu-panel "images-khiops-guides/covisualization/Criteria.png" {padding: 100px 200px 100px 200px, fade:40px}
+unfocus
+
+# cells stats
+shotElt #cell-stats-comp "images-khiops-guides/covisualization/MatrixTop.png" {padding: 2px 10px 10px 10px}
+
+# tooltip
+hover #matrix-selected
+wait 500
+shotElt .matrix-tooltip-comp "images-khiops-guides/covisualization/InfoTooltip.png" {padding: 100px 300px 100px 300px, fade:40px}
+
+
+annotation .matrix-mode-comp-option "Criterion represented by the matrix" {position:right}
+annotation kl-cell-stats "Values of the selected cell for several criteria" {position:top}
+annotation #matrix-option-toggle "To modify the axis representation"
+annotation .zoom-tools-comp "Zoom in and Zoom out" {position:right}
+annotation .invert-axis "Switch abscissa and ordinate" {position:right}
+annotation #contrast "To modify the contrast" {position:left}
+annotation #legend "Scale of the matrix" {position:left}
+
+
+shotElt .matrix-container-comp-wrapper "images-khiops-guides/covisualization/Summary.png" {padding: 15px 15px 15px 15px}
+

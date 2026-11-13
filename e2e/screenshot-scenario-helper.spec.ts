@@ -177,16 +177,42 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
 });
 
 test('Parse element names as command targets', () => {
-  for (const command of ['clickElt kl-button', 'hideElt kl-button', 'removeElt kl-button',
+  for (const command of ['clickElt kl-button', 'hover kl-button', 'hideElt kl-button', 'removeElt kl-button',
     'firstPlan kl-button', 'clickRow kl-table R11', 'clickChart canvas 0',
     'resizeSplit app-axis>as-split 50 50', 'frame app-axis',
     'annotation app-axis "text"', 'input mat-slider 50', 'shotElt app-axis image.png']) {
     expect(parseScreenshotScenario(command)).toHaveLength(1);
   }
-  for (const command of ['clickElt 123target', 'hideElt 123target', 'removeElt 123target',
+  for (const command of ['clickElt 123target', 'hover 123target', 'hideElt 123target', 'removeElt 123target',
     'firstPlan 123target', 'clickChart 123target 0', 'input 123target 50']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
+});
+
+test('Parse hover targets and occurrences', () => {
+  const commands = parseScreenshotScenario('hover #matrix-selected\nhover 2 .target\nhover canvas 3');
+  expect(commands.map(({ argument, occurrence }) => ({ argument, occurrence }))).toEqual([
+    { argument: '#matrix-selected', occurrence: undefined },
+    { argument: '.target', occurrence: 2 },
+    { argument: 'canvas', occurrence: 3 },
+  ]);
+  for (const command of ['hover', 'hover .target 0', 'hover .target 1.5', 'hover .target extra']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
+  }
+});
+
+test('Hover shows the matrix tooltip in a screenshot', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('matrix-hover.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario,
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\n'
+    + 'openTab Axis\nhover #matrix-selected\nwait 500\nshotElt .matrix-tooltip-comp tooltip.png');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  const tooltip = firstWindow.locator('.matrix-tooltip-comp.visible');
+  await expect(tooltip).toHaveCSS('opacity', '1');
+  await expect(tooltip.locator('h2')).toContainText(' x ');
+  expect((await fs.stat(path.join(output, 'tooltip.png'))).size).toBeGreaterThan(0);
 });
 
 test('Require quoted annotation text', () => {
@@ -214,6 +240,81 @@ test('Parse annotation occurrences', () => {
   for (const occurrence of ['0', '-1', '1.5', '9007199254740992', 'other']) {
     expect(() => parseScreenshotScenario(`annotation .target ${occurrence} "Label"`)).toThrow(/Line 1/);
   }
+});
+
+test('Parse annotation positions', () => {
+  const commands = parseScreenshotScenario('annotation .target "Default"\n'
+    + 'annotation 2 .target "Right {position:left}" {position:right}\n'
+    + 'annotation .target 3 "Top" {position: top}\n'
+    + 'annotation .target "Bottom" {position:bottom}\n'
+    + 'annotation .target "Left" {position:left}');
+  expect(commands.map((command) => command.annotationPosition)).toEqual([undefined, 'right', 'top', 'bottom', 'left']);
+  expect(commands[1].argument).toBe('.target Right {position:left}');
+  expect(commands[1].occurrence).toBe(2);
+  expect(commands[2].occurrence).toBe(3);
+  for (const option of ['{position:center}', '{position:}', '{position:RIGHT}',
+    '{side:right}', '{position:right, position:left}', '{position:right} {position:left}']) {
+    expect(() => parseScreenshotScenario(`annotation .target "Label" ${option}`)).toThrow(/Line 1/);
+  }
+});
+
+test('Position annotation labels and carets around their target', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('annotation-positions.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const target = document.createElement('div');
+    target.className = 'scenario-annotation-positions';
+    target.style.cssText = 'position:fixed;left:600px;top:400px;width:100px;height:40px';
+    (host.shadowRoot || host).appendChild(target);
+  });
+  const targetBox = await firstWindow.locator('.scenario-annotation-positions').boundingBox();
+  expect(targetBox).not.toBeNull();
+  let labels: { x: number; y: number; width: number; height: number;
+    caretX: number; caretY: number; caretWidth: number; caretHeight: number; color: string }[] = [];
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    labels = await firstWindow.locator('#__screenshot_annotations > div').evaluateAll((elements) =>
+      elements.map((element, index) => {
+        const box = element.getBoundingClientRect();
+        const caret = element.querySelector('span')!;
+        const caretBox = caret.getBoundingClientRect();
+        const style = getComputedStyle(caret);
+        const colors = [style.borderBottomColor, style.borderTopColor, style.borderRightColor,
+          style.borderBottomColor, style.borderLeftColor];
+        return { x: box.x, y: box.y, width: box.width, height: box.height,
+          caretX: caretBox.x, caretY: caretBox.y, caretWidth: caretBox.width, caretHeight: caretBox.height,
+          color: colors[index] };
+      }));
+    return screenshot.call(firstWindow, options);
+  };
+  try {
+    await fs.writeFile(scenario, [
+      'annotation .scenario-annotation-positions "Default"',
+      'annotation .scenario-annotation-positions "Top" {position:top}',
+      'annotation .scenario-annotation-positions "Right" {position:right}',
+      'annotation .scenario-annotation-positions "Bottom" {position:bottom}',
+      'annotation .scenario-annotation-positions "Left" {position:left}',
+      'screenshot',
+    ].join('\n'));
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(labels).toHaveLength(5);
+  expect(labels[0].y).toBeCloseTo(targetBox!.y + targetBox!.height + 7, 1);
+  expect(labels[1].y + labels[1].height).toBeCloseTo(targetBox!.y - 7, 1);
+  expect(labels[2].x).toBeCloseTo(targetBox!.x + targetBox!.width + 7, 1);
+  expect(labels[3].y).toBeCloseTo(targetBox!.y + targetBox!.height + 7, 1);
+  expect(labels[4].x + labels[4].width).toBeCloseTo(targetBox!.x - 7, 1);
+  expect(labels[0].caretY).toBeLessThan(labels[0].y);
+  expect(labels[1].caretY + labels[1].caretHeight).toBeGreaterThan(labels[1].y + labels[1].height);
+  expect(labels[2].caretX).toBeLessThan(labels[2].x);
+  expect(labels[3].caretY).toBeLessThan(labels[3].y);
+  expect(labels[4].caretX + labels[4].caretWidth).toBeGreaterThan(labels[4].x + labels[4].width);
+  for (const label of labels) expect(label.color).toBe('rgb(245, 158, 11)');
 });
 
 test('Annotate the requested visible occurrence', async ({ app, firstWindow }, testInfo) => {

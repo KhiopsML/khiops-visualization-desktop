@@ -10,11 +10,14 @@ const ANNOTATION_COLOR = '#f59e0b';
 const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0)';
 const ANNOTATION_FONT_SIZE = 14;
 
+type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
+
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
+  annotationPosition?: AnnotationPosition;
 };
 
 async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<void> {
@@ -187,18 +190,23 @@ function parseFrameArgument(argument: string, line: number): {
   return { selector, noId, badge, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
 }
 
-function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string; occurrence?: number } {
-  const annotation = /^(\S+)(?:\s+(\S+))?\s+"((?:[^"\\]|\\.)+)"$/.exec(argument);
+function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string; occurrence?: number; position?: AnnotationPosition } {
+  const annotation = /^(\S+)(?:\s+(\S+))?\s+"((?:[^"\\]|\\.)+)"(?:\s+\{\s*position\s*:\s*([a-z]+)\s*\})?$/.exec(argument);
   if (!annotation || (/^[\w-]+$/.test(annotation[1]) && !/^[a-zA-Z][\w-]*$/.test(annotation[1])) || !/\S/.test(annotation[3])) {
-    throw new Error(`Line ${line}: annotation requires a selector or element name, an optional occurrence, and quoted text; IDs must start with #`);
+    throw new Error(`Line ${line}: annotation requires a selector or element name, an optional occurrence, quoted text, and an optional {position:top|right|bottom|left}; IDs must start with #`);
   }
   if (annotation[2] && (!/^[1-9]\d*$/.test(annotation[2]) || !Number.isSafeInteger(Number(annotation[2])))) {
     throw new Error(`Line ${line}: annotation occurrence must be a positive integer`);
+  }
+  const position = annotation[4];
+  if (position && position !== 'top' && position !== 'right' && position !== 'bottom' && position !== 'left') {
+    throw new Error(`Line ${line}: annotation position must be top, right, bottom, or left`);
   }
   return {
     selector: annotation[1],
     text: annotation[3].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'),
     occurrence: annotation[2] ? Number(annotation[2]) : undefined,
+    position,
   };
 }
 
@@ -225,7 +233,8 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     const name = match![1];
     let argument = (match![2] || '').trim();
     let occurrence: number | undefined;
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    let annotationPosition: AnnotationPosition | undefined;
+    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
         if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
@@ -240,7 +249,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
           }
           occurrence = Number(value);
         };
-        if (['openTab', 'clickRow', 'clickElt', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
+        if (['openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
           'resizeSplit', 'frame', 'annotation', 'input', 'shotElt', 'setVisibility'].includes(name)) {
           const prefix = /^([+-]?\d\S*)\s+(.+)$/.exec(argument);
           if (prefix) {
@@ -252,9 +261,10 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
     }
     if (name === 'annotation') {
-      const { selector, text, occurrence: annotationOccurrence } = parseAnnotationArgument(argument, index + 1);
+      const { selector, text, occurrence: annotationOccurrence, position } = parseAnnotationArgument(argument, index + 1);
       argument = `${selector} ${text}`;
       if (annotationOccurrence !== undefined) setOccurrence(String(annotationOccurrence));
+      annotationPosition = position;
     }
     if (name === 'input') {
       const input = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?\s+(?:"((?:[^"\\]|\\.)*)"|([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?))$/.exec(argument);
@@ -286,7 +296,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       if (element) argument = element[1];
       if (text) argument = `"${text[1]}"`;
     }
-    if (name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') {
+    if (name === 'hover' || name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') {
       const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?$/.exec(argument);
       if (!element) throw new Error(`Line ${index + 1}: ${name} requires an ID, a class, or an element name`);
       if (element[2]) setOccurrence(element[2]);
@@ -367,7 +377,8 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       argument = `${selector} ${match[2]} ${match[3]}`;
     }
     commands.push({ name: name as ScreenshotCommand['name'], argument, line: index + 1,
-      ...(occurrence !== undefined ? { occurrence } : {}) });
+      ...(occurrence !== undefined ? { occurrence } : {}),
+      ...(annotationPosition !== undefined ? { annotationPosition } : {}) });
   }
   return commands;
 }
@@ -382,7 +393,7 @@ export async function runScreenshotScenario(
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
   let frames: { target: Locator; noId: boolean; badge: 'letter' | 'number'; padding: FramePadding }[] = [];
-  let annotations: { target: Locator; text: string }[] = [];
+  let annotations: { target: Locator; text: string; position: AnnotationPosition }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
 
@@ -605,6 +616,16 @@ export async function runScreenshotScenario(
           }
           break;
         }
+        case 'hover': {
+          const selector = toElementSelector(command.argument);
+          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(selector).filter({ visible: true });
+          if (command.argument.startsWith('#') && command.occurrence === undefined) {
+            await expect(targets).toHaveCount(1, { timeout: 30000 });
+          }
+          await targets.nth((command.occurrence ?? 1) - 1).hover({ timeout: 30000 });
+          break;
+        }
         case 'firstPlan': {
           const isId = command.argument.startsWith('#');
           const selector = toElementSelector(command.argument);
@@ -789,7 +810,7 @@ export async function runScreenshotScenario(
           const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
             .locator(selector).filter({ visible: true }).nth((command.occurrence ?? 1) - 1);
           await expect(target).toBeVisible({ timeout: 30000 });
-          annotations.push({ target, text });
+          annotations.push({ target, text, position: command.annotationPosition ?? 'bottom' });
           break;
         }
         case 'clean': {
@@ -909,29 +930,38 @@ export async function runScreenshotScenario(
             await expect(badges).toHaveText(labels);
           }
           if (annotations.length) {
-            const items = await Promise.all(annotations.map(async ({ target, text }) => {
+            const items = await Promise.all(annotations.map(async ({ target, text, position }) => {
               await expect(target).toBeVisible();
               const box = await target.boundingBox();
               if (!box || box.width <= 0 || box.height <= 0) throw new Error('annotation target has no visible area');
-              return { box, text };
+              return { box, text, position };
             }));
             await firstWindow.evaluate(({ items, color, fontSize }) => {
               const overlay = document.createElement('div');
               overlay.id = '__screenshot_annotations';
               overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647;';
               document.body.appendChild(overlay);
-              for (const { box, text } of items) {
+              for (const { box, text, position } of items) {
                 const label = document.createElement('div');
                 label.textContent = text;
                 label.style.cssText = `position:absolute;max-width:180px;box-sizing:border-box;padding:6px 9px;border-radius:4px;background:${color};box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:pre-wrap;overflow-wrap:anywhere;font:600 ${fontSize}px/1.35 sans-serif;color:#553300;`;
                 const caret = document.createElement('span');
-                caret.style.cssText = `position:absolute;left:50%;top:-7px;width:0;height:0;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${color};`;
+                const caretStyles = {
+                  bottom: `left:50%;top:-7px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${color};`,
+                  top: `left:50%;bottom:-7px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid ${color};`,
+                  right: `left:-7px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:8px solid ${color};`,
+                  left: `right:-7px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:8px solid ${color};`,
+                };
+                caret.style.cssText = `position:absolute;width:0;height:0;${caretStyles[position]}`;
                 label.appendChild(caret);
                 overlay.appendChild(label);
                 const labelBox = label.getBoundingClientRect();
-                const left = box.x + box.width / 2 - labelBox.width / 2;
+                const left = position === 'right' ? box.x + box.width + 7 :
+                  position === 'left' ? box.x - labelBox.width - 7 : box.x + box.width / 2 - labelBox.width / 2;
+                const top = position === 'bottom' ? box.y + box.height + 7 :
+                  position === 'top' ? box.y - labelBox.height - 7 : box.y + box.height / 2 - labelBox.height / 2;
                 label.style.left = `${Math.max(4, Math.min(window.innerWidth - labelBox.width - 4, left))}px`;
-                label.style.top = `${Math.max(11, Math.min(window.innerHeight - labelBox.height - 4, box.y + box.height + 7))}px`;
+                label.style.top = `${Math.max(11, Math.min(window.innerHeight - labelBox.height - 4, top))}px`;
               }
             }, { items, color: ANNOTATION_COLOR, fontSize: ANNOTATION_FONT_SIZE });
           }

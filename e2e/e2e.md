@@ -48,6 +48,11 @@ If a visible target is covered by another element and the pointer click is block
 `clickElt "C1"` finds text containing `C1` in the active view and dispatches a click
 on the element containing that text. The first visible match is preferred; if none is visible, the first
 attached match is used. Use `\n` and `\"` for a newline or quote in the text.
+`hover #matrix-selected` moves the pointer to the center of the visible element,
+triggering its mousemove handlers and tooltip. Classes and element names select the
+first visible match; an occurrence selects another match. An ID without an occurrence
+must match exactly one visible element in the active view. For the matrix tooltip,
+use `wait 500` after `hover` so its fade-in finishes before taking a screenshot.
 `hideElt #level-distribution-btn` hides the visible element with that ID;
 `hideElt .class-elt` hides all visible elements with that class.
 Hidden elements no longer occupy layout space.
@@ -120,6 +125,9 @@ queues a text label on the first visible match. A DOM element name also works, f
 Add a 1-based occurrence before the text to select another visible match, for example
 `annotation .hierarchy-select-comp-button 3 "Context dimension"`.
 The text must be quoted. Use `\n` for a line break and `\"` for a quote within the text.
+Labels appear below the target by default. Add `{position:top}`, `{position:right}`,
+`{position:bottom}`, or `{position:left}` after the text to select another side;
+the caret points back toward the target.
 `clean` discards all queued frames and annotations without taking a screenshot.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
 captures a PNG or JPEG under the screenshot output directory, creating subdirectories as
