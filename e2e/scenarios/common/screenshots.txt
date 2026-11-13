@@ -1,0 +1,25 @@
+### Visualization elements screenshots
+zoomOut
+
+fileOpen e2e/mocks/src-screenshots/screenshots/Adult_Setup_Visualization.khj
+
+openTab Modeling
+screenshot "images/Visualization Adult Modeling.png"
+
+openTab Evaluation
+screenshot "images/Visualization Adult Evaluation.png"
+
+
+# Covisualization screenshots
+fileOpen e2e/mocks/src-screenshots/screenshots/CoclusteringAdult_Uidocs_Coclustering.khcj
+setVisibility isDistributionChecked 1 false
+setVisibility isDistributionChecked 2 false
+screenshot "coclustering/AdultCovizuOptimal.jpg"
+
+# Set unfold hierarchy to 6
+clickElt .button-unfold-hierarchy
+input .unfold-hierarchy-settings-slider 6
+clickElt .button-confirm-hierarchy
+unfocus
+screenshot "coclustering/AdultCovizu3-3.png"
+

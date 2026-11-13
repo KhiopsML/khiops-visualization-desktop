@@ -37,12 +37,12 @@ async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<vo
 }
 
 function parseScreenshotFilename(argument: string, line: number, command: string): string {
-  const quoted = /^"((?:[\w. -]+[\\/])*[\w. -]+\.png)"$/i.exec(argument);
+  const quoted = /^"((?:[\w. -]+[\\/])*[\w. -]+\.(?:png|jpe?g))"$/i.exec(argument);
   if (quoted && quoted[1].split(/[\\/]/).slice(0, -1).every((part) => /[\w-]$/.test(part))) {
     return quoted[1];
   }
-  if (/^[\w.-]+\.png$/i.test(argument)) return argument;
-  throw new Error(`Line ${line}: ${command} requires a quoted relative PNG path without parent directories`);
+  if (/^[\w.-]+\.(?:png|jpe?g)$/i.test(argument)) return argument;
+  throw new Error(`Line ${line}: ${command} requires a relative PNG or JPEG path without parent directories`);
 }
 
 type FramePadding = { top: number; right: number; bottom: number; left: number };
@@ -55,7 +55,7 @@ function toCssSelector(selector: string): string {
 }
 
 // Chromium screenshot clips use zoomed coordinates, unlike Playwright's element bounds.
-async function captureCssRect(page: Page, rect: { x: number; y: number; width: number; height: number }, zoomFactor: number): Promise<Buffer> {
+async function captureCssRect(page: Page, rect: { x: number; y: number; width: number; height: number }, zoomFactor: number, format: 'png' | 'jpeg'): Promise<Buffer> {
   const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
   const x = Math.floor((rect.x + scroll.x) * zoomFactor);
   const y = Math.floor((rect.y + scroll.y) * zoomFactor);
@@ -67,7 +67,7 @@ async function captureCssRect(page: Page, rect: { x: number; y: number; width: n
   };
   const session = await page.context().newCDPSession(page);
   try {
-    const image = await session.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true });
+    const image = await session.send('Page.captureScreenshot', { format, clip, captureBeyondViewport: true });
     return Buffer.from(image.data, 'base64');
   } finally {
     await session.detach();
@@ -193,11 +193,12 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       argument = `${selector} ${text}`;
     }
     if (name === 'input') {
-      const input = /^([.#][\w-]+)\s+"((?:[^"\\]|\\.)*)"$/.exec(argument);
+      const input = /^([.#][\w-]+)\s+(?:"((?:[^"\\]|\\.)*)"|([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?))$/.exec(argument);
       if (!input) {
-        throw new Error(`Line ${index + 1}: input requires an ID prefixed with # or a class prefixed with . and quoted text`);
+        throw new Error(`Line ${index + 1}: input requires an ID prefixed with # or a class prefixed with . and quoted text or a number`);
       }
-      argument = `${input[1]} ${input[2].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"')}`;
+      const text = input[2] === undefined ? input[3] : input[2].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"');
+      argument = `${input[1]} ${text}`;
     }
     if (name === 'frame') parseFrameArgument(argument, index + 1);
     if (name === 'clickRow' && /\s/.test(argument) && !/^#[\w-]+\s+\S/.test(argument)) {
@@ -239,7 +240,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       }
       const element = /^([.#][\w-]+)\s+(.+)$/.exec(rest);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG path, optionally followed by {size: WxH} and {padding: ...}`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with # or a class prefixed with . and a PNG or JPEG path, optionally followed by {size: WxH} and {padding: ...}`);
       }
       if (shotSize && shotPadding) {
         throw new Error(`Line ${index + 1}: shotElt cannot combine size with padding`);
@@ -614,13 +615,34 @@ export async function runScreenshotScenario(
           const text = command.argument.slice(separator + 1);
           const isClass = selector.startsWith('.');
           const value = selector.slice(1);
-          const target = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(`[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`).filter({ visible: true }).first();
-          await expect(target).toBeVisible({ timeout: 30000 });
+          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
+            .locator(`[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`);
+          await expect(targets.first()).toBeAttached({ timeout: 30000 });
+          const visibleTarget = targets.filter({ visible: true }).first();
+          const target = await visibleTarget.count() ? visibleTarget : targets.first();
           const isInput = await target.evaluate((element) => element instanceof HTMLInputElement);
-          const input = isInput ? target : target.locator('input').filter({ visible: true }).first();
-          await expect(input).toBeVisible({ timeout: 30000 });
-          await input.fill(text);
+          const inputs = isInput ? target : target.locator('input');
+          await expect(inputs.first()).toBeAttached({ timeout: 30000 });
+          const visibleInput = inputs.filter({ visible: true }).first();
+          const input = await visibleInput.count() ? visibleInput : inputs.first();
+          const isRange = await input.evaluate((element) => element instanceof HTMLInputElement && element.type === 'range');
+          if (isRange) {
+            const requested = Number(text);
+            const { min, max, step } = await input.evaluate((element: HTMLInputElement) => ({
+              min: Number(element.min || 0), max: Number(element.max || 100), step: Number(element.step || 1),
+            }));
+            const steps = (requested - min) / step;
+            if (!text.trim() || !Number.isFinite(requested) || !Number.isFinite(steps) ||
+              requested < min || requested > max || Math.abs(steps - Math.round(steps)) > 1e-9) {
+              throw new Error(`input ${selector}: ${JSON.stringify(text)} is not a valid slider value`);
+            }
+            await input.press('Home');
+            for (let index = 0; index < Math.round(steps); index++) await input.press('ArrowRight');
+            await expect.poll(() => input.evaluate((element: HTMLInputElement) => element.valueAsNumber))
+              .toBe(requested);
+          } else {
+            await input.fill(text, { force: !(await input.isVisible()) });
+          }
           break;
         }
         case 'frame': {
@@ -668,6 +690,7 @@ export async function runScreenshotScenario(
             filename = command.argument.replace(/[\\/]/g, path.sep) || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
             await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
           }
+          const format = /\.jpe?g$/i.test(filename) ? 'jpeg' : 'png';
           if (annotations.length) {
             await firstWindow.mouse.move(0, 0);
             await firstWindow.locator('.mat-mdc-tooltip:visible').first().waitFor({ state: 'hidden', timeout: 5000 });
@@ -786,8 +809,8 @@ export async function runScreenshotScenario(
               const rect = { x: box.x, y: box.y, width: size.width, height: size.height };
               // Playwright clips are exact in CSS pixels at zoom 1; zoomed windows use the CDP clip path.
               screenshot = zoomFactor === 1
-                ? await firstWindow.screenshot({ animations: 'disabled', clip: rect })
-                : await captureCssRect(firstWindow, rect, zoomFactor);
+                ? await firstWindow.screenshot({ animations: 'disabled', clip: rect, type: format })
+                : await captureCssRect(firstWindow, rect, zoomFactor, format);
             } else if (shotPadding) {
               // Padding can extend past the element, so the clip is always taken through CDP.
               const rect = {
@@ -795,14 +818,14 @@ export async function runScreenshotScenario(
                 width: box.width + shotPadding.left + shotPadding.right,
                 height: box.height + shotPadding.top + shotPadding.bottom,
               };
-              screenshot = await captureCssRect(firstWindow, rect, zoomFactor);
+              screenshot = await captureCssRect(firstWindow, rect, zoomFactor, format);
             } else {
-              screenshot = await target.screenshot({ animations: 'disabled' });
-              if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor);
+              screenshot = await target.screenshot({ animations: 'disabled', type: format });
+              if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor, format);
             }
           } else {
             const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
-            screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height } });
+            screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height }, type: format });
           }
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
           screenshotCount++;

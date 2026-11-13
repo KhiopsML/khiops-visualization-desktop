@@ -4,6 +4,13 @@ zoomOut
 fileOpen e2e/mocks/src-screenshots/RegressionModel/AllReports.khj
 
 openTab Preparation
+frame #preparation-view-informations-split
+frame #preparation-variables-list
+frame #preparation-description-block-derivation
+frame #variable-graph-details-comp
+frame #preparation-matrix-comp-container
+frame #app-var-details-preparation-2d-comp-variables-lists
+
 screenshot "images-khiops-guides/visualization/RegressionPreparation.png"
 
 openTab Modeling

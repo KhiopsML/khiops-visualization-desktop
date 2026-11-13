@@ -4,7 +4,7 @@
 
 Start the development server with `yarn ng:serve:dev`, then run
 `yarn e2e:screenshots`. This runs the descriptive, supervised, elements,
-histograms, and regression visualization scenarios. PNG files are written
+histograms, and regression visualization scenarios. PNG and JPEG files are written
 to `e2e/screenshots`.
 If port 4200 is occupied, start `yarn ng serve -c dev --port 4201` and set
 `E2E_APP_URL=http://localhost:4201` for the test process.
@@ -46,7 +46,7 @@ class, including hidden elements.
 If the element is the only child of an Angular Split area, the area is also
 removed. When one area remains, it fills the split.
 `shotElt #header-tools-comp "images/Top Right Buttons.png"` captures the unique visible
-element with that ID to the relative PNG path in the screenshot output directory.
+element with that ID to the relative PNG or JPEG path in the screenshot output directory.
 `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
 captures the first visible element with that class. An optional `WxH` size after the
 path, such as `shotElt #header-right "UnfoldHierarchy.png" {size:600x200}`, captures a region of exactly
@@ -83,15 +83,19 @@ Add `{badge: number}` to use numbered badges instead of letters. Numbered and
 lettered badges use separate sequences, both restarting for each screenshot.
 Frames without a badge do not consume a letter or number.
 `input .tree-leaf-text-input "NewName"` fills the text input inside the first visible
-element matching the ID or class (or the element itself, if it is an input). The text must be quoted;
-`\n` and `\"` are supported.
+element matching the ID or class (or the element itself, if it is an input). Text must be quoted;
+`\n` and `\"` are supported. Numbers may be unquoted, for example `input #cy-unfold-value-input 6`;
+they are entered as text. Range inputs are set using the keyboard, for example
+`input .unfold-hierarchy-settings-slider 6`, and must match the slider's range and step.
+If no visible match exists, the first attached match is used, including hidden test inputs.
 `annotation .button-manage-views "Add or remove views"`
 queues a text label; its text must be quoted. Use `\n` for a line break and `\"`
 for a quote within the text.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
-captures a PNG under the screenshot output directory, creating subdirectories as
+captures a PNG or JPEG under the screenshot output directory, creating subdirectories as
 needed. Paths must be relative and cannot contain parent-directory segments.
-Without a filename, files are numbered. Unquoted filenames without spaces are also supported.
+Use `.png`, `.jpg`, or `.jpeg` to select the image format. Without a filename,
+numbered PNG files are created. Unquoted filenames without spaces are also supported.
 Annotations are cleared after each screenshot.
 ## yarn playwright test
 

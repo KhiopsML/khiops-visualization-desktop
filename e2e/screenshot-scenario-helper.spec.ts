@@ -6,18 +6,20 @@ import { screenshotWindowSize } from './screenshot-playwright.config';
 
 test('Parse screenshot filenames', () => {
   const commands = parseScreenshotScenario(
-    'screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"\nscreenshot "images-khiops-guides/visualization/images\\nested\\plot.png"\nscreenshot legacy.png\nscreenshot',
+    'screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"\nscreenshot "images-khiops-guides/visualization/images\\nested\\plot.png"\nscreenshot legacy.png\nscreenshot "coclustering/AdultCovizuOptimal.jpg"\nscreenshot photo.JPEG\nscreenshot',
   );
   expect(commands.map((command) => command.argument)).toEqual([
     'images-khiops-guides/visualization/images/Visualization Adult Evaluation.png',
     'images-khiops-guides/visualization/images\\nested\\plot.png',
     'legacy.png',
+    'coclustering/AdultCovizuOptimal.jpg',
+    'photo.JPEG',
     '',
   ]);
 });
 
 test('Reject invalid screenshot filenames', () => {
-  for (const filename of ['"../outside.png"', '"images\\..\\outside.png"', '"images/.. /outside.png"', '"/outside.png"', '"C:\\outside.png"', '"missing-quote.png', '"file.png" extra']) {
+  for (const filename of ['"../outside.png"', '"images\\..\\outside.png"', '"images/.. /outside.png"', '"/outside.png"', '"C:\\outside.png"', '"missing-quote.png', '"file.png" extra', '"../outside.jpg"', '"image.gif"']) {
     expect(() => parseScreenshotScenario(`screenshot ${filename}`)).toThrow(/Line 1/);
     expect(() => parseScreenshotScenario(`shotElt #app-histogram ${filename}`)).toThrow(/Line 1/);
   }
@@ -25,12 +27,13 @@ test('Reject invalid screenshot filenames', () => {
 
 test('Parse element screenshot paths', () => {
   const commands = parseScreenshotScenario(
-    'shotElt #app-histogram "images-khiops-guides/Capital Loss.png"\nshotElt .chart "images\\nested\\plot.png"\nshotElt #chart legacy.png',
+    'shotElt #app-histogram "images-khiops-guides/Capital Loss.png"\nshotElt .chart "images\\nested\\plot.png"\nshotElt #chart legacy.png\nshotElt #chart "images/photo.jpg"',
   );
   expect(commands.map((command) => command.argument)).toEqual([
     '#app-histogram images-khiops-guides/Capital Loss.png',
     '.chart images\\nested\\plot.png',
     '#chart legacy.png',
+    '#chart images/photo.jpg',
   ]);
 });
 
@@ -207,9 +210,46 @@ test('Parse input commands', () => {
     .toBe('.tree-leaf-text-input NewName');
   expect(parseScreenshotScenario('input #name "Say \\"hi\\"\\nnow"')[0].argument)
     .toBe('#name Say "hi"\nnow');
-  for (const command of ['input .name NewName', 'input name "text"', 'input .name "missing quote', 'input .name']) {
+  for (const number of ['6', '-1.5', '.25', '1e3']) {
+    expect(parseScreenshotScenario(`input #name ${number}`)[0].argument).toBe(`#name ${number}`);
+  }
+  for (const command of ['input .name NewName', 'input .name 6abc', 'input .name NaN',
+    'input name "text"', 'input .name "missing quote', 'input .name']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
+});
+
+test('Fill a hidden unfolding input', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('hidden-input.txt');
+  await fs.writeFile(scenario, [
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj',
+    'clickElt .button-unfold-hierarchy',
+    'input #cy-unfold-value-input 6',
+    'clickElt #cy-unfold-value-button',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, testInfo.outputPath('screenshots'), screenshotWindowSize);
+  await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
+});
+
+test('Set and save the unfolding slider', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('unfold-slider.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, [
+    'fileOpen e2e/mocks/src-screenshots/screenshots/CoclusteringAdult_Uidocs_Coclustering.khcj',
+    'clickElt .button-unfold-hierarchy',
+    'input .unfold-hierarchy-settings-slider 6',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
+  await firstWindow.locator('.button-confirm-hierarchy').click();
+  await expect(firstWindow.locator('#unfold-hierarchy-settings')).toBeHidden({ timeout: 30000 });
+  await fs.writeFile(scenario, 'clickElt .button-unfold-hierarchy\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
 });
 
 test('Parse unfocus command', () => {
@@ -255,6 +295,11 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     'zoomOut', 'shotElt .scenario-zoom-test "zoom-out.png"',
     'zoomIn', 'shotElt .scenario-zoom-test "normal.png"',
     'zoomIn', 'shotElt .scenario-zoom-test "zoom-in.png"',
+    'zoomOut', 'screenshot "full.jpg"',
+    'shotElt .scenario-zoom-test "element.JPEG"',
+    'shotElt .scenario-zoom-test "size.jpg" {size:30x20}',
+    'shotElt .scenario-zoom-test "padding.jpg" {padding:2px}',
+    'zoomOut', 'shotElt .scenario-zoom-test "zoom.jpg"',
   ].join('\n'));
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png']) {
@@ -269,6 +314,16 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
       return Array.from(context.getImageData(Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2), 1, 1).data);
     }, image);
     expect(pixel, filename).toEqual([255, 0, 0, 255]);
+  }
+  for (const filename of ['full.jpg', 'element.JPEG', 'size.jpg', 'padding.jpg', 'zoom.jpg']) {
+    const image = await fs.readFile(path.join(output, filename));
+    expect(image.subarray(0, 3), filename).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+    const dimensions = await firstWindow.evaluate(async (encoded) => {
+      const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))], { type: 'image/jpeg' }));
+      return { width: bitmap.width, height: bitmap.height };
+    }, image.toString('base64'));
+    expect(dimensions.width, filename).toBeGreaterThan(0);
+    expect(dimensions.height, filename).toBeGreaterThan(0);
   }
 });
 
