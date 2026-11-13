@@ -105,6 +105,7 @@ test('Parse frame tag occurrences', () => {
     'frame #axis', 'frame .axis', 'frame div .axis',
     'frame .cdk-overlay-pane {noId:true, padding: 10px 10px 10px 10px}',
     'frame app-axis 2 {padding: 1px 2px 3px, noId: false}', 'frame app-axis 2 {noId:true} ',
+    'frame .axis {badge: number}', 'frame .axis {badge:number, noId:true, padding: 1px}',
     'frame .axis {padding: 1.5px 2px;}', 'frame .axis {padding: 0px}']) {
     expect(parseScreenshotScenario(command)).toHaveLength(1);
   }
@@ -112,6 +113,7 @@ test('Parse frame tag occurrences', () => {
     'frame app-axis 9007199254740992', 'frame .axis noId', 'frame .axis {noId:yes}',
     'frame .axis {noId:true, noId:false}', 'frame .axis {padding: 1px, padding: 2px}',
     'frame .axis {padding: -1px}', 'frame .axis {padding: 10}',
+    'frame .axis {badge: letter}', 'frame .axis {badge: 1}', 'frame .axis {badge:number, badge:number}',
     'frame .axis {padding: 1px 2px 3px 4px 5px}',
     'frame .axis {padding: 10px', 'frame .axis {margin: 10px}',
     'frame .axis {padding: 1px} {padding: 2px}']) {
@@ -160,14 +162,24 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
       'screenshot "frames.png"',
       'frame .scenario-frame-test 2 {padding: 1px 2px 3px}',
       'screenshot "next.png"',
+      'frame .scenario-frame-test {badge:number}',
+      'frame .scenario-frame-test 2',
+      'frame .scenario-frame-test 3 {badge:number, noId:true}',
+      'frame .scenario-frame-test 4 {badge:number, padding: 4px}',
+      'frame #scenario-frame-duplicate',
+      'screenshot "mixed.png"',
+      'frame .scenario-frame-test {badge:number}',
+      'screenshot "number-reset.png"',
     ].join('\n'));
     await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   } finally {
     firstWindow.screenshot = screenshot;
   }
-  expect(snapshots).toHaveLength(2);
+  expect(snapshots).toHaveLength(4);
   expect(snapshots[0].badges.map(({ text, display }) => display === 'none' ? null : text)).toEqual([null, 'A', null, 'B', 'C']);
   expect(snapshots[1].badges.map(({ text }) => text)).toEqual(['A']);
+  expect(snapshots[2].badges.map(({ text, display }) => display === 'none' ? null : text)).toEqual(['1', 'A', null, '2', 'B']);
+  expect(snapshots[3].badges.map(({ text }) => text)).toEqual(['1']);
   const expectedPadding = [
     { top: 10, right: 20, bottom: 30, left: 40 },
     { top: 0, right: 0, bottom: 0, left: 0 },

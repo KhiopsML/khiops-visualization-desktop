@@ -90,10 +90,11 @@ function parsePaddingOption(body: string, line: number, command: string): FrameP
 }
 
 function parseFrameArgument(argument: string, line: number): {
-  selector: string; noId: boolean; padding: FramePadding; occurrence?: number;
+  selector: string; noId: boolean; badge: 'letter' | 'number'; padding: FramePadding; occurrence?: number;
 } {
   let selector = argument;
   let noId = false;
+  let badge: 'letter' | 'number' = 'letter';
   let padding: FramePadding | undefined;
   let occurrence: number | undefined;
   let optionsBlockSeen = false;
@@ -112,6 +113,9 @@ function parseFrameArgument(argument: string, line: number): {
         if (key === 'noId') {
           if (!/^\s*(true|false)\s*$/.test(option![2])) throw new Error(`Line ${line}: noId must be true or false`);
           noId = option![2].trim() === 'true';
+        } else if (key === 'badge') {
+          if (option![2].trim() !== 'number') throw new Error(`Line ${line}: badge must be number`);
+          badge = 'number';
         } else if (key === 'padding') {
           padding = parsePaddingOption(entry, line, 'frame');
         } else {
@@ -136,7 +140,7 @@ function parseFrameArgument(argument: string, line: number): {
     selector = suffix[1];
   }
   if (/\s+\{/.test(selector)) throw new Error(`Line ${line}: invalid frame options`);
-  return { selector, noId, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
+  return { selector, noId, badge, padding: padding || { top: 0, right: 0, bottom: 0, left: 0 }, occurrence };
 }
 
 function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string } {
@@ -271,7 +275,7 @@ export async function runScreenshotScenario(
 ): Promise<void> {
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
-  let frames: { target: Locator; noId: boolean; padding: FramePadding }[] = [];
+  let frames: { target: Locator; noId: boolean; badge: 'letter' | 'number'; padding: FramePadding }[] = [];
   let annotations: { target: Locator; text: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
@@ -620,11 +624,11 @@ export async function runScreenshotScenario(
           break;
         }
         case 'frame': {
-          const { selector, noId, padding, occurrence } = parseFrameArgument(command.argument, command.line);
+          const { selector, noId, badge, padding, occurrence } = parseFrameArgument(command.argument, command.line);
           const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
           const target = targets.nth((occurrence || 1) - 1);
           await expect(target).toBeVisible();
-          frames.push({ target, noId, padding });
+          frames.push({ target, noId, badge, padding });
           break;
         }
         case 'annotation': {
@@ -679,25 +683,14 @@ export async function runScreenshotScenario(
               });
               await firstWindow.locator('#__an_overlay').evaluate((overlay) => {
                 const updateBadges = () => {
-                  // 1-based comment indices of frames flagged {noId:true}; their badges stay hidden
-                  const hidden: number[] = (window as any).__kvdHiddenBadges || [];
-                  for (const badge of overlay.querySelectorAll('g > text')) {
-                    const number = Number(badge.textContent);
-                    if (!Number.isInteger(number) || number < 1) continue;
-                    if (hidden.includes(number)) {
+                  const labels: string[] = (window as any).__kvdBadgeLabels || [];
+                  for (const [index, badge] of Array.from(overlay.querySelectorAll('g > text')).entries()) {
+                    const label = labels[index];
+                    if (label === undefined) continue;
+                    if (!label) {
                       (badge.parentElement as unknown as SVGElement).style.setProperty('display', 'none', 'important');
-                      badge.textContent = '';
-                      continue;
                     }
-                    // Letters count only visible badges, so hidden ones do not shift the labels
-                    let visible = number - hidden.filter((value) => value < number).length;
-                    let label = '';
-                    while (visible > 0) {
-                      visible--;
-                      label = String.fromCharCode(65 + visible % 26) + label;
-                      visible = Math.floor(visible / 26);
-                    }
-                    badge.textContent = label;
+                    if (badge.textContent !== label) badge.textContent = label;
                   }
                 };
                 new MutationObserver(updateBadges).observe(overlay, { childList: true, subtree: true });
@@ -734,15 +727,28 @@ export async function runScreenshotScenario(
               };
             }, { targets: boxes, color: ANNOTATION_COLOR });
             const chooserPromise = firstWindow.waitForEvent('filechooser');
-            await firstWindow.evaluate((hidden) => { (window as any).__kvdHiddenBadges = hidden; },
-              frames.flatMap((frame, index) => (frame.noId ? [index + 1] : [])));
+            let letters = 0;
+            let numbers = 0;
+            const labels = frames.map((frame) => {
+              if (frame.noId) return '';
+              if (frame.badge === 'number') return String(++numbers);
+              let value = ++letters;
+              let label = '';
+              while (value > 0) {
+                value--;
+                label = String.fromCharCode(65 + value % 26) + label;
+                value = Math.floor(value / 26);
+              }
+              return label;
+            });
+            await firstWindow.evaluate((badgeLabels) => { (window as any).__kvdBadgeLabels = badgeLabels; }, labels);
             await firstWindow.evaluate(() => (window as any).Annotate.import());
             const chooser = await chooserPromise;
             await chooser.setFiles({ name: 'annotations.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(payload)) });
             await expect(firstWindow.locator('#__an_overlay rect.an-hit')).toHaveCount(frames.length);
             const badges = firstWindow.locator('#__an_overlay g > text');
             await expect(badges).toHaveCount(frames.length);
-            await expect(badges.filter({ hasText: /^\d+$/ })).toHaveCount(0);
+            await expect(badges).toHaveText(labels);
           }
           if (annotations.length) {
             const items = await Promise.all(annotations.map(async ({ target, text }) => {

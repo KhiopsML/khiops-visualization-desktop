@@ -79,7 +79,9 @@ bottom, and left padding. Options are comma-separated inside the braces, for exa
 `{noId:true, padding: 10px 10px 10px 10px}`. Padding accepts one to four non-negative pixel values,
 using CSS shorthand rules. For example:
 `frame .cdk-overlay-pane {noId:true, padding: 10px 10px 10px 10px}`.
-Frames without a badge do not consume a letter.
+Add `{badge: number}` to use numbered badges instead of letters. Numbered and
+lettered badges use separate sequences, both restarting for each screenshot.
+Frames without a badge do not consume a letter or number.
 `input .tree-leaf-text-input "NewName"` fills the text input inside the first visible
 element matching the ID or class (or the element itself, if it is an input). The text must be quoted;
 `\n` and `\"` are supported.

@@ -12,14 +12,19 @@ frame #preparation-current-interval
 screenshot "images-khiops-guides/visualization/ClassificationPreparation.png"
 
 openTab Tree preparation
+frame #tree-preparation-view-informations-split
+frame #tree-preparation-variables-list
+frame #variable-graph-details-comp
+screenshot "images-khiops-guides/visualization/SupervisedTreeMainView.png"
+
 clickElt .kl-icon-cell-comp-btn
 wait 500
-frame #tree-preparation-variable-graph-details
-frame #tree-preparation-hyper
-frame #tree-preparation-select
-frame #tree-details-comp
-frame #tree-leaf-details-comp
-frame #tree-leaf-rules-comp
+frame #tree-preparation-variable-graph-details {badge: number}
+frame #tree-preparation-hyper {badge: number}
+frame #tree-preparation-select {badge: number}
+frame #tree-details-comp {badge: number}
+frame #tree-leaf-details-comp {badge: number}
+frame #tree-leaf-rules-comp {badge: number}
 screenshot "images-khiops-guides/visualization/SupervisedTree.png"
 # ferme la dialog
 clickElt #tree-analysis-close-button
