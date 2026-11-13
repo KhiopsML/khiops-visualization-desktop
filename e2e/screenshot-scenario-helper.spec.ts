@@ -61,6 +61,22 @@ test('Parse element screenshot padding', () => {
   expect(() => parseScreenshotScenario('shotElt #chart "plot.png" {padding: 10em}')).toThrow(/Line 1/);
 });
 
+test('Parse element screenshot fade', () => {
+  const commands = parseScreenshotScenario(
+    'shotElt .button "button.png" {padding: 30px 150px 100px 150px, fade:20px}\n'
+    + 'shotElt #chart "plot.jpg" {fade: .5px} {size:80x60}\n'
+    + 'shotElt #chart "plot.png" {fade:0px}',
+  );
+  expect(commands.map((command) => command.argument)).toEqual([
+    '.button button.png {padding:30 150 100 150} {fade:20}',
+    '#chart plot.jpg {size:80x60} {fade:0.5}',
+    '#chart plot.png {fade:0}',
+  ]);
+  for (const option of ['fade:-1px', 'fade:20', 'fade:2em', 'fade:20px, fade:10px', 'fade:20px, padding:1px, padding:2px']) {
+    expect(() => parseScreenshotScenario(`shotElt #chart "plot.png" {${option}}`)).toThrow(/Line 1/);
+  }
+});
+
 test('Parse chained resizeSplit selectors', () => {
   const commands = parseScreenshotScenario('resizeSplit .axis-comp > .as-horizontal 100 0\nresizeSplit .axis-comp>.as-horizontal 60 40');
   expect(commands.map((command) => command.argument)).toEqual([
@@ -335,6 +351,70 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     }, image.toString('base64'));
     expect(dimensions.width, filename).toBeGreaterThan(0);
     expect(dimensions.height, filename).toBeGreaterThan(0);
+  }
+});
+
+test('Fade element screenshot edges to white', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('fade.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const background = document.createElement('div');
+    background.style.cssText = 'position:fixed;left:100px;top:100px;width:120px;height:120px;background:rgb(255,0,0);z-index:2147483647';
+    const target = document.createElement('div');
+    target.className = 'scenario-fade-test';
+    target.style.cssText = 'position:absolute;left:20px;top:20px;width:80px;height:80px';
+    background.appendChild(target);
+    (host.shadowRoot || host).appendChild(background);
+    const white = document.createElement('div');
+    white.className = 'scenario-fade-white-test';
+    white.style.cssText = 'position:fixed;left:300px;top:100px;width:80px;height:80px;background:white;z-index:2147483647';
+    (host.shadowRoot || host).appendChild(white);
+  });
+  await fs.writeFile(scenario, [
+    'shotElt .scenario-fade-test "plain.png"',
+    'shotElt .scenario-fade-test "zero.png" {fade:0px}',
+    'shotElt .scenario-fade-test "fade.png" {fade:20px}',
+    'shotElt .scenario-fade-white-test "white.png" {fade:20px}',
+    'shotElt .scenario-fade-test "wide.png" {fade:200px}',
+    'shotElt .scenario-fade-test "padding.png" {padding:10px, fade:20px}',
+    'shotElt .scenario-fade-test "size.jpg" {size:60x60, fade:20px}',
+    'zoomIn',
+    'shotElt .scenario-fade-test "zoom.png" {fade:20px}',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  for (const filename of ['plain.png', 'zero.png', 'fade.png', 'white.png', 'wide.png', 'padding.png', 'size.jpg', 'zoom.png']) {
+    const image = (await fs.readFile(path.join(output, filename))).toString('base64');
+    const pixels = await firstWindow.evaluate(async ({ image, jpeg }) => {
+      const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: jpeg ? 'image/jpeg' : 'image/png' }));
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(bitmap, 0, 0);
+      const pixel = (x: number, y: number) => Array.from(context.getImageData(x, y, 1, 1).data);
+      const x = Math.floor(bitmap.width / 2);
+      const y = Math.floor(bitmap.height / 2);
+      return [pixel(x, y), pixel(0, y), pixel(bitmap.width - 1, y), pixel(x, 0), pixel(x, bitmap.height - 1),
+        pixel(Math.floor(bitmap.width * 0.1), y)];
+    }, { image, jpeg: filename.endsWith('.jpg') });
+    if (filename === 'white.png') {
+      for (const pixel of pixels) {
+        for (const channel of pixel.slice(0, 3)) expect(channel, filename).toBeGreaterThan(245);
+      }
+      continue;
+    }
+    for (const pixel of pixels) expect(pixel[0], filename).toBeGreaterThan(245);
+    expect(pixels[0][1], filename).toBeLessThan(15);
+    if (filename === 'plain.png' || filename === 'zero.png') {
+      for (const pixel of pixels) expect(pixel[1], filename).toBeLessThan(15);
+    } else {
+      for (const pixel of pixels.slice(1, 5)) expect(pixel[1], filename).toBeGreaterThan(220);
+      expect(pixels[5][1], filename).toBeGreaterThan(50);
+      expect(pixels[5][1], filename).toBeLessThan(220);
+    }
   }
 });
 

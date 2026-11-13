@@ -8,7 +8,7 @@ shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/Scre
 
 # unfod hierarchy
 annotation .button-unfold-hierarchy "Select automatically the best unfolding"
-shotElt .button-unfold-hierarchy "images-khiops-guides/covisualization/UnfoldHierarchy.png" {padding: 30px 150px 100px 150px}
+shotElt .button-unfold-hierarchy "images-khiops-guides/covisualization/UnfoldHierarchy.png" {padding: 30px 200px 100px 200px, fade:40px}
 
 # Table filter
 shotElt .mat-badge-accent "images-khiops-guides/covisualization/ColumnsButton.png" {padding: 5px 5px 5px 5px}
@@ -30,7 +30,7 @@ shotElt .search-input-btn "images-khiops-guides/covisualization/Image-searchbox.
 
 # external datas
 annotation .button-import-external-datas "Import external datas"
-shotElt .button-import-external-datas "images-khiops-guides/covisualization/ImportExternalDataButton.png" {padding: 30px 150px 100px 150px}
+shotElt .button-import-external-datas "images-khiops-guides/covisualization/ImportExternalDataButton.png" {padding: 30px 200px 100px 200px, fade:40px}
 
 # button-manage-views 
 shotElt .button-manage-views "images-khiops-guides/covisualization/ViewButton.png" {padding: 3px 3px 3px 3px}

@@ -74,6 +74,40 @@ async function captureCssRect(page: Page, rect: { x: number; y: number; width: n
   }
 }
 
+async function fadeScreenshotEdges(page: Page, screenshot: Buffer, format: 'png' | 'jpeg', fade: number, width: number, height: number): Promise<Buffer> {
+  const encoded = await page.evaluate(async ({ image, format, fade, width, height }) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: `image/${format}` }));
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not create screenshot canvas');
+      context.drawImage(bitmap, 0, 0);
+      const horizontal = Math.min(fade * bitmap.width / width, bitmap.width / 2);
+      const vertical = Math.min(fade * bitmap.height / height, bitmap.height / 2);
+      for (const [x0, y0, x1, y1, x, y, w, h] of [
+        [0, 0, horizontal, 0, 0, 0, horizontal, bitmap.height],
+        [bitmap.width, 0, bitmap.width - horizontal, 0, bitmap.width - horizontal, 0, horizontal, bitmap.height],
+        [0, 0, 0, vertical, 0, 0, bitmap.width, vertical],
+        [0, bitmap.height, 0, bitmap.height - vertical, 0, bitmap.height - vertical, bitmap.width, vertical],
+      ]) {
+        const gradient = context.createLinearGradient(x0, y0, x1, y1);
+        gradient.addColorStop(0, 'white');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+        context.fillStyle = gradient;
+        context.fillRect(x, y, w, h);
+      }
+      const result = canvas.toDataURL(`image/${format}`, 0.92);
+      if (!result.startsWith(`data:image/${format};base64,`)) throw new Error('Could not encode faded screenshot');
+      return result.slice(result.indexOf(',') + 1);
+    } finally {
+      bitmap.close();
+    }
+  }, { image: screenshot.toString('base64'), format, fade, width, height });
+  return Buffer.from(encoded, 'base64');
+}
+
 // Parses the body of a "{padding: ...}" option using CSS shorthand order (top, right, bottom, left).
 function parsePaddingOption(body: string, line: number, command: string): FramePadding {
   const declaration = /^\s*padding\s*:\s*(.*?)\s*;?\s*$/i.exec(body);
@@ -223,31 +257,42 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     if (name === 'shotElt') {
       let shotPadding: FramePadding | undefined;
       let shotSize: { width: number; height: number } | undefined;
+      let shotFade: number | undefined;
       let rest = argument;
       for (let option = /^(.*?)\s+\{([^{}]*)\}$/.exec(rest); option; option = /^(.*?)\s+\{([^{}]*)\}$/.exec(rest)) {
-        const sizeOption = /^\s*size\s*:\s*(\d+)x(\d+)\s*$/i.exec(option[2]);
-        if (sizeOption) {
-          if (shotSize) throw new Error(`Line ${index + 1}: duplicate shotElt size`);
-          if (Number(sizeOption[1]) === 0 || Number(sizeOption[2]) === 0) {
-            throw new Error(`Line ${index + 1}: shotElt size must be greater than zero`);
+        for (const entry of option[2].split(',')) {
+          const sizeOption = /^\s*size\s*:\s*(\d+)x(\d+)\s*$/i.exec(entry);
+          const fadeOption = /^\s*fade\s*:\s*((?:\d+(?:\.\d+)?|\.\d+)px)\s*$/i.exec(entry);
+          if (sizeOption) {
+            if (shotSize) throw new Error(`Line ${index + 1}: duplicate shotElt size`);
+            if (Number(sizeOption[1]) === 0 || Number(sizeOption[2]) === 0) {
+              throw new Error(`Line ${index + 1}: shotElt size must be greater than zero`);
+            }
+            shotSize = { width: Number(sizeOption[1]), height: Number(sizeOption[2]) };
+          } else if (fadeOption) {
+            if (shotFade !== undefined) throw new Error(`Line ${index + 1}: duplicate shotElt fade`);
+            shotFade = parseFloat(fadeOption[1]);
+            if (!Number.isFinite(shotFade)) throw new Error(`Line ${index + 1}: shotElt fade requires a finite non-negative pixel value`);
+          } else if (/^\s*fade\s*:/i.test(entry)) {
+            throw new Error(`Line ${index + 1}: shotElt fade requires a finite non-negative pixel value`);
+          } else {
+            if (shotPadding) throw new Error(`Line ${index + 1}: duplicate shotElt padding`);
+            shotPadding = parsePaddingOption(entry, index + 1, 'shotElt');
           }
-          shotSize = { width: Number(sizeOption[1]), height: Number(sizeOption[2]) };
-        } else {
-          if (shotPadding) throw new Error(`Line ${index + 1}: duplicate shotElt padding`);
-          shotPadding = parsePaddingOption(option[2], index + 1, 'shotElt');
         }
         rest = option[1];
       }
       const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)\s+(.+)$/.exec(rest);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with #, a class prefixed with ., or an element name and a PNG or JPEG path, optionally followed by {size: WxH} and {padding: ...}`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with #, a class prefixed with ., or an element name and a PNG or JPEG path, optionally followed by size, padding, and fade options`);
       }
       if (shotSize && shotPadding) {
         throw new Error(`Line ${index + 1}: shotElt cannot combine size with padding`);
       }
       const size = shotSize ? ` {size:${shotSize.width}x${shotSize.height}}` : '';
       const padding = shotPadding ? ` {padding:${[shotPadding.top, shotPadding.right, shotPadding.bottom, shotPadding.left].join(' ')}}` : '';
-      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}${size}${padding}`;
+      const fade = shotFade !== undefined ? ` {fade:${shotFade}}` : '';
+      argument = `${element[1]} ${parseScreenshotFilename(element[2], index + 1, name)}${size}${padding}${fade}`;
     }
     if (name === 'screenshot' && argument) {
       argument = parseScreenshotFilename(argument, index + 1, name);
@@ -669,10 +714,12 @@ export async function runScreenshotScenario(
           let filename: string;
           let size: { width: number; height: number } | undefined;
           let shotPadding: FramePadding | undefined;
+          let shotFade: number | undefined;
           if (command.name === 'shotElt') {
-            const [, elementSelector, elementFilename, sizeWidth, sizeHeight, paddingText] =
-              /^(\S+)\s+(.+?)(?:\s+\{size:(\d+)x(\d+)\})?(?:\s+\{padding:([\d. ]+)\})?$/.exec(command.argument)!;
+            const [, elementSelector, elementFilename, sizeWidth, sizeHeight, paddingText, fadeText] =
+              /^(\S+)\s+(.+?)(?:\s+\{size:(\d+)x(\d+)\})?(?:\s+\{padding:([\d. ]+)\})?(?:\s+\{fade:([\d.e+-]+)\})?$/.exec(command.argument)!;
             size = sizeWidth !== undefined ? { width: Number(sizeWidth), height: Number(sizeHeight) } : undefined;
+            shotFade = fadeText !== undefined ? Number(fadeText) : undefined;
             if (paddingText !== undefined) {
               const [top, right, bottom, left] = paddingText.split(' ').map(Number);
               shotPadding = { top, right, bottom, left };
@@ -808,8 +855,12 @@ export async function runScreenshotScenario(
             const zoomFactor = await browserWindow.evaluate((window: any) => window.webContents.getZoomFactor() as number);
             const box = await target.boundingBox();
             if (!box || box.width <= 0 || box.height <= 0) throw new Error('Screenshot target has no visible area');
+            let captureWidth = box.width;
+            let captureHeight = box.height;
             if (size) {
               const rect = { x: box.x, y: box.y, width: size.width, height: size.height };
+              captureWidth = rect.width;
+              captureHeight = rect.height;
               // Playwright clips are exact in CSS pixels at zoom 1; zoomed windows use the CDP clip path.
               screenshot = zoomFactor === 1
                 ? await firstWindow.screenshot({ animations: 'disabled', clip: rect, type: format })
@@ -821,11 +872,14 @@ export async function runScreenshotScenario(
                 width: box.width + shotPadding.left + shotPadding.right,
                 height: box.height + shotPadding.top + shotPadding.bottom,
               };
+              captureWidth = rect.width;
+              captureHeight = rect.height;
               screenshot = await captureCssRect(firstWindow, rect, zoomFactor, format);
             } else {
               screenshot = await target.screenshot({ animations: 'disabled', type: format });
               if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor, format);
             }
+            if (shotFade) screenshot = await fadeScreenshotEdges(firstWindow, screenshot, format, shotFade, captureWidth, captureHeight);
           } else {
             const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
             screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height }, type: format });

@@ -54,7 +54,11 @@ An optional `WxH` size after the
 path, such as `shotElt #header-right "UnfoldHierarchy.png" {size:600x200}`, captures a region of exactly
 that size starting at the element's top-left corner instead of the element's bounds. An optional
 `{padding: 10px 10px 10px 10px}` (CSS shorthand, pixels) grows the captured area around the element by those
-amounts; it cannot be combined with `{size:WxH}`. As with `screenshot`, directories
+amounts; it cannot be combined with `{size:WxH}`. Add `fade: 20px` to fade the captured
+image's edges to white over that distance, for example
+`shotElt .button "button.png" {padding: 30px 150px 100px 150px, fade: 20px}`.
+Fade also works with size or in a separate options block; it uses non-negative CSS pixels
+and is limited to half the image dimension on each axis. As with `screenshot`, directories
 are created as needed and unquoted filenames without spaces are supported. Queued frames and annotations
 are applied to the capture and cleared, as with `screenshot`; only the portion
 within the captured element is visible.
