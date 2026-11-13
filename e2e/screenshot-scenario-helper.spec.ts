@@ -103,7 +103,7 @@ test('Parse chained resizeSplit selectors', () => {
     '.axis-comp 2>.as-horizontal 35 65',
     '.axis-comp 2>.group 3>.as-horizontal 40 60',
   ]);
-  expect(() => parseScreenshotScenario('resizeSplit axis-comp>.as-horizontal 100 0')).toThrow(/Line 1/);
+  expect(parseScreenshotScenario('resizeSplit axis-comp>as-split 100 0')).toHaveLength(1);
   for (const occurrence of ['0', '-1', '1.5', '9007199254740992']) {
     expect(() => parseScreenshotScenario(`resizeSplit .axis-comp ${occurrence}>.as-horizontal 35 65`)).toThrow(/Line 1/);
   }
@@ -118,7 +118,7 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     for (let index = 0; index < 2; index++) {
-      const parent = document.createElement('div');
+      const parent = document.createElement('scenario-split-group');
       parent.className = 'scenario-split-group';
       parent.style.cssText = `position:fixed;left:${100 + index * 400}px;top:200px;z-index:2147483647`;
       const split = document.createElement('as-split');
@@ -142,7 +142,7 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
       root.appendChild(parent);
     }
   });
-  await fs.writeFile(scenario, 'resizeSplit .scenario-split-group 2>.as-horizontal 35 65\nscreenshot');
+  await fs.writeFile(scenario, 'resizeSplit scenario-split-group 2>as-split 35 65\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   const ratios = await firstWindow.locator('.scenario-split-group as-split').evaluateAll((splits) => splits.map((split) => {
     const areas = split.querySelectorAll(':scope > as-split-area');
@@ -154,23 +154,16 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
   expect(Math.abs(ratios[1] - 35)).toBeLessThan(1);
 });
 
-test('Require prefixes for ID references', () => {
-  const commands = [
-    ['clickElt', 'target', '#target'],
-    ['hideElt', 'target', '#target'],
-    ['removeElt', 'target', '#target'],
-    ['firstPlan', 'target', '#target'],
-    ['clickRow', 'table row', '#table row'],
-    ['clickChart', 'chart 0', '#chart 0'],
-    ['resizeSplit', 'split 50 50', '#split 50 50'],
-  ];
-  for (const [command, invalid, valid] of commands) {
-    expect(() => parseScreenshotScenario(`${command} ${invalid}`)).toThrow(/Line 1/);
-    expect(parseScreenshotScenario(`${command} ${valid}`)).toHaveLength(1);
-  }
-  for (const command of ['frame .target', 'annotation .target "text"', 'clickElt .target',
-    'hideElt .target', 'removeElt .target', 'firstPlan .target', 'shotElt .target image.png', 'clickRow row']) {
+test('Parse element names as command targets', () => {
+  for (const command of ['clickElt kl-button', 'hideElt kl-button', 'removeElt kl-button',
+    'firstPlan kl-button', 'clickRow kl-table R11', 'clickChart canvas 0',
+    'resizeSplit app-axis>as-split 50 50', 'frame app-axis',
+    'annotation app-axis "text"', 'input mat-slider 50', 'shotElt app-axis image.png']) {
     expect(parseScreenshotScenario(command)).toHaveLength(1);
+  }
+  for (const command of ['clickElt 123target', 'hideElt 123target', 'removeElt 123target',
+    'firstPlan 123target', 'clickChart 123target 0', 'input 123target 50']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
 });
 
@@ -461,9 +454,73 @@ test('Parse input commands', () => {
     expect(parseScreenshotScenario(`input #name ${number}`)[0].argument).toBe(`#name ${number}`);
   }
   for (const command of ['input .name NewName', 'input .name 6abc', 'input .name NaN',
-    'input name "text"', 'input .name "missing quote', 'input .name']) {
+    'input 123name "text"', 'input .name "missing quote', 'input .name']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
+});
+
+test('Use element names for input and element commands', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('element-names.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const root = host.shadowRoot || host;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:200px;top:200px;z-index:2147483647;background:white';
+    const button = document.createElement('scenario-element-button');
+    button.textContent = 'Click';
+    button.addEventListener('click', () => { document.body.dataset.elementClicked = 'yes'; });
+    const slider = document.createElement('scenario-element-slider');
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.min = '10';
+    range.max = '90';
+    range.step = '10';
+    range.value = '10';
+    slider.appendChild(range);
+    const hidden = document.createElement('scenario-element-hide');
+    hidden.textContent = 'Hide';
+    const removed = document.createElement('scenario-element-remove');
+    removed.textContent = 'Remove';
+    const table = document.createElement('scenario-element-table');
+    const row = document.createElement('div');
+    row.setAttribute('role', 'row');
+    row.textContent = 'Unique R11';
+    row.addEventListener('click', () => { document.body.dataset.elementRowClicked = 'yes'; });
+    table.appendChild(row);
+    container.append(button, slider, hidden, removed, table);
+    root.appendChild(container);
+  });
+  await fs.writeFile(scenario, [
+    'clickElt scenario-element-button',
+    'input scenario-element-slider 50',
+    'hideElt scenario-element-hide',
+    'removeElt scenario-element-remove',
+    'clickRow scenario-element-table R11',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(firstWindow.locator('body')).toHaveAttribute('data-element-clicked', 'yes');
+  await expect(firstWindow.locator('body')).toHaveAttribute('data-element-row-clicked', 'yes');
+  await expect(firstWindow.locator('scenario-element-slider input')).toHaveValue('50');
+  await expect(firstWindow.locator('scenario-element-hide')).toBeHidden();
+  await expect(firstWindow.locator('scenario-element-remove')).toHaveCount(0);
+});
+
+test('Set the matrix contrast when other sliders are visible', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('matrix-slider.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, [
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj',
+    'input #contrast 50',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  const slider = firstWindow.locator('khiops-covisualization:visible').locator('#contrast mat-slider').filter({ visible: true }).first();
+  await expect(slider.locator('input').first()).toHaveValue('50');
 });
 
 test('Fill a hidden unfolding input', async ({ app, firstWindow }, testInfo) => {
@@ -787,7 +844,7 @@ test('Bring an element above a modal dialog', async ({ app, firstWindow }, testI
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;left:100px;top:100px;display:flex;z-index:9999';
-    const button = document.createElement('button');
+    const button = document.createElement('scenario-foreground-button');
     button.className = 'scenario-foreground-test';
     button.style.cssText = 'width:100px;height:40px;background:rgb(255,0,0);border:0;padding:0';
     button.addEventListener('click', () => { document.body.dataset.scenarioForegroundClicked = 'yes'; });
@@ -805,7 +862,7 @@ test('Bring an element above a modal dialog', async ({ app, firstWindow }, testI
   const sibling = firstWindow.locator('.scenario-foreground-sibling');
   const before = await target.boundingBox();
   const siblingBefore = await sibling.boundingBox();
-  await fs.writeFile(scenario, 'firstPlan .scenario-foreground-test\nscreenshot "foreground.png"');
+  await fs.writeFile(scenario, 'firstPlan scenario-foreground-button\nscreenshot "foreground.png"');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   expect(await target.boundingBox()).toEqual(before);
   expect(await sibling.boundingBox()).toEqual(siblingBefore);

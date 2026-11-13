@@ -48,9 +48,15 @@ function parseScreenshotFilename(argument: string, line: number, command: string
 
 type FramePadding = { top: number; right: number; bottom: number; left: number };
 
+function toElementSelector(selector: string): string {
+  if (selector.startsWith('.')) return `[class~=${JSON.stringify(selector.slice(1))}]`;
+  if (selector.startsWith('#')) return `[id=${JSON.stringify(selector.slice(1))}]`;
+  return selector;
+}
+
 function parseSplitSelector(selector: string, line: number): { selector: string; occurrence?: number }[] {
   return selector.split('>').map((part) => {
-    const segment = /^\s*([.#][\w-]+)(?:\s+(\S+))?\s*$/.exec(part);
+    const segment = /^\s*([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+(\S+))?\s*$/.exec(part);
     if (!segment || (segment[2] && (!/^[1-9]\d*$/.test(segment[2]) || !Number.isSafeInteger(Number(segment[2]))))) {
       throw new Error(`Line ${line}: resizeSplit requires valid selectors and positive occurrences`);
     }
@@ -251,9 +257,9 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       if (annotationOccurrence !== undefined) setOccurrence(String(annotationOccurrence));
     }
     if (name === 'input') {
-      const input = /^([.#][\w-]+)(?:\s+([+-]?\d\S*))?\s+(?:"((?:[^"\\]|\\.)*)"|([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?))$/.exec(argument);
+      const input = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?\s+(?:"((?:[^"\\]|\\.)*)"|([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?))$/.exec(argument);
       if (!input) {
-        throw new Error(`Line ${index + 1}: input requires an ID prefixed with # or a class prefixed with . and quoted text or a number`);
+        throw new Error(`Line ${index + 1}: input requires an ID, class, or element name and quoted text or a number`);
       }
       if (input[2]) setOccurrence(input[2]);
       const text = input[3] === undefined ? input[4] : input[3].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"');
@@ -265,15 +271,15 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
         throw new Error(`Line ${index + 1}: frame occurrence must be a single positive integer`);
       }
     }
-    if (name === 'clickRow' && /\s/.test(argument) && !/^#[\w-]+\s+\S/.test(argument)) {
-      throw new Error(`Line ${index + 1}: clickRow table IDs must start with #`);
+    if (name === 'clickRow' && /\s/.test(argument) && !/^(?:[.#][\w-]+|[a-zA-Z][\w-]*)\s+\S/.test(argument)) {
+      throw new Error(`Line ${index + 1}: clickRow requires an optional table ID, class, or element name and row text`);
     }
     if (name === 'clickElt') {
-      const element = /^(#[\w-]+|\.[\w-]+)(?:\s+([+-]?\d\S*))?$/.exec(argument);
+      const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?$/.exec(argument);
       const text = /^"((?:[^"\\]|\\.)+)"(?:\s+([+-]?\d\S*))?$/.exec(argument);
       if ((!text || !/\S/.test(text[1].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'))) &&
           !element) {
-        throw new Error(`Line ${index + 1}: clickElt requires quoted text, an ID prefixed with #, or a class prefixed with . and an optional positive occurrence number`);
+        throw new Error(`Line ${index + 1}: clickElt requires quoted text, an ID, a class, or an element name and an optional positive occurrence number`);
       }
       if (element?.[2]) setOccurrence(element[2]);
       if (text?.[2]) setOccurrence(text[2]);
@@ -281,8 +287,8 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       if (text) argument = `"${text[1]}"`;
     }
     if (name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') {
-      const element = /^([.#][\w-]+)(?:\s+([+-]?\d\S*))?$/.exec(argument);
-      if (!element) throw new Error(`Line ${index + 1}: ${name} requires an ID prefixed with # or a class prefixed with .`);
+      const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?$/.exec(argument);
+      if (!element) throw new Error(`Line ${index + 1}: ${name} requires an ID, a class, or an element name`);
       if (element[2]) setOccurrence(element[2]);
       argument = element[1];
     }
@@ -341,15 +347,15 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       argument = parseScreenshotFilename(argument, index + 1, name);
     }
     if (name === 'clickChart') {
-      const chart = /^(#[\w-]+)(?:\s+([+-]?\d\S*))?\s+(\d+)$/.exec(argument);
-      if (!chart) throw new Error(`Line ${index + 1}: clickChart requires a chart ID prefixed with # and a zero-based index`);
+      const chart = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?\s+(\d+)$/.exec(argument);
+      if (!chart) throw new Error(`Line ${index + 1}: clickChart requires an ID, a class, or an element name and a zero-based index`);
       if (chart[2]) setOccurrence(chart[2]);
       argument = `${chart[1]} ${chart[3]}`;
     }
     if (name === 'resizeSplit') {
       const match = /^(.+?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/.exec(argument);
       if (!match || Math.abs(Number(match[2]) + Number(match[3]) - 100) > 1e-8) {
-        throw new Error(`Line ${index + 1}: resizeSplit requires a split selector (#id or .class, optionally chained with >) and two percentages totaling 100`);
+        throw new Error(`Line ${index + 1}: resizeSplit requires a split selector (ID, class, or element name, optionally chained with >) and two percentages totaling 100`);
       }
       const segments = parseSplitSelector(match[1], index + 1);
       const last = segments[segments.length - 1];
@@ -466,16 +472,15 @@ export async function runScreenshotScenario(
         case 'resizeSplit': {
           const [, splitSelector, firstPercentage] = /^(.+)\s+(\d+(?:\.\d+)?)\s+\d+(?:\.\d+)?$/.exec(command.argument)!;
           const segments = parseSplitSelector(splitSelector, command.line);
-          const isClass = segments[segments.length - 1].selector.startsWith('.');
+          const isId = segments[segments.length - 1].selector.startsWith('#');
           let matches = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible');
           for (const [index, segment] of segments.entries()) {
-            const isClassSegment = segment.selector.startsWith('.');
-            const css = `[${isClassSegment ? 'class~' : 'id'}=${JSON.stringify(segment.selector.slice(1))}]`;
+            const css = toElementSelector(segment.selector);
             matches = matches.locator(index === 0 ? css : `:scope > ${css}`);
             if (segment.occurrence !== undefined) matches = matches.filter({ visible: true }).nth(segment.occurrence - 1);
           }
           matches = matches.filter({ visible: true });
-          if (!isClass && command.occurrence === undefined) await expect(matches).toHaveCount(1, { timeout: 30000 });
+          if (isId && command.occurrence === undefined) await expect(matches).toHaveCount(1, { timeout: 30000 });
           const split = matches.nth((command.occurrence ?? 1) - 1);
           await expect(split).toBeVisible({ timeout: 30000 });
           const vertical = await split.evaluate((element) => element.classList.contains('as-vertical'));
@@ -558,7 +563,7 @@ export async function runScreenshotScenario(
         case 'clickRow': {
           const match = /^(\S+)(?:\s+(.+))?$/.exec(command.argument)!;
           const activeView = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible');
-          const table = match[2] ? activeView.locator(`[id=${JSON.stringify(match[1].replace(/^#/, ''))}]`) : activeView;
+          const table = match[2] ? activeView.locator(toElementSelector(match[1])) : activeView;
           const rows = table.getByRole('row').filter({ hasText: match[2] || match[1], visible: true });
           if (command.occurrence === undefined) await expect(rows).toHaveCount(1, { timeout: 30000 });
           const row = command.occurrence === undefined ? rows : rows.nth(command.occurrence - 1);
@@ -582,9 +587,7 @@ export async function runScreenshotScenario(
             break;
           }
           const elementSelector = command.argument;
-          const isClass = elementSelector.startsWith('.');
-          const value = elementSelector.slice(1);
-          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const selector = toElementSelector(elementSelector);
           const matches = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector);
           const visibleMatches = matches.filter({ visible: true });
           await expect.poll(async () => (await visibleMatches.count()) > index || (await matches.count()) > index,
@@ -599,12 +602,11 @@ export async function runScreenshotScenario(
           break;
         }
         case 'firstPlan': {
-          const isClass = command.argument.startsWith('.');
-          const value = command.argument.slice(1);
-          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const isId = command.argument.startsWith('#');
+          const selector = toElementSelector(command.argument);
           const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
             .locator(selector).filter({ visible: true });
-          if (!isClass && command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
+          if (isId && command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
           const target = targets.nth((command.occurrence ?? 1) - 1);
           await expect(target).toBeVisible({ timeout: 30000 });
           await target.evaluate((element) => {
@@ -644,9 +646,7 @@ export async function runScreenshotScenario(
           break;
         }
         case 'hideElt': {
-          const isClass = command.argument.startsWith('.');
-          const value = command.argument.replace(/^[.#]/, '');
-          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const selector = toElementSelector(command.argument);
           const matches = firstWindow.locator(selector).filter({ visible: true });
           const targets = command.occurrence === undefined ? matches : matches.nth(command.occurrence - 1);
           await expect(command.occurrence === undefined ? targets.first() : targets).toBeVisible({ timeout: 30000 });
@@ -656,9 +656,7 @@ export async function runScreenshotScenario(
           break;
         }
         case 'removeElt': {
-          const isClass = command.argument.startsWith('.');
-          const value = command.argument.replace(/^[.#]/, '');
-          const selector = `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`;
+          const selector = toElementSelector(command.argument);
           const matches = firstWindow.locator(selector);
           const targets = command.occurrence === undefined ? matches : matches.nth(command.occurrence - 1);
           await expect(command.occurrence === undefined ? targets.first() : targets).toBeAttached({ timeout: 30000 });
@@ -690,9 +688,10 @@ export async function runScreenshotScenario(
           const index = Number(indexArgument);
           if (!Number.isSafeInteger(index)) throw new Error('Chart index must be a safe integer');
           const canvases = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(`[id=${JSON.stringify(chartId.replace(/^#/, ''))}]`).filter({ visible: true });
-          if (command.occurrence === undefined) await expect(canvases).toHaveCount(1, { timeout: 30000 });
-          const canvas = command.occurrence === undefined ? canvases : canvases.nth(command.occurrence - 1);
+            .locator(toElementSelector(chartId)).filter({ visible: true });
+          if (chartId.startsWith('#') && command.occurrence === undefined) await expect(canvases).toHaveCount(1, { timeout: 30000 });
+          const canvas = chartId.startsWith('#') && command.occurrence === undefined
+            ? canvases : canvases.nth((command.occurrence ?? 1) - 1);
           await expect(canvas).toBeVisible({ timeout: 30000 });
           await canvas.scrollIntoViewIfNeeded();
           let position: { x: number; y: number } | null = null;
@@ -739,10 +738,8 @@ export async function runScreenshotScenario(
           const separator = command.argument.indexOf(' ');
           const selector = command.argument.slice(0, separator);
           const text = command.argument.slice(separator + 1);
-          const isClass = selector.startsWith('.');
-          const value = selector.slice(1);
           const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')
-            .locator(`[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`);
+            .locator(toElementSelector(selector));
           const targetIndex = (command.occurrence ?? 1) - 1;
           const visibleTargets = targets.filter({ visible: true });
           await expect.poll(async () => (await visibleTargets.count()) > targetIndex || (await targets.count()) > targetIndex,
@@ -812,12 +809,8 @@ export async function runScreenshotScenario(
               const [top, right, bottom, left] = paddingText.split(' ').map(Number);
               shotPadding = { top, right, bottom, left };
             }
-            const isClass = elementSelector.startsWith('.');
             const isId = elementSelector.startsWith('#');
-            const value = elementSelector.slice(1);
-            const selector = isClass || isId
-              ? `[${isClass ? 'class~' : 'id'}=${JSON.stringify(value)}]`
-              : elementSelector;
+            const selector = toElementSelector(elementSelector);
             const targets = firstWindow.locator(selector).filter({ visible: true });
             if (isId && command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
             target = isId && command.occurrence === undefined ? targets : targets.nth((command.occurrence ?? 1) - 1);

@@ -29,11 +29,15 @@ after the target are also supported where unambiguous. Without an occurrence,
 each command retains its usual behavior. Occurrences select visible matches, except
 `removeElt` counts attached matches, including hidden elements; `clickElt` and
 `input` fall back to attached matches if there are not enough visible ones.
+Element-targeting commands accept an ID prefixed with `#`, a class prefixed with `.`,
+or a bare HTML/custom-element name, such as `input mat-slider 50`. A bare name
+selects elements by tag, not by ID.
 `fileOpen` takes an absolute path or a path relative to the
 desktop project root and waits for the load notification to disappear.
 `openTab` takes the exact visible tab name. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
-To scope the search to one table, include its ID: `clickRow #preparation-variables-list R11`.
+To scope the search to a table, include its ID, class, or element name:
+`clickRow #preparation-variables-list R11` or `clickRow kl-table R11`.
 `clickElt .kl-icon-cell-comp-btn` clicks the first visible element with that class;
 `clickElt .box-distribution 2` clicks the second visible element with that class.
 Class occurrence numbers start at 1. If no visible match exists, `clickElt` dispatches
@@ -76,6 +80,7 @@ are created as needed and unquoted filenames without spaces are supported. Queue
 are applied to the capture and cleared, as with `screenshot`; only the portion
 within the captured element is visible.
 `clickChart #distribution-chart-0 1` clicks the chart's bar at zero-based index 1.
+The chart target may also be a class or element name, such as `clickChart canvas 1`.
 `zoomOut` decreases the window's zoom by one step, like View > Zoom Out.
 `zoomIn` increases the window's zoom by one step, like View > Zoom In.
 `refreshDom` resizes the window briefly and restores its original size.
@@ -85,7 +90,7 @@ within the captured element is visible.
 `resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
 `resizeSplit #app-var-details-preparation-comp 50 50` resizes the two areas of a split;
 `resizeSplit .as-horizontal 100 0` targets the first visible split with that class.
-Selectors can be chained with `>`, for example `resizeSplit .axis-comp>.as-horizontal 100 0`.
+Selectors can be chained with `>`, for example `resizeSplit .axis-comp>as-split 100 0`.
 To select a particular parent before following the chain, add its occurrence there:
 `resizeSplit .axis-comp 2>.as-horizontal 35 65` selects the split inside the second visible `.axis-comp`.
 The split may be vertical or horizontal; the percentages must total 100. Open CDK overlays (such as a filter menu) are closed with `Escape` first, because their backdrop would otherwise block the drag.
@@ -104,7 +109,7 @@ Add `{badge: number}` to use numbered badges instead of letters. Numbered and
 lettered badges use separate sequences, both restarting for each screenshot.
 Frames without a badge do not consume a letter or number.
 `input .tree-leaf-text-input "NewName"` fills the text input inside the first visible
-element matching the ID or class (or the element itself, if it is an input). Text must be quoted;
+matching element (or the element itself, if it is an input). Text must be quoted;
 `\n` and `\"` are supported. Numbers may be unquoted, for example `input #cy-unfold-value-input 6`;
 they are entered as text. Range inputs are set using the keyboard, for example
 `input .unfold-hierarchy-settings-slider 6`, and must match the slider's range and step.
