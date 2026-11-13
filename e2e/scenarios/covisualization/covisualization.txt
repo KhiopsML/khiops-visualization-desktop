@@ -16,7 +16,7 @@ frame app-axis 2
 frame app-matrix-container
 screenshot "images-khiops-guides/covisualization/Axis.png"
 
-shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/ScreenshotButtons.png"
+shotElt #header-tools-comp-copy-paste "images-khiops-guides/covisualization/ScreenshotButtons.png" {padding: 5px 5px 5px 0px}
 
 clickElt .button-manage-views
 firstPlan .button-manage-views
@@ -24,7 +24,7 @@ annotation .button-manage-views "Add or remove different view on each dimension"
 screenshot "images-khiops-guides/covisualization/AddRemoveView.png"
 clickElt #manage-views-save
 
-frame .matrix-container-comp-wrapper
+frame .matrix-container-comp-wrapper  {noId:true}
 annotation #header-tools-comp-copy-paste "Copy data\nCopy image"
 screenshot "images-khiops-guides/covisualization/Screenshot.png"
 
