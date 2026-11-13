@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   screenshots:
-    timeout-minutes: 30
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -55,10 +55,21 @@ jobs:
           yarn ng serve -c dev &
           yarn wait-on http://localhost:4200 --timeout 120000
 
-      - name: Generate screenshots
+      - name: Run screenshot scenario tests and generate screenshots
         env:
           SCREENSHOT_OUTPUT: ${{ runner.temp }}/kvd-screenshots
         run: xvfb-run --auto-servernum yarn e2e:screenshots
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-playwright-artifacts
+          path: |
+            desktop/e2e/test-results/
+            desktop/e2e/playwright-report/
+          retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
