@@ -179,8 +179,8 @@ function parseFrameArgument(argument: string, line: number): {
 
 function parseAnnotationArgument(argument: string, line: number): { selector: string; text: string } {
   const annotation = /^(\S+)\s+"((?:[^"\\]|\\.)+)"$/.exec(argument);
-  if (!annotation || /^[\w-]+$/.test(annotation[1]) || !/\S/.test(annotation[2])) {
-    throw new Error(`Line ${line}: annotation requires a selector and quoted text; IDs must start with #`);
+  if (!annotation || (/^[\w-]+$/.test(annotation[1]) && !/^[a-zA-Z][\w-]*$/.test(annotation[1])) || !/\S/.test(annotation[2])) {
+    throw new Error(`Line ${line}: annotation requires a selector or element name and quoted text; IDs must start with #`);
   }
   return {
     selector: annotation[1],
@@ -240,8 +240,10 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     }
     if (name === 'clickElt') {
       const element = /^(#[\w-]+|\.[\w-]+)(?:\s+([1-9]\d*))?$/.exec(argument);
-      if (!element || (element[2] && (!element[1].startsWith('.') || !Number.isSafeInteger(Number(element[2]))))) {
-        throw new Error(`Line ${index + 1}: clickElt requires an ID prefixed with # or a class prefixed with . and an optional positive occurrence number`);
+      const text = /^"((?:[^"\\]|\\.)+)"$/.exec(argument);
+      if ((!text || !/\S/.test(text[1].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'))) &&
+          (!element || (element[2] && (!element[1].startsWith('.') || !Number.isSafeInteger(Number(element[2])))))) {
+        throw new Error(`Line ${index + 1}: clickElt requires quoted text, an ID prefixed with #, or a class prefixed with . and an optional positive occurrence number`);
       }
     }
     if ((name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') && !/^[.#][\w-]+$/.test(argument)) {
@@ -503,6 +505,20 @@ export async function runScreenshotScenario(
           break;
         }
         case 'clickElt': {
+          const text = /^"((?:[^"\\]|\\.)+)"$/.exec(command.argument);
+          if (text) {
+            const value = text[1].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"');
+            const matches = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').getByText(value);
+            const visibleMatches = matches.filter({ visible: true });
+            await expect.poll(async () => (await visibleMatches.count()) > 0 || (await matches.count()) > 0,
+              { timeout: 30000 }).toBe(true);
+            const match = (await visibleMatches.count()) ? visibleMatches.first() : matches.first();
+            await match.evaluate((element) => {
+              if (!(element instanceof HTMLElement)) throw new Error('clickElt text target must be an HTML element');
+              element.click();
+            });
+            break;
+          }
           const [elementSelector, occurrence] = command.argument.split(/\s+/);
           const isClass = elementSelector.startsWith('.');
           const value = elementSelector.slice(1);

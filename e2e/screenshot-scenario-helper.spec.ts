@@ -88,7 +88,6 @@ test('Parse chained resizeSplit selectors', () => {
 
 test('Require prefixes for ID references', () => {
   const commands = [
-    ['annotation', 'target "text"', '#target "text"'],
     ['clickElt', 'target', '#target'],
     ['hideElt', 'target', '#target'],
     ['removeElt', 'target', '#target'],
@@ -109,14 +108,17 @@ test('Require prefixes for ID references', () => {
 
 test('Require quoted annotation text', () => {
   const commands = parseScreenshotScenario('annotation .target "Add or remove views"\n'
-    + 'annotation #target "First line\\nSecond line"\nannotation .target "Say \\"hello\\""');
+    + 'annotation #target "First line\\nSecond line"\nannotation .target "Say \\"hello\\""\n'
+    + 'annotation app-selected-clusters "3 dimensions\\n2 main, 1 contextual"\nannotation div "A label"');
   expect(commands.map((command) => command.argument)).toEqual([
     '.target Add or remove views',
     '#target First line\nSecond line',
     '.target Say "hello"',
+    'app-selected-clusters 3 dimensions\n2 main, 1 contextual',
+    'div A label',
   ]);
   for (const command of ['annotation .target Add or remove views', 'annotation .target "missing quote',
-    'annotation .target ""', 'annotation .target "text" extra']) {
+    'annotation .target ""', 'annotation .target "text" extra', 'annotation 123invalid "text"']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
 });
@@ -295,6 +297,59 @@ test('Parse class click occurrences', () => {
     'clickElt .box-distribution 1.5', 'clickElt .box-distribution 9007199254740992', 'clickElt #box-distribution 2']) {
     expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
   }
+});
+
+test('Parse text click commands', () => {
+  for (const command of ['clickElt "C1"', 'clickElt "Say \\"hi\\"\\nnow"']) {
+    expect(parseScreenshotScenario(command)).toHaveLength(1);
+  }
+  for (const command of ['clickElt ""', 'clickElt "   "', 'clickElt "\\n"', 'clickElt "C1', 'clickElt "C1" 2']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
+  }
+});
+
+test('Click the element containing matching text', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('text-click.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const root = host.shadowRoot || host;
+    for (const [id, hidden] of [['hidden', true], ['first', false], ['second', false]] as const) {
+      const parent = document.createElement('div');
+      parent.style.cssText = `position:fixed;top:200px;left:200px;${hidden ? 'display:none;' : ''}`;
+      const child = document.createElement('span');
+      child.textContent = 'Unique C1 test cluster';
+      child.addEventListener('click', (event) => {
+        event.stopPropagation();
+        document.body.dataset.textClick = id;
+      });
+      parent.appendChild(child);
+      root.appendChild(parent);
+    }
+  });
+  await fs.writeFile(scenario, 'clickElt "Unique C1"\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(firstWindow.locator('body')).toHaveAttribute('data-text-click', 'first');
+});
+
+test('Select a context cluster by text', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('text-cluster.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, [
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/2-Iris3vars-Coclustering.khcj',
+    'openTab Context',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  const cluster = firstWindow.locator('khiops-covisualization:visible').getByText('C1').filter({ visible: true }).first();
+  await expect(cluster).toHaveClass(/tree-leaf-text/);
+  await cluster.locator('..').evaluate((element) => element.classList.remove('tree-selected'));
+  await fs.writeFile(scenario, 'clickElt "C1"\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(cluster.locator('..')).toHaveClass(/tree-selected/);
 });
 
 test('Capture an element at different zoom levels', async ({ app, firstWindow }, testInfo) => {

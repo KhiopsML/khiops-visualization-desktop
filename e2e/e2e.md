@@ -34,6 +34,9 @@ the click on the first attached match, so it works on elements with `display: no
 If a visible target is covered by another element and the pointer click is blocked for 3 seconds,
 `clickElt` also dispatches the click on that target.
 `clickElt #kl-icon-cell-comp-btn` clicks the visible element with that ID.
+`clickElt "C1"` finds text containing `C1` in the active view and dispatches a click
+on the element containing that text. The first visible match is preferred; if none is visible, the first
+attached match is used. Use `\n` and `\"` for a newline or quote in the text.
 `hideElt #level-distribution-btn` hides the visible element with that ID;
 `hideElt .class-elt` hides all visible elements with that class.
 Hidden elements no longer occupy layout space.
@@ -95,8 +98,9 @@ they are entered as text. Range inputs are set using the keyboard, for example
 `input .unfold-hierarchy-settings-slider 6`, and must match the slider's range and step.
 If no visible match exists, the first attached match is used, including hidden test inputs.
 `annotation .button-manage-views "Add or remove views"`
-queues a text label; its text must be quoted. Use `\n` for a line break and `\"`
-for a quote within the text.
+queues a text label on the first visible match. A DOM element name also works, for example
+`annotation app-selected-clusters "Selected clusters"`; IDs must be prefixed with `#`.
+The text must be quoted. Use `\n` for a line break and `\"` for a quote within the text.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
 captures a PNG or JPEG under the screenshot output directory, creating subdirectories as
 needed. Paths must be relative and cannot contain parent-directory segments.

@@ -1,0 +1,19 @@
+### CoVisualization elements screenshots
+zoomOut
+
+fileOpen e2e/mocks/src-screenshots/Covisualization/2-Iris3vars-Coclustering.khcj
+
+setVisibility isCompositionChecked 1 false
+setVisibility isCompositionChecked 2 false
+setVisibility isDistributionChecked 1 false
+setVisibility isDistributionChecked 2 false
+
+openTab Context
+# Select first node
+clickElt "C1"
+openTab Axis
+
+frame app-selected-clusters {noId:true}
+annotation app-selected-clusters "3 dimensions\n2 main, 1 contextual"
+screenshot "images-khiops-guides/covisualization/3DimAxis.png"
+
