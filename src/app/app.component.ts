@@ -873,7 +873,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
 
     // Open the file - openFile will create the tab
-    this.fileSystemService.openFile(path, callbackDone);
+    this.fileSystemService.openFile(path, () => {
+      this.menuService.menuShouldRebuild$.next();
+      callbackDone?.();
+    });
   }
 
   beforeQuit() {
