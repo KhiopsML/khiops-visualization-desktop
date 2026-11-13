@@ -856,7 +856,7 @@ export async function runScreenshotScenario(
                 label.textContent = text;
                 label.style.cssText = `position:absolute;max-width:180px;box-sizing:border-box;padding:6px 9px;border-radius:4px;background:${color};box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:pre-wrap;overflow-wrap:anywhere;font:600 ${fontSize}px/1.35 sans-serif;color:#553300;`;
                 const caret = document.createElement('span');
-                caret.style.cssText = `position:absolute;left:50%;top:-7px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid ${color};`;
+                caret.style.cssText = `position:absolute;left:50%;top:-7px;width:0;height:0;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${color};`;
                 label.appendChild(caret);
                 overlay.appendChild(label);
                 const labelBox = label.getBoundingClientRect();

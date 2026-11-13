@@ -123,6 +123,67 @@ test('Require quoted annotation text', () => {
   }
 });
 
+test('Keep the annotation caret attached at different zoom levels', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('annotation-caret.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
+    const target = document.createElement('div');
+    target.className = 'scenario-annotation-target';
+    target.style.cssText = 'position:fixed;left:200px;top:200px;width:100px;height:40px';
+    (host.shadowRoot || host).appendChild(target);
+  });
+  const snapshots: { image: Buffer; x: number; y: number; caretBottom: number; viewportWidth: number; viewportHeight: number }[] = [];
+  const screenshot = firstWindow.screenshot;
+  firstWindow.screenshot = async (options) => {
+    const bounds = await firstWindow.evaluate(() => {
+      const label = document.querySelector('#__screenshot_annotations > div')!;
+      const caret = label.querySelector('span')!.getBoundingClientRect();
+      return { x: caret.left + caret.width / 2, y: label.getBoundingClientRect().top, caretBottom: caret.bottom,
+        viewportWidth: window.innerWidth, viewportHeight: window.innerHeight };
+    });
+    const image = await screenshot.call(firstWindow, options);
+    snapshots.push({ image, ...bounds });
+    return image;
+  };
+  try {
+    await fs.writeFile(scenario, [
+      'annotation .scenario-annotation-target "Label"',
+      'screenshot "normal.png"',
+      'zoomIn',
+      'annotation .scenario-annotation-target "Label"',
+      'screenshot "zoom.png"',
+    ].join('\n'));
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  } finally {
+    firstWindow.screenshot = screenshot;
+  }
+  expect(snapshots).toHaveLength(2);
+  for (const { y, caretBottom } of snapshots) {
+    expect(caretBottom - y).toBeGreaterThan(0.5);
+  }
+  const { image, x, y, viewportWidth, viewportHeight } = snapshots[0];
+  const pixels = await firstWindow.evaluate(async ({ image, x, y, viewportWidth, viewportHeight }) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: 'image/png' }));
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(bitmap, 0, 0);
+    const pixelX = Math.floor(x * bitmap.width / viewportWidth);
+    const pixelY = Math.round(y * bitmap.height / viewportHeight);
+    return [-1, 0, 1].map((offset) => Array.from(context.getImageData(pixelX, pixelY + offset, 1, 1).data));
+  }, { image: image.toString('base64'), x, y, viewportWidth, viewportHeight });
+  for (const pixel of pixels) {
+    expect(pixel[0]).toBeGreaterThan(220);
+    expect(pixel[1]).toBeGreaterThan(120);
+    expect(pixel[1]).toBeLessThan(200);
+    expect(pixel[2]).toBeLessThan(50);
+  }
+});
+
 test('Parse frame tag occurrences', () => {
   for (const command of ['frame app-axis', 'frame app-axis 2',
     'frame #axis', 'frame .axis', 'frame div .axis',
