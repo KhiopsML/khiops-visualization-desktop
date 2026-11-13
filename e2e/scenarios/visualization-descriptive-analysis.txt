@@ -1,7 +1,7 @@
 ### Descriptive analysis visualization
 zoomOut
 
-fileOpen e2e/scenarios/src/ExplanatoryAnalysis/AllReports.khj
+fileOpen e2e/scenarios/src/DatasetsHistograms/AdultUnsupervised.khj
 
 openTab Preparation
 clickRow #preparation-variables-list R11
@@ -11,7 +11,8 @@ frame #preparation-view-informations-split
 frame #preparation-variables-list
 frame #variable-graph-details-comp
 frame #preparation-description-block-derivation
-frame #preparation-current-inscreenshot "images-khiops-guides/visualization/ization/UnsupervisedFivePanels.png"
+frame #preparation-current-interval
+screenshot "images-khiops-guides/visualization/UnsupervisedFivePanels.png"
 
 clickRow #preparation-variables-list R02
 # wait for histogram rendering
@@ -20,12 +21,16 @@ frame #preparation-view-informations-split
 frame #preparation-variables-list
 frame #variable-graph-details-comp
 frame #preparation-description-block-derivation
-frame #preparation-currscreenshot "images-khiops-guides/visualization/visualization/UnsupervisedFivePanelsNumerical.png"
+frame #preparation-current-interval
+screenshot "images-khiops-guides/visualization/UnsupervisedFivePanelsNumerical.png"
 
 openTab Preparation 2D
 frame #preparation-view-2d-informations-split
 frame #preparation-2d-variables-list
-frame #cooccurrence-matrix-comp-container
-frame #app-var-details-preparation-2d-compscreenshot "images-khiops-guides/visualization/des/visualization/Unsupervised-2D.png"
+frame #cooccurrence-matrix-comp
+frame #app-var-details-preparation-2d-comp-variables-lists
+screenshot "images-khiops-guides/visualization/Unsupervised-2D.png"
 
-openTscreenshot "images-khiops-guides/visualization/des/visualization/ProjectInfos.png"
+openTab Project infos
+screenshot "images-khiops-guides/visualization/ProjectInfos.png"
+
