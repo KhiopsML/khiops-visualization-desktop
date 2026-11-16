@@ -15,5 +15,21 @@ screenshot "images-khiops-guides/covisualization/UnfoldHierarchyWindow.png"
 # close dialog
 clickElt .button-confirm-hierarchy
 
+# Distribution views
+fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj
+
+# open manage view dialog and disable composition
+setVisibility isCompositionChecked 1 false
+setVisibility isCompositionChecked 2 false
+setVisibility isCooccurrenceChecked false
+setVisibility isDimensionsChecked false
+
+clickElt "A10"
+clickElt "{Masters}"
+resizeSplit .axis-comp 1 >.as-horizontal 40 60
+resizeSplit .axis-comp 2 >.as-horizontal 40 60
+
+shotElt #axis-container "images-khiops-guides/covisualization/DistributionView.png"
+
 
 

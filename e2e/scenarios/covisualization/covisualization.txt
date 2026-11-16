@@ -8,6 +8,9 @@ screenshot "images-khiops-guides/covisualization/ProjetInfos.png"
 
 openTab Axis
 
+# Dimensions views
+shotElt .selected-clusters-comp "images-khiops-guides/covisualization/DimensionView.png" {padding: 15px 15px 15px 15px}
+
 # open manage view dialog and disable distribution charts
 setVisibility isDistributionChecked 1 false
 setVisibility isDistributionChecked 2 false
