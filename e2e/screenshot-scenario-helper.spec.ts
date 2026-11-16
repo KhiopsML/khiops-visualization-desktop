@@ -153,6 +153,65 @@ test('Parse screenshot filenames', () => {
   ]);
 });
 
+test('Parse the File menu command', () => {
+  expect(parseScreenshotScenario('openMenu\nframe "Save current hierarchy as"').map((command) => command.name))
+    .toEqual(['openMenu', 'frame']);
+  expect(() => parseScreenshotScenario('openMenu File')).toThrow(/does not take an argument/);
+});
+
+test('Capture a framed File menu item at reduced zoom', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('menu.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, [
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj',
+    'zoomOut',
+    'openMenu',
+    'openMenu',
+    'frame "Save current hierarchy as"',
+    'shotElt .cet-menubar-menu-container "menu.png" {padding:5px}',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  const menu = firstWindow.locator('.cet-menubar-menu-container:visible').first();
+  const item = menu.getByText('Save current hierarchy as', { exact: true }).locator('..');
+  await expect(item).toBeVisible();
+  const menuBox = await menu.boundingBox();
+  const itemBox = await item.boundingBox();
+  if (!menuBox || !itemBox) throw new Error('Menu or item has no visible bounds');
+  const browserWindow = await app.browserWindow(firstWindow);
+  const zoom = await browserWindow.evaluate((window) => window.webContents.getZoomFactor());
+  await browserWindow.dispose();
+  const image = (await fs.readFile(path.join(output, 'menu.png'))).toString('base64');
+  const result = await firstWindow.evaluate(async ({ image, menuBox, itemBox, zoom }) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: 'image/png' }));
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not inspect menu screenshot');
+      context.drawImage(bitmap, 0, 0);
+      const x = Math.round((itemBox.x - menuBox.x + 5 + itemBox.width / 2) * zoom);
+      const y = Math.round((itemBox.y - menuBox.y + 5) * zoom);
+      const pixels = context.getImageData(x - 5, y - 4, 10, 9).data;
+      let orange = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i] > 220 && pixels[i + 1] > 100 && pixels[i + 1] < 190 && pixels[i + 2] < 80) orange++;
+      }
+      const background = Array.from(context.getImageData(x, y + Math.round(itemBox.height * zoom / 2), 1, 1).data);
+      return { width: bitmap.width, height: bitmap.height, orange, background };
+    } finally {
+      bitmap.close();
+    }
+  }, { image, menuBox, itemBox, zoom });
+  expect(result.width).toBeGreaterThanOrEqual(Math.floor((menuBox.width + 10) * zoom));
+  expect(result.width).toBeLessThanOrEqual(Math.ceil((menuBox.width + 10) * zoom) + 1);
+  expect(result.height).toBeGreaterThanOrEqual(Math.floor((menuBox.height + 10) * zoom));
+  expect(result.height).toBeLessThanOrEqual(Math.ceil((menuBox.height + 10) * zoom) + 1);
+  expect(result.orange).toBeGreaterThan(0);
+  expect(result.background.slice(0, 3).every((channel) => channel > 240)).toBe(true);
+});
+
 test('Reject invalid screenshot filenames', () => {
   for (const filename of ['"../outside.png"', '"images\\..\\outside.png"', '"images/.. /outside.png"', '"/outside.png"', '"C:\\outside.png"', '"missing-quote.png', '"file.png" extra', '"../outside.jpg"', '"../outside.webp"', '"image.gif"']) {
     expect(() => parseScreenshotScenario(`screenshot ${filename}`)).toThrow(/Line 1/);

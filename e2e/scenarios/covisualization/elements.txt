@@ -50,3 +50,8 @@ shotElt kl-search-input "images-khiops-guides/covisualization/SearchButton.png" 
 # Grid resize buttons
 shotElt .kl-grid-resize-btns "images-khiops-guides/covisualization/RedimensionButton.png" {padding: 5px 0px 5px 5px}
 
+# Save current hierarchy as
+openMenu 
+frame "Save current hierarchy as" {noId:true}
+shotElt .cet-menubar-menu-container "images-khiops-guides/covisualization/SaveCurrentHierarchy.png" {padding: 5px 5px 5px 5px}
+

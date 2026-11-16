@@ -16,7 +16,7 @@ type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
 type ChartBarGeometry = { x: number; y: number; width: number; height: number; offsetX: number; offsetY: number };
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
@@ -119,6 +119,36 @@ async function captureCssRect(page: Page, rect: { x: number; y: number; width: n
   } finally {
     await session.detach();
   }
+}
+
+async function captureMenuRect(page: Page, rect: { x: number; y: number; width: number; height: number }, format: 'png' | 'jpeg', viewport: { width: number; height: number }): Promise<Buffer> {
+  const screenshot = await page.screenshot({ animations: 'disabled', type: 'png', clip: { x: 0, y: 0, ...viewport } });
+  const encoded = await page.evaluate(async ({ image, rect, format }) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: 'image/png' }));
+    try {
+      const scaleX = bitmap.width / window.innerWidth;
+      const scaleY = bitmap.height / window.innerHeight;
+      const x = Math.floor(rect.x * scaleX);
+      const y = Math.floor(rect.y * scaleY);
+      const right = Math.ceil((rect.x + rect.width) * scaleX);
+      const bottom = Math.ceil((rect.y + rect.height) * scaleY);
+      if (x < 0 || y < 0 || right > bitmap.width || bottom > bitmap.height) {
+        throw new Error('Menu screenshot area extends outside the viewport');
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = right - x;
+      canvas.height = bottom - y;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not create screenshot canvas');
+      context.drawImage(bitmap, x, y, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+      const result = canvas.toDataURL(`image/${format}`, 0.92);
+      if (!result.startsWith(`data:image/${format};base64,`)) throw new Error(`Could not encode ${format} screenshot`);
+      return result.slice(result.indexOf(',') + 1);
+    } finally {
+      bitmap.close();
+    }
+  }, { image: screenshot.toString('base64'), rect, format });
+  return Buffer.from(encoded, 'base64');
 }
 
 async function processScreenshot(page: Page, screenshot: Buffer, inputFormat: 'png' | 'jpeg', outputFormat: 'png' | 'jpeg' | 'webp', fade: number, width: number, height: number): Promise<Buffer> {
@@ -269,13 +299,13 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     let occurrence: number | undefined;
     let annotationPosition: AnnotationPosition | undefined;
     let chartIndex: number | undefined;
-    if (!['fileOpen', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    if (!['fileOpen', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
-        if (name !== 'screenshot' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
+        if (name !== 'screenshot' && name !== 'openMenu' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
     }
-        if ((name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus' || name === 'clean') && argument) {
+        if ((name === 'openMenu' || name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus' || name === 'clean') && argument) {
       throw new Error(`Line ${index + 1}: ${name} does not take an argument`);
     }
         const setOccurrence = (value: string) => {
@@ -496,6 +526,13 @@ export async function runScreenshotScenario(
           await expect(tab).toBeVisible({ timeout: 30000 });
           await tab.click();
           await expect(tab).toHaveAttribute('aria-selected', 'true');
+          break;
+        }
+        case 'openMenu': {
+          const button = firstWindow.locator('.cet-menubar-menu-button').first();
+          await expect(button).toBeVisible({ timeout: 30000 });
+          if (!(await button.evaluate((element) => element.classList.contains('open')))) await button.click();
+          await expect(firstWindow.locator('.cet-menubar-menu-container:visible').first()).toBeVisible();
           break;
         }
         case 'zoomOut': {
@@ -852,7 +889,13 @@ export async function runScreenshotScenario(
         }
         case 'frame': {
           const { selector, noId, badge, padding, occurrence } = parseFrameArgument(command.argument, command.line);
-          const targets = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
+          const text = /^"((?:[^"\\]|\\.)+)"$/.exec(selector);
+          const targets = text
+            ? firstWindow.locator('.cet-menubar-menu-container:visible').getByText(
+              text[1].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"'),
+              { exact: true },
+            ).locator('..').filter({ visible: true })
+            : firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible').locator(selector).filter({ visible: true });
           const target = targets.nth((command.occurrence ?? occurrence ?? 1) - 1);
           await expect(target).toBeVisible();
           frames.push({ target, noId, badge, padding });
@@ -902,6 +945,7 @@ export async function runScreenshotScenario(
           let size: { width: number; height: number } | undefined;
           let shotPadding: FramePadding | undefined;
           let shotFade: number | undefined;
+          let isMenu = false;
           if (command.name === 'shotElt') {
             const [, elementSelector, elementFilename, sizeWidth, sizeHeight, paddingText, fadeText] =
               /^(\S+)\s+(.+?)(?:\s+\{size:(\d+)x(\d+)\})?(?:\s+\{padding:([\d. ]+)\})?(?:\s+\{fade:([\d.e+-]+)\})?$/.exec(command.argument)!;
@@ -912,6 +956,7 @@ export async function runScreenshotScenario(
               shotPadding = { top, right, bottom, left };
             }
             const isId = elementSelector.startsWith('#');
+            isMenu = elementSelector === '.cet-menubar-menu-container';
             const selector = toElementSelector(elementSelector);
             const targets = firstWindow.locator(selector).filter({ visible: true });
             if (isId && command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
@@ -1074,6 +1119,12 @@ export async function runScreenshotScenario(
           let screenshot: Buffer;
           if (target) {
             const zoomFactor = await browserWindow.evaluate((window: any) => window.webContents.getZoomFactor() as number);
+            const menuViewport = isMenu
+              ? await browserWindow.evaluate((window: Electron.BrowserWindow) => {
+                const [width, height] = window.getContentSize();
+                return { width, height };
+              })
+              : undefined;
             const box = await target.boundingBox();
             if (!box || box.width <= 0 || box.height <= 0) throw new Error('Screenshot target has no visible area');
             let captureWidth = box.width;
@@ -1083,7 +1134,9 @@ export async function runScreenshotScenario(
               captureWidth = rect.width;
               captureHeight = rect.height;
               // Playwright clips are exact in CSS pixels at zoom 1; zoomed windows use the CDP clip path.
-              screenshot = zoomFactor === 1
+              screenshot = menuViewport
+                ? await captureMenuRect(firstWindow, rect, format, menuViewport)
+                : zoomFactor === 1
                 ? await firstWindow.screenshot({ animations: 'disabled', clip: rect, type: format })
                 : await captureCssRect(firstWindow, rect, zoomFactor, format);
             } else if (shotPadding) {
@@ -1095,10 +1148,14 @@ export async function runScreenshotScenario(
               };
               captureWidth = rect.width;
               captureHeight = rect.height;
-              screenshot = await captureCssRect(firstWindow, rect, zoomFactor, format);
+              screenshot = menuViewport
+                ? await captureMenuRect(firstWindow, rect, format, menuViewport)
+                : await captureCssRect(firstWindow, rect, zoomFactor, format);
             } else {
-              screenshot = await target.screenshot({ animations: 'disabled', type: format });
-              if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor, format);
+              screenshot = menuViewport
+                ? await captureMenuRect(firstWindow, box, format, menuViewport)
+                : await target.screenshot({ animations: 'disabled', type: format });
+              if (!isMenu && zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor, format);
             }
             if (shotFade || outputFormat === 'webp') {
               screenshot = await processScreenshot(firstWindow, screenshot, format, outputFormat, shotFade ?? 0, captureWidth, captureHeight);

@@ -48,7 +48,8 @@ selects elements by tag, not by ID.
 It activates an already-open tab for that path, or opens the file in the scenario
 window through the application's main-process open action if needed, then waits for
 loading and any visible load notification to finish.
-`openTab` takes the exact visible tab name. `clickRow`
+`openTab` takes the exact visible tab name. `openMenu` opens the desktop File
+menu and leaves it open if already visible. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
 To scope the search to a table, include its ID, class, or element name:
 `clickRow #preparation-variables-list R11` or `clickRow kl-table R11`.
@@ -118,7 +119,8 @@ takes an element ID prefixed with `#`, a class prefixed with `.`, or a Playwrigh
 CSS selector. By default, `frame` selects the first visible match, including
 when multiple elements share the same ID. Add a 1-based occurrence number to
 select another visible match, for example `frame app-axis 2`. The command queues a rectangle around the
-selected element. Add `{noId:true}` to hide the orange letter badge, and
+selected element. Quoted exact text selects a visible item in the open desktop
+menu, for example `frame "Save current hierarchy as"`. Add `{noId:true}` to hide the orange letter badge, and
 `{padding: 10px 10px 10px 10px}` to expand the frame by the specified top, right,
 bottom, and left padding. Options are comma-separated inside the braces, for example
 `{noId:true, padding: 10px 10px 10px 10px}`. Padding accepts one to four non-negative pixel values,
