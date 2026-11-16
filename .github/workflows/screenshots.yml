@@ -2,11 +2,6 @@ name: Screenshot Scenarios
 
 on:
   workflow_dispatch:
-    inputs:
-      scenario:
-        description: Scenario path relative to the desktop repository
-        required: true
-        default: e2e/scenarios/demo.txt
 
 permissions:
   contents: read
@@ -18,9 +13,6 @@ jobs:
     defaults:
       run:
         working-directory: desktop
-    env:
-      SCREENSHOT_SCENARIO: ${{ inputs.scenario }}
-
     steps:
       - name: Checkout desktop repository
         uses: actions/checkout@v4

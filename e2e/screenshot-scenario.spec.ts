@@ -1,25 +1,21 @@
+import { readdirSync } from 'fs';
 import * as path from 'path';
 import { screenshotTest as test } from './fixtures/launch-electron';
 import { runScreenshotScenario } from './helpers/screenshot-scenario';
 
+function findScenarios(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap((entry) => {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) return findScenarios(entryPath);
+      return entry.isFile() && entry.name.endsWith('.txt') ? [entryPath] : [];
+    });
+}
+
 const scenarios = process.env.SCREENSHOT_SCENARIO
   ? [process.env.SCREENSHOT_SCENARIO]
-  : [
-      // 'e2e/scenarios/covisualization/elements.txt',
-      // 'e2e/scenarios/covisualization/matrix.txt',
-      // 'e2e/scenarios/covisualization/behaviors.txt',
-      // 'e2e/scenarios/covisualization/covisualization.txt',
-      // 'e2e/scenarios/covisualization/instances-variables.txt',
-      'e2e/scenarios/covisualization/ext-datas.txt',
-      // 'e2e/scenarios/covisualization/covisualization-2.txt',
-      // 'e2e/scenarios/covisualization/covisualization-3.txt',
-      // 'e2e/scenarios/common/screenshots.txt',
-      // 'e2e/scenarios/visualization/descriptive-analysis.txt',
-      // 'e2e/scenarios/visualization/supervised-analysis.txt',
-      // 'e2e/scenarios/visualization/elements.txt',
-      // 'e2e/scenarios/visualization/histograms.txt',
-      // 'e2e/scenarios/visualization/regression-analysis.txt',
-    ];
+  : findScenarios(path.join('e2e', 'scenarios'));
 
 test.describe('Screenshot scenario', () => {
   test.describe.configure({ timeout: 180000 });

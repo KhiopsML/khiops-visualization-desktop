@@ -3,8 +3,8 @@
 ## Screenshot scenarios
 
 Start the development server with `yarn ng:serve:dev`, then run
-`yarn e2e:screenshots`. This runs the screenshot scenario helper tests and the
-configured screenshot scenarios. PNG, JPEG and WebP files are written to `e2e/screenshots`.
+`yarn e2e:screenshots`. This runs all `.txt` screenshot scenarios in
+`e2e/scenarios` and its subdirectories. PNG, JPEG and WebP files are written to `e2e/screenshots`.
 If port 4200 is occupied, start `yarn ng serve -c dev --port 4201` and set
 `E2E_APP_URL=http://localhost:4201` for the test process.
 Set `SCREENSHOT_SCENARIO` to run a single scenario and `SCREENSHOT_OUTPUT`
@@ -15,11 +15,10 @@ in a scenario to resize it for subsequent commands and screenshots. If the
 requested window size cannot be applied, the command fails.
 
 Screenshot scenarios and their helper tests are excluded from the standard E2E
-suite. On GitHub, run the **Screenshot Scenarios** workflow manually to run
-both and generate a separate `screenshot-scenarios` artifact. The workflow
-accepts one scenario path and checks out the visualization repository beside
-the desktop repository. Run the helper tests separately with
-`yarn e2e:screenshots screenshot-scenario-helper`.
+suite. On GitHub, run the **Screenshot Scenarios** workflow manually without
+inputs to run all scenarios and generate a separate `screenshot-scenarios`
+artifact. The workflow checks out the visualization repository beside the
+desktop repository.
 
 The screenshot tests reuse one Electron window per Playwright worker.
 Each E2E Electron instance uses a separate temporary user-data directory to
