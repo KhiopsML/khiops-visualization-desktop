@@ -5,6 +5,9 @@ export const screenshotWindowSize = { width: 1440, height: 1000 };
 
 export default defineConfig({
   ...baseConfig,
-  testMatch: ['screenshot-scenario.spec.ts', 'screenshot-scenario-helper.spec.ts'],
+  testMatch: [
+    'screenshot-scenario.spec.ts',
+    'screenshot-scenario-helper.spec.ts',
+  ],
   testIgnore: [],
 });

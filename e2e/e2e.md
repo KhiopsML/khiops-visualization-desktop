@@ -21,6 +21,9 @@ the desktop repository. Run the helper tests separately with
 `yarn e2e:screenshots screenshot-scenario-helper`.
 
 The screenshot tests reuse one Electron window per Playwright worker.
+Each E2E Electron instance uses a separate temporary user-data directory to
+avoid single-instance lock and cache conflicts with the desktop application.
+The directory is removed after the instance closes, including on test failure.
 Helper tests restore their temporary elements, listeners, zoom and report state
 where possible and use the `preserve-screenshot-state` annotation to keep
 loaded reports for subsequent tests. Tests that cannot safely restore their

@@ -1,5 +1,7 @@
 import { test as base, expect } from '@playwright/test';
 import { ElectronApplication, Page, _electron as electron } from 'playwright';
+import { mkdtemp, rm } from 'fs/promises';
+import { tmpdir } from 'os';
 import * as PATH from 'path';
 
 type ElectronFixtures = {
@@ -40,25 +42,33 @@ function hideNotifications(): void {
   addExistingRoots(document);
 }
 
-async function launchApp(): Promise<ElectronApplication> {
-  const app = await electron.launch({
-    args: [
-      PATH.join(__dirname, '../../app/main.js'),
-      '--serve',
-      '--no-sandbox',
-    ],
-  });
+async function withElectronApp(
+  use: (app: ElectronApplication) => Promise<void>,
+): Promise<void> {
+  const userDataDir = await mkdtemp(PATH.join(tmpdir(), 'kvd-e2e-'));
+  let app: ElectronApplication | undefined;
   try {
+    app = await electron.launch({
+      args: [
+        PATH.join(__dirname, '../../app/main.js'),
+        '--serve',
+        '--no-sandbox',
+        `--user-data-dir=${userDataDir}`,
+      ],
+    });
     await app.context().addInitScript(hideNotifications);
     await app.firstWindow();
     for (const page of app.context().pages()) {
       await page.waitForLoadState('domcontentloaded');
       await page.evaluate(hideNotifications);
     }
-    return app;
-  } catch (error) {
-    await app.close();
-    throw error;
+    await use(app);
+  } finally {
+    try {
+      await app?.close();
+    } finally {
+      await rm(userDataDir, { recursive: true, force: true, maxRetries: 5 });
+    }
   }
 }
 
@@ -109,12 +119,7 @@ async function getFirstWindow(app: ElectronApplication): Promise<Page> {
 
 export const test = base.extend<ElectronFixtures>({
   app: async ({}, use) => {
-    const app = await launchApp();
-    try {
-      await use(app);
-    } finally {
-      await app.close();
-    }
+    await withElectronApp(use);
   },
 
   firstWindow: async ({ app }, use) => {
@@ -133,13 +138,10 @@ type ScreenshotWorker = {
 
 export const screenshotTest = base.extend<ElectronFixtures, ScreenshotWorker>({
   screenshotState: [async ({}, use) => {
-    const app = await launchApp();
-    try {
+    await withElectronApp(async (app) => {
       const firstWindow = await getFirstWindow(app);
       await use({ app, firstWindow, needsReset: false });
-    } finally {
-      await app.close();
-    }
+    });
   }, { scope: 'worker', timeout: 120000 }],
 
   app: async ({ screenshotState }, use) => {
