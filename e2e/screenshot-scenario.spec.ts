@@ -6,7 +6,7 @@ import { screenshotWindowSize } from './screenshot-playwright.config';
 const scenarios = process.env.SCREENSHOT_SCENARIO
   ? [process.env.SCREENSHOT_SCENARIO]
   : [
-      // 'e2e/scenarios/covisualization/elements.txt',
+      'e2e/scenarios/covisualization/elements.txt',
       // 'e2e/scenarios/covisualization/matrix.txt',
       // 'e2e/scenarios/covisualization/behaviors.txt',
       // 'e2e/scenarios/covisualization/covisualization.txt',
@@ -15,7 +15,7 @@ const scenarios = process.env.SCREENSHOT_SCENARIO
       // 'e2e/scenarios/common/screenshots.txt',
       // 'e2e/scenarios/visualization/descriptive-analysis.txt',
       // 'e2e/scenarios/visualization/supervised-analysis.txt',
-      'e2e/scenarios/visualization/elements.txt',
+      // 'e2e/scenarios/visualization/elements.txt',
       // 'e2e/scenarios/visualization/histograms.txt',
       // 'e2e/scenarios/visualization/regression-analysis.txt',
     ];

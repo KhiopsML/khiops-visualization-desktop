@@ -43,3 +43,10 @@ shotElt .button-manage-views "images-khiops-guides/covisualization/ViewButton.pn
 
 # matrix-option-toggle
 shotElt #matrix-option-toggle "images-khiops-guides/covisualization/StandardFrequency.png" {padding: 5px 5px 5px 5px}
+
+# search button
+shotElt kl-search-input "images-khiops-guides/covisualization/SearchButton.png" {padding: 5px 5px 5px 5px}
+
+# Grid resize buttons
+shotElt .kl-grid-resize-btns "images-khiops-guides/covisualization/RedimensionButton.png" {padding: 5px 0px 5px 5px}
+
