@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import * as path from 'path';
 import { ElectronApplication, Locator, Page } from 'playwright';
 import { expect } from '../fixtures/launch-electron';
-import { clickMenuItem, mockOpenDialogAbsolute } from './electron-menu';
+import { openFileInWindow } from './electron-menu';
 
 const ANNOTATION_COLOR = '#f59e0b';
 // const ANNOTATION_OVERLAY_COLOR = 'rgba(245, 158, 11, 0.04)';
@@ -233,7 +233,7 @@ function parseAnnotationArgument(argument: string, line: number): { selector: st
     throw new Error(`Line ${line}: annotation occurrence must be a positive integer`);
   }
   const position = annotation[4];
-  if (position && position !== 'top' && position !== 'right' && position !== 'bottom' && position !== 'left') {
+  if (position !== undefined && position !== 'top' && position !== 'right' && position !== 'bottom' && position !== 'left') {
     throw new Error(`Line ${line}: annotation position must be top, right, bottom, or left`);
   }
   return {
@@ -460,23 +460,31 @@ export async function runScreenshotScenario(
         case 'fileOpen': {
           const filePath = path.resolve(projectRoot, command.argument.replace(/[\\/]/g, path.sep));
           await fs.access(filePath);
-          const tabTitles = await firstWindow.locator('.tab[title]').evaluateAll((tabs) =>
-            tabs.map((tab) => tab.getAttribute('title') || ''),
+          const toast = firstWindow.locator('.mat-mdc-snack-bar-container:visible').first();
+          await toast.waitFor({ state: 'hidden', timeout: 15000 });
+          const tabs = firstWindow.locator('.tab[title]');
+          const tabTitles = await tabs.evaluateAll((elements) =>
+            elements.map((element) => element.getAttribute('title') || ''),
           );
           const comparablePath = process.platform === 'win32' ? filePath.toLowerCase() : filePath;
-          const alreadyOpen = tabTitles.some((title) => {
+          const existingIndex = tabTitles.findIndex((title) => {
             const separator = title.indexOf('\n');
             if (separator < 0) return false;
             const tabPath = path.normalize(title.slice(separator + 1));
             return (process.platform === 'win32' ? tabPath.toLowerCase() : tabPath) === comparablePath;
           });
-          const toast = firstWindow.locator('.mat-mdc-snack-bar-container:visible').first();
-          await toast.waitFor({ state: 'hidden', timeout: 15000 });
-          await mockOpenDialogAbsolute(app, filePath);
-          await clickMenuItem(app, 'File', 'Open');
-          if (!alreadyOpen) await toast.waitFor({ state: 'visible', timeout: 30000 });
+          if (existingIndex >= 0) {
+            const existingTab = tabs.nth(existingIndex);
+            if (!(await existingTab.evaluate((element) => element.classList.contains('active')))) {
+              await existingTab.click();
+            }
+          } else {
+            await openFileInWindow(app, firstWindow, filePath);
+          }
           const filename = path.basename(filePath).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          await expect(firstWindow.locator('.tab.active')).toHaveAttribute('title', new RegExp(`^${filename}(?:\\r?\\n|$)`), { timeout: 30000 });
+          const activeTab = firstWindow.locator('.tab.active');
+          await expect(activeTab).toHaveAttribute('title', new RegExp(`^${filename}(?:\\r?\\n|$)`), { timeout: 30000 });
+          await expect(activeTab.locator('.tab-spinner')).toHaveCount(0, { timeout: 30000 });
           await expect(firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible')).toBeVisible({ timeout: 30000 });
           await toast.waitFor({ state: 'hidden', timeout: 15000 });
           break;
@@ -825,8 +833,20 @@ export async function runScreenshotScenario(
             for (let index = 0; index < Math.round(steps); index++) await input.press('ArrowRight');
             await expect.poll(() => input.evaluate((element: HTMLInputElement) => element.valueAsNumber))
               .toBe(requested);
+          } else if (await input.isVisible()) {
+            await input.fill(text);
           } else {
-            await input.fill(text, { force: !(await input.isVisible()) });
+            await input.evaluate((element, value) => {
+              if (!(element instanceof HTMLInputElement) || element.disabled || element.readOnly) {
+                throw new Error('Hidden input must be an editable input element');
+              }
+              const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+              if (!setter) throw new Error('Input value setter is unavailable');
+              setter.call(element, value);
+              element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+              element.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+            }, text);
+            await expect(input).toHaveValue(text);
           }
           break;
         }
@@ -1032,10 +1052,10 @@ export async function runScreenshotScenario(
                 label.style.cssText = `position:absolute;max-width:180px;box-sizing:border-box;padding:6px 9px;border-radius:4px;background:${color};box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:pre-wrap;overflow-wrap:anywhere;font:600 ${fontSize}px/1.35 sans-serif;color:${fontColor};`;
                 const caret = document.createElement('span');
                 const caretStyles = {
-                  bottom: `left:50%;top:-7px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${color};`,
-                  top: `left:50%;bottom:-7px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid ${color};`,
-                  right: `left:-7px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:8px solid ${color};`,
-                  left: `right:-7px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:8px solid ${color};`,
+                  bottom: `left:50%;top:-6px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${color};`,
+                  top: `left:50%;bottom:-6px;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid ${color};`,
+                  right: `left:-6px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:8px solid ${color};`,
+                  left: `right:-6px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:8px solid ${color};`,
                 };
                 caret.style.cssText = `position:absolute;width:0;height:0;${caretStyles[position]}`;
                 label.appendChild(caret);

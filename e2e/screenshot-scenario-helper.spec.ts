@@ -1,8 +1,141 @@
 import * as path from 'path';
 import { promises as fs } from 'fs';
-import { expect, test } from './fixtures/launch-electron';
+import { ElectronApplication, Page } from 'playwright';
+import { expect, screenshotTest as test } from './fixtures/launch-electron';
+import { clickSaveDialogButton, openFileInWindow } from './helpers/electron-menu';
 import { parseScreenshotScenario, runScreenshotScenario } from './helpers/screenshot-scenario';
 import { screenshotWindowSize } from './screenshot-playwright.config';
+
+async function resetZoom(app: ElectronApplication, firstWindow: Page): Promise<void> {
+  const window = await app.browserWindow(firstWindow);
+  try {
+    await window.evaluate((browserWindow) => browserWindow.webContents.setZoomLevel(0));
+  } finally {
+    await window.dispose();
+  }
+}
+
+async function discardCovisualization(firstWindow: Page, filename: string): Promise<void> {
+  const tab = firstWindow.locator(`.tab[title^=${JSON.stringify(filename)}]`);
+  await tab.locator('.tab-close').click();
+  const dialog = firstWindow.getByText('Do you want to save the changes you made?');
+  await expect.poll(async () => {
+    if (await dialog.isVisible()) return 'dialog';
+    if (await tab.count() === 0) return 'closed';
+    return 'waiting';
+  }, { timeout: 15000 }).not.toBe('waiting');
+  if (await dialog.isVisible()) await clickSaveDialogButton(firstWindow, 'no');
+  await expect(tab).toHaveCount(0);
+}
+
+test('Hide notifications without disrupting their lifecycle', async ({ app, firstWindow }) => {
+  test.setTimeout(90000);
+  const windowPromise = app.waitForEvent('window');
+  const windowId = await app.evaluate(({ BrowserWindow }) => {
+    const window = new BrowserWindow({ show: false });
+    void window.loadURL('data:text/html,<div class="toastify">Another window</div>');
+    return window.id;
+  });
+  try {
+    const window = await windowPromise;
+    await expect(window.getByText('Another window')).toHaveCSS('opacity', '0');
+  } finally {
+    await app.evaluate(({ BrowserWindow }, id) => BrowserWindow.fromId(id)?.destroy(), windowId);
+  }
+
+  await openFileInWindow(app, firstWindow, path.resolve('e2e/mocks/bi2.json'));
+  const snackbar = firstWindow.locator('.mat-mdc-snack-bar-container:visible').first();
+  await expect(snackbar).toBeVisible({ timeout: 30000 });
+  await expect(snackbar).toHaveCSS('opacity', '0');
+  await expect(snackbar).toHaveCSS('pointer-events', 'none');
+  await expect(snackbar).toBeHidden({ timeout: 15000 });
+  const tab = firstWindow.locator('.tab[title^="bi2.json"]');
+  await tab.locator('.tab-close').click();
+  await expect(tab).toHaveCount(0);
+
+  await firstWindow.reload();
+  await firstWindow.waitForSelector('app-root');
+  await firstWindow.evaluate(() => {
+    const toast = document.createElement('div');
+    toast.className = 'toastify';
+    toast.textContent = 'Toast';
+    document.body.appendChild(toast);
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const nestedHost = document.createElement('div');
+    shadow.appendChild(nestedHost);
+    const nestedShadow = nestedHost.attachShadow({ mode: 'open' });
+    const pane = document.createElement('div');
+    pane.className = 'cdk-overlay-pane';
+    const snackbar = document.createElement('div');
+    snackbar.className = 'mat-mdc-snack-bar-container';
+    snackbar.textContent = 'Snackbar';
+    pane.appendChild(snackbar);
+    nestedShadow.appendChild(pane);
+  });
+  for (const notification of [firstWindow.locator('.toastify'), firstWindow.getByText('Snackbar', { exact: true })]) {
+    await expect(notification).toBeVisible();
+    await expect(notification).toHaveCSS('opacity', '0');
+    await expect(notification).toHaveCSS('pointer-events', 'none');
+  }
+  await expect(firstWindow.locator('.cdk-overlay-pane').filter({ hasText: 'Snackbar' })).toHaveCSS('pointer-events', 'none');
+});
+
+test('Open after reload in the requested window and reuse its tab', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('reuse-report.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
+  await firstWindow.reload();
+  await firstWindow.waitForFunction(
+    () => window.require('electron').ipcRenderer.listenerCount('file-open-system') > 0,
+  );
+  const menu = await app.evaluateHandle(({ Menu }) => {
+    const item = Menu.getApplicationMenu()?.items.find((entry) => entry.label === 'File')
+      ?.submenu?.items.find((entry) => entry.label === 'Open');
+    if (!item) throw new Error('File > Open menu item is unavailable');
+    const state = { item, original: item.click, calls: 0 };
+    item.click = () => { state.calls++; };
+    return state;
+  });
+  const otherWindowId = await app.evaluate(({ BrowserWindow }) => {
+    const window = new BrowserWindow({ show: false });
+    window.show();
+    window.focus();
+    return window.id;
+  });
+  const probe = await firstWindow.evaluateHandle(() => {
+    const ipc: Electron.IpcRenderer = window.require('electron').ipcRenderer;
+    const listeners = ipc.listeners('file-open-system');
+    if (!listeners.length) throw new Error('File-open listener is unavailable');
+    const state = { ipc, original: ipc.invoke, listenerCounts: [] as number[] };
+    ipc.invoke = (channel, ...args) => {
+      if (channel === 'menu-action-open-file') state.listenerCounts.push(ipc.listenerCount('file-open-system'));
+      return state.original.call(ipc, channel, ...args);
+    };
+    ipc.removeAllListeners('file-open-system');
+    setTimeout(() => {
+      for (const listener of listeners) ipc.on('file-open-system', listener);
+    }, 1000);
+    return state;
+  });
+  try {
+    expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getFocusedWindow()?.id)).toBe(otherWindowId);
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    expect(await menu.evaluate((state) => state.calls)).toBe(0);
+    expect(await probe.evaluate((state) => state.listenerCounts)).toEqual([1]);
+    await expect(firstWindow.locator('.tab[title^="AllReports.khj"]')).toHaveCount(1);
+  } finally {
+    await probe.evaluate((state) => { state.ipc.invoke = state.original; });
+    await probe.dispose();
+    await menu.evaluate((state) => { state.item.click = state.original; });
+    await menu.dispose();
+    await app.evaluate(({ BrowserWindow }, id) => BrowserWindow.fromId(id)?.destroy(), otherWindowId);
+  }
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
+});
 
 test('Parse screenshot filenames', () => {
   const commands = parseScreenshotScenario(
@@ -133,14 +266,16 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
       gutter.className = 'as-split-gutter';
       const second = document.createElement('as-split-area');
       let dragging = false;
+      const controller = new AbortController();
+      parent.addEventListener('scenario-cleanup', () => controller.abort(), { once: true });
       gutter.addEventListener('mousedown', () => { dragging = true; });
       document.addEventListener('mousemove', (event) => {
         if (!dragging) return;
         const box = split.getBoundingClientRect();
         const ratio = Math.max(0, Math.min(1, (event.clientX - box.left - 4) / (box.width - 8)));
         split.style.gridTemplateColumns = `${ratio}fr 8px ${1 - ratio}fr`;
-      });
-      document.addEventListener('mouseup', () => { dragging = false; });
+      }, { signal: controller.signal });
+      document.addEventListener('mouseup', () => { dragging = false; }, { signal: controller.signal });
       split.append(first, gutter, second);
       parent.appendChild(split);
       root.appendChild(parent);
@@ -174,6 +309,14 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
   }));
   expect(ratios[0]).toBeCloseTo(50, 0);
   expect(Math.abs(ratios[1] - 35)).toBeLessThan(1);
+  await firstWindow.locator('.scenario-split-group').evaluateAll((groups) => {
+    for (const group of groups) {
+      group.dispatchEvent(new Event('scenario-cleanup'));
+      group.remove();
+    }
+  });
+  await firstWindow.locator('.scenario-split-focus').evaluate((input) => input.remove());
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Parse element names as command targets', () => {
@@ -213,6 +356,9 @@ test('Hover shows the matrix tooltip in a screenshot', async ({ app, firstWindow
   await expect(tooltip).toHaveCSS('opacity', '1');
   await expect(tooltip.locator('h2')).toContainText(' x ');
   expect((await fs.stat(path.join(output, 'tooltip.png'))).size).toBeGreaterThan(0);
+  await firstWindow.mouse.move(0, 0);
+  await expect(tooltip).toHaveCount(0);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Require quoted annotation text', () => {
@@ -341,9 +487,11 @@ test('Annotate a chart bar without selecting it', async ({ app, firstWindow }, t
   expect(labelBox!.x).toBeCloseTo(canvasBox!.x + 127, 1);
   expect(labelBox!.y + labelBox!.height / 2).toBeCloseTo(canvasBox!.y + 120, 1);
   await expect(canvas).not.toHaveAttribute('data-click');
-  await fs.writeFile(scenario, 'clickChart #scenario-chart 1');
+  await fs.writeFile(scenario, 'clickChart #scenario-chart 1\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await expect(canvas).toHaveAttribute('data-click', '100,120');
+  await canvas.evaluate((element) => element.parentElement!.remove());
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Annotate a distribution chart bar', async ({ app, firstWindow }, testInfo) => {
@@ -352,7 +500,7 @@ test('Annotate a distribution chart bar', async ({ app, firstWindow }, testInfo)
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario,
     'fileOpen e2e/mocks/src-screenshots/DatasetsHistograms/AdultUnsupervised.khj\n'
-    + 'openTab Preparation\nclickRow #preparation-variables-list R11');
+    + 'openTab Preparation\nclickRow #preparation-variables-list R11\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   let text: string | null = null;
   const screenshot = firstWindow.screenshot;
@@ -367,6 +515,10 @@ test('Annotate a distribution chart bar', async ({ app, firstWindow }, testInfo)
     firstWindow.screenshot = screenshot;
   }
   expect(text).toBe('Distribution bar');
+  const tab = firstWindow.locator('.tab[title^="AdultUnsupervised.khj"]');
+  await tab.locator('.tab-close').click();
+  await expect(tab).toHaveCount(0);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }, testInfo) => {
@@ -375,12 +527,18 @@ test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
-  await firstWindow.locator('#matrix-selected').evaluateAll((canvases) => {
-    for (const canvas of canvases) (canvas as HTMLElement).style.display = 'none';
+  const originalDisplays = await firstWindow.locator('#matrix-selected').evaluateAll((canvases) => {
+    return canvases.map((canvas) => {
+      const element = canvas as HTMLElement;
+      const display = element.style.display;
+      element.style.display = 'none';
+      return display;
+    });
   });
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const canvas = document.createElement('canvas');
     canvas.id = 'matrix-selected';
+    canvas.className = 'scenario-selected-matrix';
     canvas.width = 200;
     canvas.height = 100;
     canvas.style.cssText = 'position:fixed;left:300px;top:300px;width:400px;height:200px;z-index:2147483647';
@@ -407,6 +565,11 @@ test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }
   expect(labelBox).not.toBeNull();
   expect(labelBox!.x).toBeCloseTo(canvasBox!.x + 180 + 7, 1);
   expect(labelBox!.y + labelBox!.height / 2).toBeCloseTo(canvasBox!.y + 130, 1);
+  await firstWindow.locator('.scenario-selected-matrix').evaluate((element) => element.remove());
+  await firstWindow.locator('#matrix-selected').evaluateAll((canvases, displays) => {
+    canvases.forEach((canvas, index) => { (canvas as HTMLElement).style.display = displays[index]; });
+  }, originalDisplays);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Annotate a selected matrix cell', async ({ app, firstWindow }, testInfo) => {
@@ -430,6 +593,8 @@ test('Annotate a selected matrix cell', async ({ app, firstWindow }, testInfo) =
     firstWindow.screenshot = screenshot;
   }
   expect(text).toBe('Selected cell');
+  await discardCovisualization(firstWindow, '1-Adult2varsEducationOccupation.khcj');
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Position annotation labels and carets around their target', async ({ app, firstWindow }, testInfo) => {
@@ -489,6 +654,8 @@ test('Position annotation labels and carets around their target', async ({ app, 
   expect(labels[3].caretY).toBeLessThan(labels[3].y);
   expect(labels[4].caretX + labels[4].caretWidth).toBeGreaterThan(labels[4].x + labels[4].width);
   for (const label of labels) expect(label.color).toBe('rgb(245, 158, 11)');
+  await firstWindow.locator('.scenario-annotation-positions').evaluate((target) => target.remove());
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Annotate the requested visible occurrence', async ({ app, firstWindow }, testInfo) => {
@@ -525,6 +692,10 @@ test('Annotate the requested visible occurrence', async ({ app, firstWindow }, t
   }
   expect(labelCenter).toBeDefined();
   expect(labelCenter!).toBeCloseTo(targetBox!.x + targetBox!.width / 2, 1);
+  await firstWindow.locator('.scenario-annotation-occurrence').evaluateAll((targets) => {
+    targets.forEach((target) => target.remove());
+  });
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Parse clean command', () => {
@@ -577,6 +748,9 @@ test('Clean queued frames and annotations', async ({ app, firstWindow }, testInf
     { frames: 1, annotation: 'Kept' },
     { frames: 0, annotation: null },
   ]);
+  await firstWindow.evaluate(() => (window as any).Annotate.destroy());
+  await firstWindow.locator('.scenario-clean-target').evaluate((target) => target.remove());
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Keep the annotation caret attached at different zoom levels', async ({ app, firstWindow }, testInfo) => {
@@ -638,6 +812,9 @@ test('Keep the annotation caret attached at different zoom levels', async ({ app
     expect(pixel[1]).toBeLessThan(200);
     expect(pixel[2]).toBeLessThan(50);
   }
+  await firstWindow.locator('.scenario-annotation-target').evaluate((target) => target.remove());
+  await resetZoom(app, firstWindow);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Parse frame tag occurrences', () => {
@@ -740,6 +917,9 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
   expect(snapshots[1].rectangles[0].y).toBeCloseTo(box.y - 1, 1);
   expect(snapshots[1].rectangles[0].width).toBeCloseTo(box.width + 4, 1);
   expect(snapshots[1].rectangles[0].height).toBeCloseTo(box.height + 4, 1);
+  await firstWindow.evaluate(() => (window as any).Annotate.destroy());
+  await targets.evaluateAll((elements) => elements.forEach((element) => element.remove()));
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Parse input commands', () => {
@@ -765,6 +945,7 @@ test('Use element names for input and element commands', async ({ app, firstWind
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     const container = document.createElement('div');
+    container.className = 'scenario-element-container';
     container.style.cssText = 'position:fixed;left:200px;top:200px;z-index:2147483647;background:white';
     const button = document.createElement('scenario-element-button');
     button.textContent = 'Click';
@@ -804,20 +985,29 @@ test('Use element names for input and element commands', async ({ app, firstWind
   await expect(firstWindow.locator('scenario-element-slider input')).toHaveValue('50');
   await expect(firstWindow.locator('scenario-element-hide')).toBeHidden();
   await expect(firstWindow.locator('scenario-element-remove')).toHaveCount(0);
+  await firstWindow.locator('.scenario-element-container').evaluate((element) => element.remove());
+  await firstWindow.evaluate(() => {
+    delete document.body.dataset.elementClicked;
+    delete document.body.dataset.elementRowClicked;
+  });
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Set the matrix contrast when other sliders are visible', async ({ app, firstWindow }, testInfo) => {
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('matrix-slider.txt');
   const output = testInfo.outputPath('screenshots');
-  await fs.writeFile(scenario, [
-    'fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj',
-    'input #contrast 50',
-    'screenshot',
-  ].join('\n'));
+  await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   const slider = firstWindow.locator('khiops-covisualization:visible').locator('#contrast mat-slider').filter({ visible: true }).first();
+  const originalValue = await slider.locator('input').first().inputValue();
+  await fs.writeFile(scenario, 'input #contrast 50\nscreenshot');
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await expect(slider.locator('input').first()).toHaveValue('50');
+  await fs.writeFile(scenario, `input #contrast ${originalValue}\nscreenshot`);
+  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await expect(slider.locator('input').first()).toHaveValue(originalValue);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Fill a hidden unfolding input', async ({ app, firstWindow }, testInfo) => {
@@ -832,6 +1022,10 @@ test('Fill a hidden unfolding input', async ({ app, firstWindow }, testInfo) => 
   ].join('\n'));
   await runScreenshotScenario(app, firstWindow, scenario, testInfo.outputPath('screenshots'), screenshotWindowSize);
   await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
+  await firstWindow.locator('#unfold-hierarchy-header').getByRole('button', { name: 'Cancel' }).click();
+  await expect(firstWindow.locator('#unfold-hierarchy-settings')).toBeHidden();
+  await discardCovisualization(firstWindow, 'IV-AdultComplete.khcj');
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Set and save the unfolding slider', async ({ app, firstWindow }, testInfo) => {
@@ -851,6 +1045,10 @@ test('Set and save the unfolding slider', async ({ app, firstWindow }, testInfo)
   await fs.writeFile(scenario, 'clickElt .button-unfold-hierarchy\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
+  await firstWindow.locator('#unfold-hierarchy-header').getByRole('button', { name: 'Cancel' }).click();
+  await expect(firstWindow.locator('#unfold-hierarchy-settings')).toBeHidden();
+  await discardCovisualization(firstWindow, 'CoclusteringAdult_Uidocs_Coclustering.khcj');
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Parse unfocus command', () => {
@@ -922,6 +1120,7 @@ test('Apply target occurrences to click, input, hide and remove', async ({ app, 
     const root = host.shadowRoot || host;
     for (let index = 0; index < 3; index++) {
       const container = document.createElement('div');
+      container.className = 'scenario-occurrence-container';
       container.style.cssText = `position:fixed;left:${200 + index * 200}px;top:200px;z-index:2147483647;background:white`;
       const button = document.createElement('button');
       button.className = 'occurrence-click';
@@ -956,6 +1155,9 @@ test('Apply target occurrences to click, input, hide and remove', async ({ app, 
   await expect(hidden.nth(1)).toBeHidden();
   await expect(hidden.nth(2)).toBeVisible();
   await expect(firstWindow.locator('.occurrence-remove')).toHaveText(['Remove 0', 'Remove 2']);
+  await firstWindow.locator('.scenario-occurrence-container').evaluateAll((elements) => elements.forEach((element) => element.remove()));
+  await firstWindow.evaluate(() => { delete document.body.dataset.occurrenceClick; });
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Click the element containing matching text', async ({ app, firstWindow }, testInfo) => {
@@ -968,6 +1170,7 @@ test('Click the element containing matching text', async ({ app, firstWindow }, 
     const root = host.shadowRoot || host;
     for (const [id, hidden] of [['hidden', true], ['first', false], ['second', false]] as const) {
       const parent = document.createElement('div');
+      parent.className = 'scenario-text-click-container';
       parent.style.cssText = `position:fixed;top:200px;left:200px;${hidden ? 'display:none;' : ''}`;
       const child = document.createElement('span');
       child.textContent = 'Unique C1 test cluster';
@@ -982,6 +1185,9 @@ test('Click the element containing matching text', async ({ app, firstWindow }, 
   await fs.writeFile(scenario, 'clickElt "Unique C1"\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await expect(firstWindow.locator('body')).toHaveAttribute('data-text-click', 'first');
+  await firstWindow.locator('.scenario-text-click-container').evaluateAll((elements) => elements.forEach((element) => element.remove()));
+  await firstWindow.evaluate(() => { delete document.body.dataset.textClick; });
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Select a context cluster by text', async ({ app, firstWindow }, testInfo) => {
@@ -1000,6 +1206,8 @@ test('Select a context cluster by text', async ({ app, firstWindow }, testInfo) 
   await fs.writeFile(scenario, 'clickElt "C1"\nscreenshot');
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   await expect(cluster.locator('..')).toHaveClass(/tree-selected/);
+  await discardCovisualization(firstWindow, '2-Iris3vars-Coclustering.khcj');
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Capture an element at different zoom levels', async ({ app, firstWindow }, testInfo) => {
@@ -1066,6 +1274,9 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     expect(dimensions.width, filename).toBeGreaterThan(0);
     expect(dimensions.height, filename).toBeGreaterThan(0);
   }
+  await firstWindow.locator('#scenario-zoom-target, .scenario-zoom-test').evaluateAll((elements) => elements.forEach((element) => element.remove()));
+  await resetZoom(app, firstWindow);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Fade element screenshot edges to white', async ({ app, firstWindow }, testInfo) => {
@@ -1130,6 +1341,10 @@ test('Fade element screenshot edges to white', async ({ app, firstWindow }, test
       expect(pixels[5][1], filename).toBeLessThan(220);
     }
   }
+  await firstWindow.locator('.scenario-fade-test').evaluate((element) => element.parentElement!.remove());
+  await firstWindow.locator('.scenario-fade-white-test').evaluate((element) => element.remove());
+  await resetZoom(app, firstWindow);
+  testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
 test('Bring an element above a modal dialog', async ({ app, firstWindow }, testInfo) => {

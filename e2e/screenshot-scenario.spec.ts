@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { test } from './fixtures/launch-electron';
+import { screenshotTest as test } from './fixtures/launch-electron';
 import { runScreenshotScenario } from './helpers/screenshot-scenario';
 import { screenshotWindowSize } from './screenshot-playwright.config';
 

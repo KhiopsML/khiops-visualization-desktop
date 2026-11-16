@@ -6,25 +6,41 @@ import * as PATH from 'path';
  * @param app - The Electron application instance
  * @param menuLabel - The top-level menu label (e.g. 'File')
  * @param submenuLabel - The submenu item label to click (e.g. 'Open')
+ * @param firstWindow - Optional target window for the menu action
  */
 export async function clickMenuItem(
   app: ElectronApplication,
   menuLabel: string,
   submenuLabel: string,
+  firstWindow?: Page,
 ): Promise<void> {
+  let windowId: number | undefined;
+  if (firstWindow) {
+    const window = await app.browserWindow(firstWindow);
+    try {
+      windowId = await window.evaluate((browserWindow) => browserWindow.id);
+    } finally {
+      await window.dispose();
+    }
+  }
   await app.evaluate(
-    ({ Menu }, { menuLabel, submenuLabel }) => {
+    ({ Menu, BrowserWindow }, { menuLabel, submenuLabel, windowId }) => {
       const menu = Menu.getApplicationMenu();
-      if (!menu) return;
+      if (!menu) throw new Error('Application menu is unavailable');
       const menuItem = menu.items.find((item) => item.label === menuLabel);
-      if (menuItem?.submenu) {
-        const submenuItem = menuItem.submenu.items.find(
-          (s) => s.label === submenuLabel,
-        );
-        submenuItem?.click();
+      const submenuItem = menuItem?.submenu?.items.find(
+        (item) => item.label === submenuLabel,
+      );
+      if (!submenuItem) throw new Error(`Menu item ${menuLabel} > ${submenuLabel} is unavailable`);
+      if (windowId === undefined) {
+        submenuItem.click();
+      } else {
+        const window = BrowserWindow.fromId(windowId);
+        if (!window) throw new Error(`Window ${windowId} is unavailable`);
+        submenuItem.click(submenuItem, window);
       }
     },
-    { menuLabel, submenuLabel },
+    { menuLabel, submenuLabel, windowId },
   );
 }
 
@@ -66,6 +82,32 @@ export async function mockOpenDialogAbsolute(
         filePaths: [path],
       });
   }, absoluteFilePath);
+}
+
+export async function openFileInWindow(
+  app: ElectronApplication,
+  firstWindow: Page,
+  absoluteFilePath: string,
+): Promise<void> {
+  await firstWindow.waitForFunction(
+    () => window.require('electron').ipcRenderer.listenerCount('file-open-system') > 0,
+    undefined,
+    { timeout: 30000 },
+  );
+  await mockOpenDialogAbsolute(app, absoluteFilePath);
+  const browserWindow = await app.browserWindow(firstWindow);
+  let windowId: number;
+  try {
+    windowId = await browserWindow.evaluate((window) => window.id);
+  } finally {
+    await browserWindow.dispose();
+  }
+  const result = await firstWindow.evaluate(async (id) => {
+    const ipc: Electron.IpcRenderer = window.require('electron').ipcRenderer;
+    const response: { success: boolean; reason?: string } = await ipc.invoke('menu-action-open-file', id);
+    return response;
+  }, windowId);
+  if (!result?.success) throw new Error(`Open file failed: ${result?.reason ?? 'unknown error'}`);
 }
 
 /**

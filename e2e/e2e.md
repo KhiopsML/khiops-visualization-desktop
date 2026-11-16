@@ -20,6 +20,16 @@ accepts one scenario path and checks out the visualization repository beside
 the desktop repository. Run the helper tests separately with
 `yarn e2e:screenshots screenshot-scenario-helper`.
 
+The screenshot tests reuse one Electron window per Playwright worker.
+Helper tests restore their temporary elements, listeners, zoom and report state
+where possible and use the `preserve-screenshot-state` annotation to keep
+loaded reports for subsequent tests. Tests that cannot safely restore their
+state cause a page reload before the next test. Playwright replaces the worker
+and its window after a test failure.
+
+E2E windows render snackbars and Toastify notifications transparently. Their
+normal lifecycle remains available to tests that wait for or assert them.
+
 Scenario commands are one per line. Blank lines and lines beginning with `#`
 are ignored. Commands that select a target accept a 1-based occurrence immediately
 after the command, for example `clickElt 2 .mat-badge-accent`,
@@ -31,8 +41,10 @@ each command retains its usual behavior. Occurrences select visible matches, exc
 Element-targeting commands accept an ID prefixed with `#`, a class prefixed with `.`,
 or a bare HTML/custom-element name, such as `input mat-slider 50`. A bare name
 selects elements by tag, not by ID.
-`fileOpen` takes an absolute path or a path relative to the
-desktop project root and waits for the load notification to disappear.
+`fileOpen` takes an absolute path or a path relative to the desktop project root.
+It activates an already-open tab for that path, or opens the file in the scenario
+window through the application's main-process open action if needed, then waits for
+loading and any visible load notification to finish.
 `openTab` takes the exact visible tab name. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.
 To scope the search to a table, include its ID, class, or element name:
