@@ -12,3 +12,11 @@ setVisibility isDistributionChecked 2 false
 clickElt .button-import-external-datas
 browseFile #import-new-file-btn e2e/mocks/src-screenshots/Covisualization/1-ExternalData_JoinKeyEducation_DimensionEducation.txt
 shotElt #import-ext-datas-list-comp "images-khiops-guides/covisualization/ImportExternalDataWindow.png"
+
+clickElt #import-ext-datas-save-btn
+clickElt .close-btn
+shotElt .axis-comp 2 "images-khiops-guides/covisualization/ExternalData-Bachelors.png"
+
+clickElt "{Some-college}"
+shotElt .axis-comp 2 "images-khiops-guides/covisualization/ExternalData-SomeCollege.png"
+
