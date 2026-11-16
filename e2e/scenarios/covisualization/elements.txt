@@ -53,5 +53,5 @@ shotElt .kl-grid-resize-btns "images-khiops-guides/covisualization/RedimensionBu
 # Save current hierarchy as
 openMenu 
 frame "Save current hierarchy as" {noId:true}
-shotElt .cet-menubar-menu-container "images-khiops-guides/covisualization/SaveCurrentHierarchy.png" {padding: 5px 5px 5px 5px}
+shotElt .cet-menubar-menu-container "images-khiops-guides/covisualization/SaveCurrentHierarchy.png" {padding: 15px 15px 15px 15px}
 

@@ -57,3 +57,9 @@ unfocus
 clickElt .kl-grid-btn-fit-columns 2 
 unfocus
 shotElt .axis-comp 2 "images-khiops-guides/covisualization/Composition.png"
+
+# search text clerical
+clickElt .search-input-btn 1
+input .search-input-btn 1 "clerical"
+unfocus
+shotElt .axis-comp 1 "images-khiops-guides/covisualization/SearchClerical.png"
