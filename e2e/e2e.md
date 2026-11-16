@@ -13,6 +13,8 @@ project root.
 Scenarios start with a 1440x1000 Electron window. Use `setResolution 1800x1000`
 in a scenario to resize it for subsequent commands and screenshots. If the
 requested window size cannot be applied, the command fails.
+On Linux with Xvfb, use a display large enough for the requested window, for
+example `xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" yarn e2e:screenshots`.
 
 Screenshot scenarios and their helper tests are excluded from the standard E2E
 suite. On GitHub, run the **Screenshot Scenarios** workflow manually without

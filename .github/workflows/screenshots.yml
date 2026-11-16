@@ -50,7 +50,7 @@ jobs:
       - name: Run screenshot scenario tests and generate screenshots
         env:
           SCREENSHOT_OUTPUT: ${{ runner.temp }}/kvd-screenshots
-        run: xvfb-run --auto-servernum yarn e2e:screenshots
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" yarn e2e:screenshots
 
       - name: Upload Playwright artifacts
         if: always()
