@@ -139,7 +139,7 @@ test('Open after reload in the requested window and reuse its tab', async ({ app
 
 test('Parse screenshot filenames', () => {
   const commands = parseScreenshotScenario(
-    'screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"\nscreenshot "images-khiops-guides/visualization/images\\nested\\plot.png"\nscreenshot legacy.png\nscreenshot "coclustering/AdultCovizuOptimal.jpg"\nscreenshot photo.JPEG\nscreenshot',
+    'screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"\nscreenshot "images-khiops-guides/visualization/images\\nested\\plot.png"\nscreenshot legacy.png\nscreenshot "coclustering/AdultCovizuOptimal.jpg"\nscreenshot photo.JPEG\nscreenshot "images/photo.webp"\nscreenshot photo.WEBP\nscreenshot',
   );
   expect(commands.map((command) => command.argument)).toEqual([
     'images-khiops-guides/visualization/images/Visualization Adult Evaluation.png',
@@ -147,12 +147,14 @@ test('Parse screenshot filenames', () => {
     'legacy.png',
     'coclustering/AdultCovizuOptimal.jpg',
     'photo.JPEG',
+    'images/photo.webp',
+    'photo.WEBP',
     '',
   ]);
 });
 
 test('Reject invalid screenshot filenames', () => {
-  for (const filename of ['"../outside.png"', '"images\\..\\outside.png"', '"images/.. /outside.png"', '"/outside.png"', '"C:\\outside.png"', '"missing-quote.png', '"file.png" extra', '"../outside.jpg"', '"image.gif"']) {
+  for (const filename of ['"../outside.png"', '"images\\..\\outside.png"', '"images/.. /outside.png"', '"/outside.png"', '"C:\\outside.png"', '"missing-quote.png', '"file.png" extra', '"../outside.jpg"', '"../outside.webp"', '"image.gif"']) {
     expect(() => parseScreenshotScenario(`screenshot ${filename}`)).toThrow(/Line 1/);
     expect(() => parseScreenshotScenario(`shotElt #app-histogram ${filename}`)).toThrow(/Line 1/);
   }
@@ -160,13 +162,15 @@ test('Reject invalid screenshot filenames', () => {
 
 test('Parse element screenshot paths', () => {
   const commands = parseScreenshotScenario(
-    'shotElt #app-histogram "images-khiops-guides/Capital Loss.png"\nshotElt .chart "images\\nested\\plot.png"\nshotElt #chart legacy.png\nshotElt #chart "images/photo.jpg"',
+    'shotElt #app-histogram "images-khiops-guides/Capital Loss.png"\nshotElt .chart "images\\nested\\plot.png"\nshotElt #chart legacy.png\nshotElt #chart "images/photo.jpg"\nshotElt #chart "images/photo.webp"\nshotElt #chart photo.WEBP',
   );
   expect(commands.map((command) => command.argument)).toEqual([
     '#app-histogram images-khiops-guides/Capital Loss.png',
     '.chart images\\nested\\plot.png',
     '#chart legacy.png',
     '#chart images/photo.jpg',
+    '#chart images/photo.webp',
+    '#chart photo.WEBP',
   ]);
 });
 
@@ -1248,6 +1252,12 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     'shotElt .scenario-zoom-test "size.jpg" {size:30x20}',
     'shotElt .scenario-zoom-test "padding.jpg" {padding:2px}',
     'zoomOut', 'shotElt .scenario-zoom-test "zoom.jpg"',
+    'screenshot "full.webp"',
+    'shotElt .scenario-zoom-test "zoom.WEBP"',
+    'zoomIn',
+    'shotElt .scenario-zoom-test "element.webp"',
+    'shotElt .scenario-zoom-test "size.webp" {size:30x20}',
+    'shotElt .scenario-zoom-test "padding.webp" {padding:2px}',
   ].join('\n'));
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
   for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png', 'tag.png',
@@ -1273,6 +1283,29 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     }, image.toString('base64'));
     expect(dimensions.width, filename).toBeGreaterThan(0);
     expect(dimensions.height, filename).toBeGreaterThan(0);
+  }
+  for (const filename of ['full.webp', 'zoom.WEBP', 'element.webp', 'size.webp', 'padding.webp']) {
+    const image = await fs.readFile(path.join(output, filename));
+    expect(image.toString('ascii', 0, 4), filename).toBe('RIFF');
+    expect(image.toString('ascii', 8, 12), filename).toBe('WEBP');
+    const result = await firstWindow.evaluate(async (encoded) => {
+      const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))], { type: 'image/webp' }));
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(bitmap, 0, 0);
+      return { width: bitmap.width, height: bitmap.height,
+        pixel: Array.from(context.getImageData(Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2), 1, 1).data) };
+    }, image.toString('base64'));
+    expect(result.width, filename).toBeGreaterThan(0);
+    expect(result.height, filename).toBeGreaterThan(0);
+    if (filename === 'size.webp') expect([result.width, result.height]).toEqual([30, 20]);
+    if (filename !== 'full.webp') {
+      expect(result.pixel[0], filename).toBeGreaterThan(240);
+      expect(result.pixel[1], filename).toBeLessThan(15);
+      expect(result.pixel[2], filename).toBeLessThan(15);
+    }
   }
   await firstWindow.locator('#scenario-zoom-target, .scenario-zoom-test').evaluateAll((elements) => elements.forEach((element) => element.remove()));
   await resetZoom(app, firstWindow);
@@ -1306,14 +1339,15 @@ test('Fade element screenshot edges to white', async ({ app, firstWindow }, test
     'shotElt .scenario-fade-test "wide.png" {fade:200px}',
     'shotElt .scenario-fade-test "padding.png" {padding:10px, fade:20px}',
     'shotElt .scenario-fade-test "size.jpg" {size:60x60, fade:20px}',
+    'shotElt .scenario-fade-test "fade.webp" {padding:10px, fade:20px}',
     'zoomIn',
     'shotElt .scenario-fade-test "zoom.png" {fade:20px}',
   ].join('\n'));
   await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
-  for (const filename of ['plain.png', 'zero.png', 'fade.png', 'white.png', 'wide.png', 'padding.png', 'size.jpg', 'zoom.png']) {
+  for (const filename of ['plain.png', 'zero.png', 'fade.png', 'white.png', 'wide.png', 'padding.png', 'size.jpg', 'fade.webp', 'zoom.png']) {
     const image = (await fs.readFile(path.join(output, filename))).toString('base64');
-    const pixels = await firstWindow.evaluate(async ({ image, jpeg }) => {
-      const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: jpeg ? 'image/jpeg' : 'image/png' }));
+    const pixels = await firstWindow.evaluate(async ({ image, mime }) => {
+      const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: mime }));
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
@@ -1324,7 +1358,7 @@ test('Fade element screenshot edges to white', async ({ app, firstWindow }, test
       const y = Math.floor(bitmap.height / 2);
       return [pixel(x, y), pixel(0, y), pixel(bitmap.width - 1, y), pixel(x, 0), pixel(x, bitmap.height - 1),
         pixel(Math.floor(bitmap.width * 0.1), y)];
-    }, { image, jpeg: filename.endsWith('.jpg') });
+    }, { image, mime: filename.endsWith('.jpg') ? 'image/jpeg' : filename.endsWith('.webp') ? 'image/webp' : 'image/png' });
     if (filename === 'white.png') {
       for (const pixel of pixels) {
         for (const channel of pixel.slice(0, 3)) expect(channel, filename).toBeGreaterThan(245);

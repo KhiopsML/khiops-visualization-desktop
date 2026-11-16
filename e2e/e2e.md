@@ -4,7 +4,7 @@
 
 Start the development server with `yarn ng:serve:dev`, then run
 `yarn e2e:screenshots`. This runs the screenshot scenario helper tests and the
-configured screenshot scenarios. PNG and JPEG files are written to `e2e/screenshots`.
+configured screenshot scenarios. PNG, JPEG and WebP files are written to `e2e/screenshots`.
 If port 4200 is occupied, start `yarn ng serve -c dev --port 4201` and set
 `E2E_APP_URL=http://localhost:4201` for the test process.
 Set `SCREENSHOT_SCENARIO` to run a single scenario and `SCREENSHOT_OUTPUT`
@@ -79,7 +79,7 @@ class, including hidden elements.
 If the element is the only child of an Angular Split area, the area is also
 removed. When one area remains, it fills the split.
 `shotElt #header-tools-comp "images/Top Right Buttons.png"` captures the unique visible
-element with that ID to the relative PNG or JPEG path in the screenshot output directory.
+element with that ID to the relative PNG, JPEG or WebP path in the screenshot output directory.
 `shotElt .ag-grid-comp-header-tools "TopRightPanelAButtons.png"`
 captures the first visible element with that class. An unprefixed element name, such as
 `shotElt kl-keyboard-tooltip "CTRL.png"`, captures the first visible matching HTML element.
@@ -156,9 +156,9 @@ datasets have a non-zero-height bar at that index, the first is used. Position d
 `bottom`, as with `annotation`.
 `clean` discards all queued frames and annotations without taking a screenshot.
 `screenshot "images-khiops-guides/visualization/images/Visualization Adult Evaluation.png"`
-captures a PNG or JPEG under the screenshot output directory, creating subdirectories as
+captures a PNG, JPEG or WebP under the screenshot output directory, creating subdirectories as
 needed. Paths must be relative and cannot contain parent-directory segments.
-Use `.png`, `.jpg`, or `.jpeg` to select the image format. Without a filename,
+Use `.png`, `.jpg`, `.jpeg`, or `.webp` to select the image format. Without a filename,
 numbered PNG files are created. Unquoted filenames without spaces are also supported.
 Annotations are cleared after each screenshot.
 ## yarn playwright test

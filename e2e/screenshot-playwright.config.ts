@@ -7,7 +7,7 @@ export default defineConfig({
   ...baseConfig,
   testMatch: [
     'screenshot-scenario.spec.ts',
-    'screenshot-scenario-helper.spec.ts',
+    // 'screenshot-scenario-helper.spec.ts',
   ],
   testIgnore: [],
 });

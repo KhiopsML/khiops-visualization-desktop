@@ -45,12 +45,12 @@ async function writeScreenshot(filePath: string, screenshot: Buffer): Promise<vo
 }
 
 function parseScreenshotFilename(argument: string, line: number, command: string): string {
-  const quoted = /^"((?:[\w. -]+[\\/])*[\w. -]+\.(?:png|jpe?g))"$/i.exec(argument);
+  const quoted = /^"((?:[\w. -]+[\\/])*[\w. -]+\.(?:png|jpe?g|webp))"$/i.exec(argument);
   if (quoted && quoted[1].split(/[\\/]/).slice(0, -1).every((part) => /[\w-]$/.test(part))) {
     return quoted[1];
   }
-  if (/^[\w.-]+\.(?:png|jpe?g)$/i.test(argument)) return argument;
-  throw new Error(`Line ${line}: ${command} requires a relative PNG or JPEG path without parent directories`);
+  if (/^[\w.-]+\.(?:png|jpe?g|webp)$/i.test(argument)) return argument;
+  throw new Error(`Line ${line}: ${command} requires a relative PNG, JPEG or WebP path without parent directories`);
 }
 
 type FramePadding = { top: number; right: number; bottom: number; left: number };
@@ -121,9 +121,9 @@ async function captureCssRect(page: Page, rect: { x: number; y: number; width: n
   }
 }
 
-async function fadeScreenshotEdges(page: Page, screenshot: Buffer, format: 'png' | 'jpeg', fade: number, width: number, height: number): Promise<Buffer> {
-  const encoded = await page.evaluate(async ({ image, format, fade, width, height }) => {
-    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: `image/${format}` }));
+async function processScreenshot(page: Page, screenshot: Buffer, inputFormat: 'png' | 'jpeg', outputFormat: 'png' | 'jpeg' | 'webp', fade: number, width: number, height: number): Promise<Buffer> {
+  const encoded = await page.evaluate(async ({ image, inputFormat, outputFormat, fade, width, height }) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: `image/${inputFormat}` }));
     try {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -133,25 +133,25 @@ async function fadeScreenshotEdges(page: Page, screenshot: Buffer, format: 'png'
       context.drawImage(bitmap, 0, 0);
       const horizontal = Math.min(fade * bitmap.width / width, bitmap.width / 2);
       const vertical = Math.min(fade * bitmap.height / height, bitmap.height / 2);
-      for (const [x0, y0, x1, y1, x, y, w, h] of [
+      for (const [x0, y0, x1, y1, x, y, w, h] of fade ? [
         [0, 0, horizontal, 0, 0, 0, horizontal, bitmap.height],
         [bitmap.width, 0, bitmap.width - horizontal, 0, bitmap.width - horizontal, 0, horizontal, bitmap.height],
         [0, 0, 0, vertical, 0, 0, bitmap.width, vertical],
         [0, bitmap.height, 0, bitmap.height - vertical, 0, bitmap.height - vertical, bitmap.width, vertical],
-      ]) {
+      ] : []) {
         const gradient = context.createLinearGradient(x0, y0, x1, y1);
         gradient.addColorStop(0, 'white');
         gradient.addColorStop(1, 'rgba(255,255,255,0)');
         context.fillStyle = gradient;
         context.fillRect(x, y, w, h);
       }
-      const result = canvas.toDataURL(`image/${format}`, 0.92);
-      if (!result.startsWith(`data:image/${format};base64,`)) throw new Error('Could not encode faded screenshot');
+      const result = canvas.toDataURL(`image/${outputFormat}`, 0.92);
+      if (!result.startsWith(`data:image/${outputFormat};base64,`)) throw new Error(`Could not encode ${outputFormat} screenshot`);
       return result.slice(result.indexOf(',') + 1);
     } finally {
       bitmap.close();
     }
-  }, { image: screenshot.toString('base64'), format, fade, width, height });
+  }, { image: screenshot.toString('base64'), inputFormat, outputFormat, fade, width, height });
   return Buffer.from(encoded, 'base64');
 }
 
@@ -387,7 +387,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       }
       const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)\s+(?:([+-]?\d\S*)\s+)?(.+)$/.exec(rest);
       if (!element) {
-        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with #, a class prefixed with ., or an element name, an optional occurrence, and a PNG or JPEG path, optionally followed by size, padding, and fade options`);
+        throw new Error(`Line ${index + 1}: shotElt requires an ID prefixed with #, a class prefixed with ., or an element name, an optional occurrence, and a PNG, JPEG or WebP path, optionally followed by size, padding, and fade options`);
       }
       if (element[2]) {
         setOccurrence(element[2]);
@@ -923,7 +923,8 @@ export async function runScreenshotScenario(
             filename = command.argument.replace(/[\\/]/g, path.sep) || `screenshot-${String(screenshotCount + 1).padStart(3, '0')}.png`;
             await firstWindow.locator('.mat-mdc-snack-bar-container:visible').first().waitFor({ state: 'hidden', timeout: 15000 });
           }
-          const format = /\.jpe?g$/i.test(filename) ? 'jpeg' : 'png';
+          const outputFormat = /\.webp$/i.test(filename) ? 'webp' : /\.jpe?g$/i.test(filename) ? 'jpeg' : 'png';
+          const format = outputFormat === 'webp' ? 'png' : outputFormat;
           if (annotations.length) {
             await firstWindow.mouse.move(0, 0);
             await firstWindow.locator('.mat-mdc-tooltip:visible').first().waitFor({ state: 'hidden', timeout: 5000 });
@@ -1099,10 +1100,13 @@ export async function runScreenshotScenario(
               screenshot = await target.screenshot({ animations: 'disabled', type: format });
               if (zoomFactor !== 1) screenshot = await captureCssRect(firstWindow, box, zoomFactor, format);
             }
-            if (shotFade) screenshot = await fadeScreenshotEdges(firstWindow, screenshot, format, shotFade, captureWidth, captureHeight);
+            if (shotFade || outputFormat === 'webp') {
+              screenshot = await processScreenshot(firstWindow, screenshot, format, outputFormat, shotFade ?? 0, captureWidth, captureHeight);
+            }
           } else {
             const [width, height] = await browserWindow.evaluate((window: any) => window.getContentSize() as [number, number]);
             screenshot = await firstWindow.screenshot({ animations: 'disabled', clip: { x: 0, y: 0, width, height }, type: format });
+            if (outputFormat === 'webp') screenshot = await processScreenshot(firstWindow, screenshot, format, outputFormat, 0, width, height);
           }
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
           screenshotCount++;

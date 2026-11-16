@@ -23,3 +23,10 @@ removeElt #app-var-details-preparation-2d-comp-variables-lists
 removeElt #preparation-2d-target-distribution-graph
 refreshDom
 shotElt #cooccurrence-matrix-comp-container "images-khiops-guides/visualization/Cooccurence.png" {padding: 10px 10px 10px 10px}
+
+fileOpen e2e/mocks/src-screenshots/AdultReport.json
+
+clickRow R04
+resizeSplit #preparation-view-comp>.as-vertical 0 100
+shotElt app-target-distribution-graph "images/KhiopsViz_Adult.png" {padding: 0px 10px 10px 5px}
+shotElt app-target-distribution-graph "images/KhiopsViz_Adult.webp" {padding: 0px 10px 10px 5px}
