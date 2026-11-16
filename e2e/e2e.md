@@ -10,8 +10,9 @@ If port 4200 is occupied, start `yarn ng serve -c dev --port 4201` and set
 Set `SCREENSHOT_SCENARIO` to run a single scenario and `SCREENSHOT_OUTPUT`
 to change the output directory; relative paths are resolved from the desktop
 project root.
-Set `screenshotWindowSize` in `e2e/screenshot-playwright.config.ts` to change
-the Electron window size used by screenshot scenarios.
+Scenarios start with a 1440x1000 Electron window. Use `setResolution 1800x1000`
+in a scenario to resize it for subsequent commands and screenshots. If the
+requested window size cannot be applied, the command fails.
 
 Screenshot scenarios and their helper tests are excluded from the standard E2E
 suite. On GitHub, run the **Screenshot Scenarios** workflow manually to run
@@ -48,6 +49,12 @@ selects elements by tag, not by ID.
 It activates an already-open tab for that path, or opens the file in the scenario
 window through the application's main-process open action if needed, then waits for
 loading and any visible load notification to finish.
+`browseFile #import-new-file-btn e2e/mocks/ExternalDataEducation.txt` clicks a visible
+file-browse control and selects the specified file. Paths are absolute or relative
+to the desktop project root; quote paths containing spaces. IDs require one visible
+match unless an occurrence is specified. The command selects the file but does not
+save the external-data mapping; for the external-data importer, it waits until the
+new mapping editor appears.
 `openTab` takes the exact visible tab name. `openMenu` opens the desktop File
 menu and leaves it open if already visible. `clickRow`
 clicks the unique visible row containing the supplied text, for example `clickRow R11`.

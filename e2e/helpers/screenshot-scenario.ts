@@ -16,7 +16,7 @@ type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
 type ChartBarGeometry = { x: number; y: number; width: number; height: number; offsetX: number; offsetY: number };
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'browseFile' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'setResolution' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
@@ -299,7 +299,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     let occurrence: number | undefined;
     let annotationPosition: AnnotationPosition | undefined;
     let chartIndex: number | undefined;
-    if (!['fileOpen', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    if (!['fileOpen', 'browseFile', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'setResolution', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
         if (name !== 'screenshot' && name !== 'openMenu' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
@@ -314,7 +314,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
           }
           occurrence = Number(value);
         };
-        if (['openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
+        if (['browseFile', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
           'resizeSplit', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'input', 'shotElt', 'setVisibility'].includes(name)) {
           const prefix = /^([+-]?\d\S*)\s+(.+)$/.exec(argument);
           if (prefix) {
@@ -324,6 +324,12 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
         }
     if (name === 'wait' && (!/^\d+$/.test(argument) || Number(argument) > 2147483647)) {
       throw new Error(`Line ${index + 1}: wait requires a non-negative integer duration in milliseconds`);
+    }
+    if (name === 'setResolution') {
+      const size = /^([1-9]\d*)x([1-9]\d*)$/.exec(argument);
+      if (!size || Number(size[1]) > 2147483647 || Number(size[2]) > 2147483647) {
+        throw new Error(`Line ${index + 1}: setResolution requires a positive integer width and height in WIDTHxHEIGHT format`);
+      }
     }
     if (name === 'annotation' || name === 'annotationSelectedCell') {
       const { selector, text, occurrence: annotationOccurrence, position } = parseAnnotationArgument(
@@ -351,6 +357,14 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       if (input[2]) setOccurrence(input[2]);
       const text = input[3] === undefined ? input[4] : input[3].replace(/\\(n|")/g, (_match, escaped: string) => escaped === 'n' ? '\n' : '"');
       argument = `${input[1]} ${text}`;
+    }
+    if (name === 'browseFile') {
+      const browse = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?\s+(?:"([^"]+)"|(\S+))$/.exec(argument);
+      if (!browse || (browse[4] && browse[4].includes('"'))) {
+        throw new Error(`Line ${index + 1}: browseFile requires an ID, class, or element name, an optional occurrence, and a file path`);
+      }
+      if (browse[2]) setOccurrence(browse[2]);
+      argument = `${browse[1]} ${browse[3] ?? browse[4]}`;
     }
     if (name === 'frame') {
       const frame = parseFrameArgument(argument, index + 1);
@@ -466,7 +480,6 @@ export async function runScreenshotScenario(
   firstWindow: Page,
   scenarioPath: string,
   outputDirectory: string,
-  windowSize: { width: number; height: number },
 ): Promise<void> {
   const commands = parseScreenshotScenario(await fs.readFile(scenarioPath, 'utf8'));
   const projectRoot = path.resolve(__dirname, '../..');
@@ -478,11 +491,11 @@ export async function runScreenshotScenario(
   await fs.mkdir(outputDirectory, { recursive: true });
   await firstWindow.waitForLoadState('networkidle');
   const browserWindow = await app.browserWindow(firstWindow);
-  await browserWindow.evaluate((window: any, { width, height }) => {
+  await browserWindow.evaluate((window: Electron.BrowserWindow) => {
     window.webContents.setZoomLevel(0);
-    window.setSize(width, height);
+    window.setSize(1440, 1000);
     window.center();
-  }, windowSize);
+  });
 
   for (const command of commands) {
     try {
@@ -519,6 +532,28 @@ export async function runScreenshotScenario(
           await toast.waitFor({ state: 'hidden', timeout: 15000 });
           break;
         }
+        case 'browseFile': {
+          const separator = command.argument.indexOf(' ');
+          const selector = command.argument.slice(0, separator);
+          const filePath = path.resolve(projectRoot, command.argument.slice(separator + 1).replace(/[\\/]/g, path.sep));
+          if (!(await fs.stat(filePath)).isFile()) throw new Error(`Not a file: ${filePath}`);
+          const targets = firstWindow.locator(toElementSelector(selector)).filter({ visible: true });
+          if (selector.startsWith('#') && command.occurrence === undefined) await expect(targets).toHaveCount(1, { timeout: 30000 });
+          const target = targets.nth((command.occurrence ?? 1) - 1);
+          await expect(target).toBeVisible({ timeout: 30000 });
+          const isExternalDataImport = await target.evaluate((element) => !!element.closest('kl-import-file-loader'));
+          const [chooser] = await Promise.all([
+            firstWindow.waitForEvent('filechooser', { timeout: 30000 }),
+            target.click({ timeout: 30000 }),
+          ]);
+          await chooser.setFiles(filePath);
+          if (isExternalDataImport) {
+            const mapping = firstWindow.locator('app-import-ext-datas.new-mapping-editor')
+              .filter({ hasText: path.basename(filePath) });
+            await expect(mapping).toBeVisible({ timeout: 30000 });
+          }
+          break;
+        }
         case 'openTab': {
           const activeView = firstWindow.locator('khiops-visualization:visible, khiops-covisualization:visible');
           const tabs = activeView.getByRole('tab', { name: command.argument, exact: true });
@@ -533,6 +568,19 @@ export async function runScreenshotScenario(
           await expect(button).toBeVisible({ timeout: 30000 });
           if (!(await button.evaluate((element) => element.classList.contains('open')))) await button.click();
           await expect(firstWindow.locator('.cet-menubar-menu-container:visible').first()).toBeVisible();
+          break;
+        }
+        case 'setResolution': {
+          const [width, height] = command.argument.split('x').map(Number);
+          const actualSize = await browserWindow.evaluate((window: Electron.BrowserWindow, size) => {
+            window.setSize(size.width, size.height);
+            window.center();
+            return window.getSize();
+          }, { width, height });
+          if (actualSize[0] !== width || actualSize[1] !== height) {
+            throw new Error(`Requested ${width}x${height}, but the window size is ${actualSize[0]}x${actualSize[1]}`);
+          }
+          await firstWindow.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
           break;
         }
         case 'zoomOut': {

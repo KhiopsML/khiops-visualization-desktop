@@ -4,7 +4,6 @@ import { ElectronApplication, Page } from 'playwright';
 import { expect, screenshotTest as test } from './fixtures/launch-electron';
 import { clickSaveDialogButton, openFileInWindow } from './helpers/electron-menu';
 import { parseScreenshotScenario, runScreenshotScenario } from './helpers/screenshot-scenario';
-import { screenshotWindowSize } from './screenshot-playwright.config';
 
 async function resetZoom(app: ElectronApplication, firstWindow: Page): Promise<void> {
   const window = await app.browserWindow(firstWindow);
@@ -122,8 +121,8 @@ test('Open after reload in the requested window and reuse its tab', async ({ app
   });
   try {
     expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getFocusedWindow()?.id)).toBe(otherWindowId);
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
     expect(await menu.evaluate((state) => state.calls)).toBe(0);
     expect(await probe.evaluate((state) => state.listenerCounts)).toEqual([1]);
     await expect(firstWindow.locator('.tab[title^="AllReports.khj"]')).toHaveCount(1);
@@ -159,6 +158,69 @@ test('Parse the File menu command', () => {
   expect(() => parseScreenshotScenario('openMenu File')).toThrow(/does not take an argument/);
 });
 
+test('Parse file browse commands', () => {
+  const commands = parseScreenshotScenario('browseFile #import-new-file-btn e2e/mocks/data.txt\n'
+    + 'browseFile 2 .browse "folder/file name.txt"\nbrowseFile .browse 2 data.txt');
+  expect(commands.map(({ argument, occurrence }) => ({ argument, occurrence }))).toEqual([
+    { argument: '#import-new-file-btn e2e/mocks/data.txt', occurrence: undefined },
+    { argument: '.browse folder/file name.txt', occurrence: 2 },
+    { argument: '.browse data.txt', occurrence: 2 },
+  ]);
+  for (const command of ['browseFile #button', 'browseFile #button "unterminated', 'browseFile 0 #button data.txt', 'browseFile #button 2.5 data.txt']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
+  }
+});
+
+test('Parse window resolutions', () => {
+  expect(parseScreenshotScenario('setResolution 1800x1000')[0].argument).toBe('1800x1000');
+  for (const size of ['0x1000', '1800x0', '-1x1000', '1800X1000', '1.5x1000', '1800x1000 extra', '2147483648x1000']) {
+    expect(() => parseScreenshotScenario(`setResolution ${size}`)).toThrow(/Line 1/);
+  }
+});
+
+test('Resize subsequent screenshots and reset between scenarios', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('resolution.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, [
+    'screenshot initial.png',
+    'setResolution 1800x1000',
+    'screenshot large.png',
+    'setResolution 1200x700',
+    'screenshot small.png',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output);
+  await fs.writeFile(scenario, 'screenshot reset.png');
+  await runScreenshotScenario(app, firstWindow, scenario, output);
+  for (const [filename, width, height] of [
+    ['initial.png', 1440, 1000],
+    ['large.png', 1800, 1000],
+    ['small.png', 1200, 700],
+    ['reset.png', 1440, 1000],
+  ] as const) {
+    const image = await fs.readFile(path.join(output, filename));
+    expect(image.readUInt32BE(16), filename).toBe(width);
+    expect(image.readUInt32BE(20), filename).toBe(height);
+  }
+});
+
+test('Browse an external data file', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  const scenario = testInfo.outputPath('browse.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario, [
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj',
+    'clickElt .button-import-external-datas',
+    'browseFile #import-new-file-btn e2e/mocks/src-screenshots/Covisualization/1-ExternalData_JoinKeyEducation_DimensionEducation.txt',
+    'screenshot',
+  ].join('\n'));
+  await runScreenshotScenario(app, firstWindow, scenario, output);
+  const mapping = firstWindow.locator('app-import-ext-datas');
+  await expect(mapping).toBeVisible({ timeout: 30000 });
+  await expect(mapping).toContainText('1-ExternalData_JoinKeyEducation_DimensionEducation.txt');
+  await expect(mapping).toContainText('education');
+});
+
 test('Capture a framed File menu item at reduced zoom', async ({ app, firstWindow }, testInfo) => {
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('menu.txt');
@@ -171,7 +233,7 @@ test('Capture a framed File menu item at reduced zoom', async ({ app, firstWindo
     'frame "Save current hierarchy as"',
     'shotElt .cet-menubar-menu-container "menu.png" {padding:5px}',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   const menu = firstWindow.locator('.cet-menubar-menu-container:visible').first();
   const item = menu.getByText('Save current hierarchy as', { exact: true }).locator('..');
   await expect(item).toBeVisible();
@@ -310,7 +372,7 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
   const scenario = testInfo.outputPath('split-parent-occurrence.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     const focusTarget = document.createElement('input');
@@ -354,11 +416,11 @@ test('Resize the split inside the selected parent occurrence', async ({ app, fir
   };
   try {
     await focusTarget.focus();
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
     await expect(focusTarget).not.toBeFocused();
     await focusTarget.focus();
     await expect(focusTarget).toBeFocused();
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
     await expect(focusTarget).not.toBeFocused();
   } finally {
     firstWindow.mouse.click = mouseClick;
@@ -414,7 +476,7 @@ test('Hover shows the matrix tooltip in a screenshot', async ({ app, firstWindow
   await fs.writeFile(scenario,
     'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\n'
     + 'openTab Axis\nhover #matrix-selected\nwait 500\nshotElt .matrix-tooltip-comp tooltip.png');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   const tooltip = firstWindow.locator('.matrix-tooltip-comp.visible');
   await expect(tooltip).toHaveCSS('opacity', '1');
   await expect(tooltip.locator('h2')).toContainText(' x ');
@@ -503,7 +565,7 @@ test('Annotate a chart bar without selecting it', async ({ app, firstWindow }, t
   const scenario = testInfo.outputPath('annotation-chart-bar.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const chart = document.createElement('kl-chart');
     const canvas = document.createElement('canvas');
@@ -542,7 +604,7 @@ test('Annotate a chart bar without selecting it', async ({ app, firstWindow }, t
   };
   try {
     await fs.writeFile(scenario, 'annotationSelectedChart #scenario-chart 1 "Bar" {position:right}\nscreenshot');
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -551,7 +613,7 @@ test('Annotate a chart bar without selecting it', async ({ app, firstWindow }, t
   expect(labelBox!.y + labelBox!.height / 2).toBeCloseTo(canvasBox!.y + 120, 1);
   await expect(canvas).not.toHaveAttribute('data-click');
   await fs.writeFile(scenario, 'clickChart #scenario-chart 1\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(canvas).toHaveAttribute('data-click', '100,120');
   await canvas.evaluate((element) => element.parentElement!.remove());
   testInfo.annotations.push({ type: 'preserve-screenshot-state' });
@@ -564,7 +626,7 @@ test('Annotate a distribution chart bar', async ({ app, firstWindow }, testInfo)
   await fs.writeFile(scenario,
     'fileOpen e2e/mocks/src-screenshots/DatasetsHistograms/AdultUnsupervised.khj\n'
     + 'openTab Preparation\nclickRow #preparation-variables-list R11\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   let text: string | null = null;
   const screenshot = firstWindow.screenshot;
   firstWindow.screenshot = async (options) => {
@@ -573,7 +635,7 @@ test('Annotate a distribution chart bar', async ({ app, firstWindow }, testInfo)
   };
   try {
     await fs.writeFile(scenario, 'annotationSelectedChart #distribution-chart-0 1 "Distribution bar" {position:top}\nscreenshot');
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -589,7 +651,7 @@ test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }
   const scenario = testInfo.outputPath('annotation-selected-cell.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   const originalDisplays = await firstWindow.locator('#matrix-selected').evaluateAll((canvases) => {
     return canvases.map((canvas) => {
       const element = canvas as HTMLElement;
@@ -621,7 +683,7 @@ test('Annotate transformed matrix selection bounds', async ({ app, firstWindow }
   };
   try {
     await fs.writeFile(scenario, 'annotationSelectedCell "Selection" {position:right}\nscreenshot');
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -641,7 +703,7 @@ test('Annotate a selected matrix cell', async ({ app, firstWindow }, testInfo) =
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario,
     'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\nopenTab Axis\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('#matrix-selected').filter({ visible: true }).click();
   let text: string | null = null;
   const screenshot = firstWindow.screenshot;
@@ -651,7 +713,7 @@ test('Annotate a selected matrix cell', async ({ app, firstWindow }, testInfo) =
   };
   try {
     await fs.writeFile(scenario, 'annotationSelectedCell "Selected cell" {position:right}\nscreenshot');
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -665,7 +727,7 @@ test('Position annotation labels and carets around their target', async ({ app, 
   const scenario = testInfo.outputPath('annotation-positions.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const target = document.createElement('div');
     target.className = 'scenario-annotation-positions';
@@ -701,7 +763,7 @@ test('Position annotation labels and carets around their target', async ({ app, 
       'annotation .scenario-annotation-positions "Left" {position:left}',
       'screenshot',
     ].join('\n'));
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -726,7 +788,7 @@ test('Annotate the requested visible occurrence', async ({ app, firstWindow }, t
   const scenario = testInfo.outputPath('annotation-occurrence.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     for (let index = 0; index < 4; index++) {
       const target = document.createElement('div');
@@ -749,7 +811,7 @@ test('Annotate the requested visible occurrence', async ({ app, firstWindow }, t
   };
   try {
     await fs.writeFile(scenario, 'annotation 3 .scenario-annotation-occurrence "Third"\nscreenshot');
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -771,7 +833,7 @@ test('Clean queued frames and annotations', async ({ app, firstWindow }, testInf
   const scenario = testInfo.outputPath('clean.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const target = document.createElement('div');
     target.className = 'scenario-clean-target';
@@ -802,7 +864,7 @@ test('Clean queued frames and annotations', async ({ app, firstWindow }, testInf
       'clean',
       'screenshot "clean-after.png"',
     ].join('\n'));
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -821,7 +883,7 @@ test('Keep the annotation caret attached at different zoom levels', async ({ app
   const scenario = testInfo.outputPath('annotation-caret.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const target = document.createElement('div');
     target.className = 'scenario-annotation-target';
@@ -849,7 +911,7 @@ test('Keep the annotation caret attached at different zoom levels', async ({ app
       'annotation .scenario-annotation-target "Label"',
       'screenshot "zoom.png"',
     ].join('\n'));
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -906,7 +968,7 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
   const scenario = testInfo.outputPath('frames.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     for (let index = 0; index < 4; index++) {
       const target = document.createElement('div');
@@ -951,7 +1013,7 @@ test('Render frame padding and optional badges', async ({ app, firstWindow }, te
       'frame .scenario-frame-test {badge:number}',
       'screenshot "number-reset.png"',
     ].join('\n'));
-    await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+    await runScreenshotScenario(app, firstWindow, scenario, output);
   } finally {
     firstWindow.screenshot = screenshot;
   }
@@ -1004,7 +1066,7 @@ test('Use element names for input and element commands', async ({ app, firstWind
   const scenario = testInfo.outputPath('element-names.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     const container = document.createElement('div');
@@ -1042,7 +1104,7 @@ test('Use element names for input and element commands', async ({ app, firstWind
     'clickRow scenario-element-table R11',
     'screenshot',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(firstWindow.locator('body')).toHaveAttribute('data-element-clicked', 'yes');
   await expect(firstWindow.locator('body')).toHaveAttribute('data-element-row-clicked', 'yes');
   await expect(firstWindow.locator('scenario-element-slider input')).toHaveValue('50');
@@ -1061,14 +1123,14 @@ test('Set the matrix contrast when other sliders are visible', async ({ app, fir
   const scenario = testInfo.outputPath('matrix-slider.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   const slider = firstWindow.locator('khiops-covisualization:visible').locator('#contrast mat-slider').filter({ visible: true }).first();
   const originalValue = await slider.locator('input').first().inputValue();
   await fs.writeFile(scenario, 'input #contrast 50\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(slider.locator('input').first()).toHaveValue('50');
   await fs.writeFile(scenario, `input #contrast ${originalValue}\nscreenshot`);
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(slider.locator('input').first()).toHaveValue(originalValue);
   testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
@@ -1083,7 +1145,7 @@ test('Fill a hidden unfolding input', async ({ app, firstWindow }, testInfo) => 
     'clickElt #cy-unfold-value-button',
     'screenshot',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, testInfo.outputPath('screenshots'), screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, testInfo.outputPath('screenshots'));
   await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
   await firstWindow.locator('#unfold-hierarchy-header').getByRole('button', { name: 'Cancel' }).click();
   await expect(firstWindow.locator('#unfold-hierarchy-settings')).toBeHidden();
@@ -1101,12 +1163,12 @@ test('Set and save the unfolding slider', async ({ app, firstWindow }, testInfo)
     'input .unfold-hierarchy-settings-slider 6',
     'screenshot',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
   await firstWindow.locator('.button-confirm-hierarchy').click();
   await expect(firstWindow.locator('#unfold-hierarchy-settings')).toBeHidden({ timeout: 30000 });
   await fs.writeFile(scenario, 'clickElt .button-unfold-hierarchy\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(firstWindow.locator('#unfold-hierarchy-settings kl-important-badge')).toHaveText('6');
   await firstWindow.locator('#unfold-hierarchy-header').getByRole('button', { name: 'Cancel' }).click();
   await expect(firstWindow.locator('#unfold-hierarchy-settings')).toBeHidden();
@@ -1178,7 +1240,7 @@ test('Apply target occurrences to click, input, hide and remove', async ({ app, 
   const scenario = testInfo.outputPath('target-occurrences.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     for (let index = 0; index < 3; index++) {
@@ -1208,7 +1270,7 @@ test('Apply target occurrences to click, input, hide and remove', async ({ app, 
     'removeElt .occurrence-remove 2',
     'screenshot',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(firstWindow.locator('body')).toHaveAttribute('data-occurrence-click', '1');
   const inputs = firstWindow.locator('.occurrence-input');
   await expect(inputs.nth(0)).toHaveValue('');
@@ -1228,7 +1290,7 @@ test('Click the element containing matching text', async ({ app, firstWindow }, 
   const scenario = testInfo.outputPath('text-click.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     for (const [id, hidden] of [['hidden', true], ['first', false], ['second', false]] as const) {
@@ -1246,7 +1308,7 @@ test('Click the element containing matching text', async ({ app, firstWindow }, 
     }
   });
   await fs.writeFile(scenario, 'clickElt "Unique C1"\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(firstWindow.locator('body')).toHaveAttribute('data-text-click', 'first');
   await firstWindow.locator('.scenario-text-click-container').evaluateAll((elements) => elements.forEach((element) => element.remove()));
   await firstWindow.evaluate(() => { delete document.body.dataset.textClick; });
@@ -1262,12 +1324,12 @@ test('Select a context cluster by text', async ({ app, firstWindow }, testInfo) 
     'openTab Context',
     'screenshot',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   const cluster = firstWindow.locator('khiops-covisualization:visible').getByText('C1').filter({ visible: true }).first();
   await expect(cluster).toHaveClass(/tree-leaf-text/);
   await cluster.locator('..').evaluate((element) => element.classList.remove('tree-selected'));
   await fs.writeFile(scenario, 'clickElt "C1"\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await expect(cluster.locator('..')).toHaveClass(/tree-selected/);
   await discardCovisualization(firstWindow, '2-Iris3vars-Coclustering.khcj');
   testInfo.annotations.push({ type: 'preserve-screenshot-state' });
@@ -1278,7 +1340,7 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
   const scenario = testInfo.outputPath('zoom.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const root = host.shadowRoot || host;
     const decoy = document.createElement('div');
@@ -1318,7 +1380,7 @@ test('Capture an element at different zoom levels', async ({ app, firstWindow },
     'shotElt .scenario-zoom-test "size.webp" {size:30x20}',
     'shotElt .scenario-zoom-test "padding.webp" {padding:2px}',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   for (const filename of ['zoom-out.png', 'normal.png', 'zoom-in.png', 'tag.png',
     'second.png', 'second-padded.png', 'tag-second.png']) {
     const image = (await fs.readFile(path.join(output, filename))).toString('base64');
@@ -1376,7 +1438,7 @@ test('Fade element screenshot edges to white', async ({ app, firstWindow }, test
   const scenario = testInfo.outputPath('fade.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const background = document.createElement('div');
     background.style.cssText = 'position:fixed;left:100px;top:100px;width:120px;height:120px;background:rgb(255,0,0);z-index:2147483647';
@@ -1402,7 +1464,7 @@ test('Fade element screenshot edges to white', async ({ app, firstWindow }, test
     'zoomIn',
     'shotElt .scenario-fade-test "zoom.png" {fade:20px}',
   ].join('\n'));
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   for (const filename of ['plain.png', 'zero.png', 'fade.png', 'white.png', 'wide.png', 'padding.png', 'size.jpg', 'fade.webp', 'zoom.png']) {
     const image = (await fs.readFile(path.join(output, filename))).toString('base64');
     const pixels = await firstWindow.evaluate(async ({ image, mime }) => {
@@ -1445,7 +1507,7 @@ test('Bring an element above a modal dialog', async ({ app, firstWindow }, testI
   const scenario = testInfo.outputPath('foreground.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/ExplanatoryAnalysis/AllReports.khj\nscreenshot');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   await firstWindow.locator('khiops-visualization:visible').evaluate((host) => {
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;left:100px;top:100px;display:flex;z-index:9999';
@@ -1468,7 +1530,7 @@ test('Bring an element above a modal dialog', async ({ app, firstWindow }, testI
   const before = await target.boundingBox();
   const siblingBefore = await sibling.boundingBox();
   await fs.writeFile(scenario, 'firstPlan scenario-foreground-button\nscreenshot "foreground.png"');
-  await runScreenshotScenario(app, firstWindow, scenario, output, screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, output);
   expect(await target.boundingBox()).toEqual(before);
   expect(await sibling.boundingBox()).toEqual(siblingBefore);
   expect(await target.evaluate((element) => element.matches(':popover-open'))).toBe(true);

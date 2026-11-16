@@ -2,12 +2,11 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { screenshotTest as test } from './fixtures/launch-electron';
 import { runScreenshotScenario } from './helpers/screenshot-scenario';
-import { screenshotWindowSize } from './screenshot-playwright.config';
 
 test('probe menu geometry', async ({ app, firstWindow }, testInfo) => {
   const scenario = testInfo.outputPath('probe.txt');
   await fs.writeFile(scenario, 'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\nzoomOut\nopenMenu\nscreenshot "full.png"');
-  await runScreenshotScenario(app, firstWindow, scenario, testInfo.outputPath('output'), screenshotWindowSize);
+  await runScreenshotScenario(app, firstWindow, scenario, testInfo.outputPath('output'));
   console.log('MENU', await firstWindow.locator('.cet-menubar-menu-container').evaluateAll((elements) => elements.map((e) => ({
     html: e.outerHTML.slice(0, 1000), rect: e.getBoundingClientRect().toJSON(),
     text: e.textContent?.slice(0, 500),

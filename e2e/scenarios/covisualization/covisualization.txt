@@ -36,7 +36,7 @@ resizeSplit .axis-comp>.as-horizontal 35 65
 clickElt .kl-grid-btn-fit-columns 
 clickElt .tree-leaf-text
 unfocus
-shotElt .axis-comp  "images-khiops-guides/covisualization/CurrentClusterView.png"
+shotElt .axis-comp "images-khiops-guides/covisualization/CurrentClusterView.png"
 
 # edit selection name
 clickElt .edit-button 3

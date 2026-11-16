@@ -1,0 +1,39 @@
+
+zoomOut
+
+fileOpen e2e/mocks/src-screenshots/Covisualization/IV-AdultComplete.khcj
+
+setResolution 1800x1000
+
+# open manage view dialog and disable distribution charts
+setVisibility isDistributionChecked 1 true
+setVisibility isDistributionChecked 2 true
+
+frame .hierarchy-select-comp-button 1 {noId: true, padding: 5px 5px 5px 5px}
+frame .hierarchy-select-comp-button 2 {noId: true, padding: 5px 5px 5px 5px}
+screenshot "images-khiops-guides/covisualization/IV-Adult-Global.png"
+
+frame app-variable-search-button {noId: true, padding: 5px 5px 5px 0px}
+shotElt .hierarchy-details-comp 2 "images-khiops-guides/covisualization/IV-Adult-HierarchySearchInnerVariable.png"
+
+clickElt app-variable-search-button
+clickElt .inner-variable-select
+screenshot "images-khiops-guides/covisualization/IV-Adult-SearchInnerVariable.png"
+unfocus
+
+clickElt .close-btn
+frame .kl-icon-cell-comp-btn {noId: true, padding: 5px 5px 5px 5px}
+shotElt .composition-comp 2 "images-khiops-guides/covisualization/IV-Adult-Composition.png"
+
+clickElt .kl-icon-cell-comp-btn 2
+shotElt app-composition-detailed-parts "images-khiops-guides/covisualization/IV-Adult-CompositionPartDetails.png" {padding: 50px 100px 50px 100px}
+clickElt .close-btn
+unfocus
+
+clickElt app-matrix-inner-variables-filter
+clickElt "Unselect all"
+clickElt mat-option 1
+shotElt .matrix-container-comp-wrapper "images-khiops-guides/covisualization/IV-Adult-SelectAge.png"
+
+
+
