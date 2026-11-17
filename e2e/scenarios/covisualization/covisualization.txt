@@ -62,6 +62,7 @@ unfocus
 shotElt .axis-comp 2 "images-khiops-guides/covisualization/Composition.png"
 
 # search text clerical
+clickElt "Adm-clerical"
 clickElt .search-input-btn 1
 input .search-input-btn 1 "clerical"
 unfocus
