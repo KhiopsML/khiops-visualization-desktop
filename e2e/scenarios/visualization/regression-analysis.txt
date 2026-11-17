@@ -14,6 +14,7 @@ frame #app-var-details-preparation-2d-comp-variables-lists
 screenshot "images-khiops-guides/visualization/RegressionPreparation.png"
 
 openTab Modeling
+wait 500
 screenshot "images-khiops-guides/visualization/RegressionModeling.png"
 
 openTab Evaluation
