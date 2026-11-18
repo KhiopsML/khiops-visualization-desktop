@@ -131,6 +131,7 @@ jobs:
           mac_certs_password: ${{ secrets.mac_certs_password }}
         env:
           DEBUG: electron-builder
+          NODE_OPTIONS: --max-old-space-size=4096
           YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
           # macOS notarization API key
           API_KEY_ID: ${{ secrets.api_key_id }}
