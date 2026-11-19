@@ -798,12 +798,14 @@ export async function runScreenshotScenario(
             if (!(element instanceof HTMLElement)) throw new Error('Matrix tooltip must be an HTML element');
             const box = element.getBoundingClientRect();
             if (box.width <= 0 || box.height <= 0) throw new Error('Matrix tooltip has no visible area');
+            const style = getComputedStyle(element);
             const snapshot = element.cloneNode(true) as HTMLElement;
             snapshot.setAttribute('popover', 'manual');
             for (const [property, value] of Object.entries({
               position: 'fixed', inset: 'auto', top: `${box.top}px`, left: `${box.left}px`,
               width: `${box.width}px`, height: `${box.height}px`, margin: '0',
               'max-width': 'none', 'max-height': 'none', 'box-sizing': 'border-box',
+              padding: style.padding, border: style.border, overflow: style.overflow,
               opacity: '1', visibility: 'visible', transition: 'none', 'pointer-events': 'none',
             })) {
               snapshot.style.setProperty(property, value, 'important');
