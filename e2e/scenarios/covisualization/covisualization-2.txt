@@ -24,7 +24,7 @@ setVisibility isCompositionChecked 2 false
 setVisibility isCooccurrenceChecked false
 setVisibility isDimensionsChecked false
 
-clickElt "A10"
+clickElt "B11"
 clickElt "{Masters}"
 resizeSplit .axis-comp 1 >.as-horizontal 40 60
 resizeSplit .axis-comp 2 >.as-horizontal 40 60

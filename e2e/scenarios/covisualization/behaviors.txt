@@ -6,7 +6,7 @@ fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupati
 openTab Axis
 
 clickElt "{Machine-op-inspct, Transport-moving, Handlers-cleaners}"
-clickElt "{11th, 10th, 9th, ...}"
+clickElt "{11th, 10th, 12th}"
 
 annotation .tree-selected "A mouse click on a cluster propagate to all view on the same dimension"
 annotation ag-grid-angular "Selected composition" {position:top}
