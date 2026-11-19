@@ -4,10 +4,10 @@ zoomOut
 fileOpen e2e/mocks/src-screenshots/screenshots/Adult_Setup_Visualization.khj
 
 openTab Modeling
+clickRow age
 screenshot "images/Visualization Adult Modeling.png"
 
 openTab Evaluation
-clickRow age
 screenshot "images/Visualization Adult Evaluation.png"
 
 
