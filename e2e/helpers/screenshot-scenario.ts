@@ -16,7 +16,7 @@ type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
 type ChartBarGeometry = { x: number; y: number; width: number; height: number; offsetX: number; offsetY: number };
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'browseFile' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'setResolution' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'browseFile' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'waitOpaque' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'setResolution' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
@@ -299,7 +299,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     let occurrence: number | undefined;
     let annotationPosition: AnnotationPosition | undefined;
     let chartIndex: number | undefined;
-    if (!['fileOpen', 'browseFile', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'setResolution', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    if (!['fileOpen', 'browseFile', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'waitOpaque', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'setResolution', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
         if (name !== 'screenshot' && name !== 'openMenu' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
@@ -314,7 +314,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
           }
           occurrence = Number(value);
         };
-        if (['browseFile', 'openTab', 'clickRow', 'clickElt', 'hover', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
+        if (['browseFile', 'openTab', 'clickRow', 'clickElt', 'hover', 'waitOpaque', 'hideElt', 'removeElt', 'firstPlan', 'clickChart',
           'resizeSplit', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'input', 'shotElt', 'setVisibility'].includes(name)) {
           const prefix = /^([+-]?\d\S*)\s+(.+)$/.exec(argument);
           if (prefix) {
@@ -387,7 +387,7 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
       if (element) argument = element[1];
       if (text) argument = `"${text[1]}"`;
     }
-    if (name === 'hover' || name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') {
+    if (name === 'hover' || name === 'waitOpaque' || name === 'hideElt' || name === 'removeElt' || name === 'firstPlan') {
       const element = /^([.#][\w-]+|[a-zA-Z][\w-]*)(?:\s+([+-]?\d\S*))?$/.exec(argument);
       if (!element) throw new Error(`Line ${index + 1}: ${name} requires an ID, a class, or an element name`);
       if (element[2]) setOccurrence(element[2]);
@@ -765,6 +765,17 @@ export async function runScreenshotScenario(
             await expect(targets).toHaveCount(1, { timeout: 30000 });
           }
           await targets.nth((command.occurrence ?? 1) - 1).hover({ timeout: 30000 });
+          break;
+        }
+        case 'waitOpaque': {
+          const selector = toElementSelector(command.argument);
+          const targets = firstWindow.locator(selector).filter({ visible: true });
+          if (command.argument.startsWith('#') && command.occurrence === undefined) {
+            await expect(targets).toHaveCount(1, { timeout: 30000 });
+          }
+          const target = targets.nth((command.occurrence ?? 1) - 1);
+          await expect(target).toBeVisible({ timeout: 30000 });
+          await expect(target).toHaveCSS('opacity', '1', { timeout: 30000 });
           break;
         }
         case 'firstPlan': {

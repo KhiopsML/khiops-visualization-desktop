@@ -74,8 +74,11 @@ attached match is used. Use `\n` and `\"` for a newline or quote in the text.
 `hover #matrix-selected` moves the pointer to the center of the visible element,
 triggering its mousemove handlers and tooltip. Classes and element names select the
 first visible match; an occurrence selects another match. An ID without an occurrence
-must match exactly one visible element in the active view. For the matrix tooltip,
-use `wait 500` after `hover` so its fade-in finishes before taking a screenshot.
+must match exactly one visible element in the active view.
+`waitOpaque .matrix-tooltip-comp` waits for the first visible matching element's CSS
+opacity to reach 1, including completion of its fade-in. IDs require a unique visible
+match unless an occurrence is specified. Use it after hovering over the matrix and
+before capturing its tooltip.
 `hideElt #level-distribution-btn` hides the visible element with that ID;
 `hideElt .class-elt` hides all visible elements with that class.
 Hidden elements no longer occupy layout space.

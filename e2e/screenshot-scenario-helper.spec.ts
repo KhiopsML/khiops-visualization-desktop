@@ -469,13 +469,59 @@ test('Parse hover targets and occurrences', () => {
   }
 });
 
+test('Parse waitOpaque targets and occurrences', () => {
+  const commands = parseScreenshotScenario('waitOpaque .matrix-tooltip-comp\nwaitOpaque 2 .target\nwaitOpaque #target 3');
+  expect(commands.map(({ argument, occurrence }) => ({ argument, occurrence }))).toEqual([
+    { argument: '.matrix-tooltip-comp', occurrence: undefined },
+    { argument: '.target', occurrence: 2 },
+    { argument: '#target', occurrence: 3 },
+  ]);
+  for (const command of ['waitOpaque', 'waitOpaque .target 0', 'waitOpaque .target 1.5', 'waitOpaque .target extra']) {
+    expect(() => parseScreenshotScenario(command)).toThrow(/Line 1/);
+  }
+});
+
+test('Wait for fade-in before capturing a padded screenshot', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  await openFileInWindow(app, firstWindow, path.resolve('e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj'));
+  const view = firstWindow.locator('khiops-covisualization:visible');
+  await expect(view).toBeVisible({ timeout: 30000 });
+  await view.evaluate((element) => {
+    const trigger = document.createElement('div');
+    trigger.className = 'scenario-opacity-trigger';
+    trigger.style.cssText = 'position:fixed;left:100px;top:100px;width:20px;height:20px;z-index:2147483647';
+    const target = document.createElement('div');
+    target.className = 'scenario-opacity-target';
+    target.style.cssText = 'position:fixed;left:150px;top:100px;width:40px;height:40px;z-index:2147483647;background:red;opacity:0;transition:opacity 2s linear;pointer-events:none';
+    trigger.addEventListener('mouseenter', () => { target.style.opacity = '1'; });
+    element.append(trigger, target);
+  });
+  const scenario = testInfo.outputPath('opacity.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario,
+    'hover .scenario-opacity-trigger\nwaitOpaque .scenario-opacity-target\n'
+    + 'shotElt .scenario-opacity-target opacity.png {padding:0px}');
+  await runScreenshotScenario(app, firstWindow, scenario, output);
+  const screenshot = await fs.readFile(path.join(output, 'opacity.png'));
+  const pixel = await firstWindow.evaluate(async (image) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: 'image/png' }));
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(bitmap, 0, 0);
+    return Array.from(context.getImageData(Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2), 1, 1).data);
+  }, screenshot.toString('base64'));
+  expect(pixel).toEqual([255, 0, 0, 255]);
+});
+
 test('Hover shows the matrix tooltip in a screenshot', async ({ app, firstWindow }, testInfo) => {
   test.setTimeout(90000);
   const scenario = testInfo.outputPath('matrix-hover.txt');
   const output = testInfo.outputPath('screenshots');
   await fs.writeFile(scenario,
     'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\n'
-    + 'openTab Axis\nhover #matrix-selected\nwait 500\nshotElt .matrix-tooltip-comp tooltip.png');
+    + 'openTab Axis\nhover #matrix-selected\nwaitOpaque .matrix-tooltip-comp\nshotElt .matrix-tooltip-comp tooltip.png');
   await runScreenshotScenario(app, firstWindow, scenario, output);
   const tooltip = firstWindow.locator('.matrix-tooltip-comp.visible');
   await expect(tooltip).toHaveCSS('opacity', '1');
