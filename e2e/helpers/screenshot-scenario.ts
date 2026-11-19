@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { randomUUID } from 'crypto';
 import * as path from 'path';
-import { ElectronApplication, Locator, Page } from 'playwright';
+import { ElectronApplication, JSHandle, Locator, Page } from 'playwright';
 import { expect } from '../fixtures/launch-electron';
 import { openFileInWindow } from './electron-menu';
 
@@ -16,7 +16,7 @@ type AnnotationPosition = 'top' | 'right' | 'bottom' | 'left';
 type ChartBarGeometry = { x: number; y: number; width: number; height: number; offsetX: number; offsetY: number };
 
 export type ScreenshotCommand = {
-  name: 'fileOpen' | 'browseFile' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'waitOpaque' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'setResolution' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
+  name: 'fileOpen' | 'browseFile' | 'openTab' | 'openMenu' | 'clickRow' | 'clickElt' | 'hover' | 'waitOpaque' | 'pinMatrixTooltip' | 'hideElt' | 'removeElt' | 'firstPlan' | 'clickChart' | 'zoomOut' | 'zoomIn' | 'setResolution' | 'refreshDom' | 'resizeSplit' | 'wait' | 'frame' | 'annotation' | 'annotationSelectedCell' | 'annotationSelectedChart' | 'clean' | 'input' | 'unfocus' | 'setVisibility' | 'screenshot' | 'shotElt';
   argument: string;
   line: number;
   occurrence?: number;
@@ -299,13 +299,13 @@ export function parseScreenshotScenario(source: string): ScreenshotCommand[] {
     let occurrence: number | undefined;
     let annotationPosition: AnnotationPosition | undefined;
     let chartIndex: number | undefined;
-    if (!['fileOpen', 'browseFile', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'waitOpaque', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'setResolution', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
+    if (!['fileOpen', 'browseFile', 'openTab', 'openMenu', 'clickRow', 'clickElt', 'hover', 'waitOpaque', 'pinMatrixTooltip', 'hideElt', 'removeElt', 'firstPlan', 'clickChart', 'zoomOut', 'zoomIn', 'setResolution', 'refreshDom', 'resizeSplit',     'wait', 'frame', 'annotation', 'annotationSelectedCell', 'annotationSelectedChart', 'clean', 'input', 'unfocus', 'screenshot', 'shotElt', 'setVisibility'].includes(name)) {
       throw new Error(`Line ${index + 1}: unknown command "${name}"`);
     }
-        if (name !== 'screenshot' && name !== 'openMenu' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && !argument) {
+        if (name !== 'screenshot' && name !== 'openMenu' && name !== 'zoomOut' && name !== 'zoomIn' && name !== 'refreshDom' && name !== 'unfocus' && name !== 'clean' && name !== 'pinMatrixTooltip' && !argument) {
       throw new Error(`Line ${index + 1}: ${name} requires an argument`);
     }
-        if ((name === 'openMenu' || name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus' || name === 'clean') && argument) {
+        if ((name === 'openMenu' || name === 'zoomOut' || name === 'zoomIn' || name === 'refreshDom' || name === 'unfocus' || name === 'clean' || name === 'pinMatrixTooltip') && argument) {
       throw new Error(`Line ${index + 1}: ${name} does not take an argument`);
     }
         const setOccurrence = (value: string) => {
@@ -487,6 +487,17 @@ export async function runScreenshotScenario(
   let annotations: { target: Locator; text: string; position: AnnotationPosition; selectedCell?: boolean; chartIndex?: number; chartSelector?: string }[] = [];
   let screenshotCount = 0;
   let annotationReady = false;
+  let pinnedTooltip: JSHandle<{ original: HTMLElement; snapshot: HTMLElement; visibility: string; priority: string }> | undefined;
+  const releasePinnedTooltip = async () => {
+    if (!pinnedTooltip) return;
+    await pinnedTooltip.evaluate(({ original, snapshot, visibility, priority }) => {
+      snapshot.remove();
+      if (visibility) original.style.setProperty('visibility', visibility, priority);
+      else original.style.removeProperty('visibility');
+    });
+    await pinnedTooltip.dispose();
+    pinnedTooltip = undefined;
+  };
 
   await fs.mkdir(outputDirectory, { recursive: true });
   await firstWindow.waitForLoadState('networkidle');
@@ -776,6 +787,39 @@ export async function runScreenshotScenario(
           const target = targets.nth((command.occurrence ?? 1) - 1);
           await expect(target).toBeVisible({ timeout: 30000 });
           await expect(target).toHaveCSS('opacity', '1', { timeout: 30000 });
+          break;
+        }
+        case 'pinMatrixTooltip': {
+          if (pinnedTooltip) throw new Error('A matrix tooltip is already pinned');
+          const target = firstWindow.locator('.matrix-tooltip-comp.visible').filter({ visible: true });
+          await expect(target).toHaveCount(1, { timeout: 30000 });
+          await expect(target.locator('h2')).toContainText(' x ', { timeout: 30000 });
+          pinnedTooltip = await target.evaluateHandle((element) => {
+            if (!(element instanceof HTMLElement)) throw new Error('Matrix tooltip must be an HTML element');
+            const box = element.getBoundingClientRect();
+            if (box.width <= 0 || box.height <= 0) throw new Error('Matrix tooltip has no visible area');
+            const snapshot = element.cloneNode(true) as HTMLElement;
+            snapshot.setAttribute('popover', 'manual');
+            for (const [property, value] of Object.entries({
+              position: 'fixed', inset: 'auto', top: `${box.top}px`, left: `${box.left}px`,
+              width: `${box.width}px`, height: `${box.height}px`, margin: '0',
+              'max-width': 'none', 'max-height': 'none', 'box-sizing': 'border-box',
+              opacity: '1', visibility: 'visible', transition: 'none', 'pointer-events': 'none',
+            })) {
+              snapshot.style.setProperty(property, value, 'important');
+            }
+            element.after(snapshot);
+            try {
+              snapshot.showPopover();
+            } catch (error) {
+              snapshot.remove();
+              throw error;
+            }
+            const visibility = element.style.getPropertyValue('visibility');
+            const priority = element.style.getPropertyPriority('visibility');
+            element.style.setProperty('visibility', 'hidden', 'important');
+            return { original: element, snapshot, visibility, priority };
+          });
           break;
         }
         case 'firstPlan': {
@@ -1226,6 +1270,7 @@ export async function runScreenshotScenario(
           }
           await writeScreenshot(path.join(outputDirectory, filename), screenshot);
           screenshotCount++;
+          await releasePinnedTooltip();
           if (annotationReady) await firstWindow.evaluate(() => (window as any).Annotate.clear());
           if (annotations.length) await firstWindow.locator('#__screenshot_annotations').evaluate((overlay) => overlay.remove());
           frames = [];
@@ -1234,8 +1279,13 @@ export async function runScreenshotScenario(
         }
       }
     } catch (error) {
+      await releasePinnedTooltip();
       throw new Error(`${scenarioPath}:${command.line}: ${command.name} ${command.argument}: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+  if (pinnedTooltip) {
+    await releasePinnedTooltip();
+    throw new Error(`${scenarioPath}: pinned matrix tooltip must be followed by a screenshot`);
   }
   if (frames.length || annotations.length) throw new Error(`${scenarioPath}: annotations must be followed by a screenshot`);
   if (!screenshotCount) throw new Error(`${scenarioPath}: scenario contains no screenshot`);

@@ -533,6 +533,39 @@ test('Hover shows the matrix tooltip in a screenshot', async ({ app, firstWindow
   testInfo.annotations.push({ type: 'preserve-screenshot-state' });
 });
 
+test('Pin the matrix tooltip for capture after the pointer leaves', async ({ app, firstWindow }, testInfo) => {
+  test.setTimeout(90000);
+  expect(parseScreenshotScenario('pinMatrixTooltip')[0].name).toBe('pinMatrixTooltip');
+  expect(() => parseScreenshotScenario('pinMatrixTooltip .matrix-tooltip-comp')).toThrow(/Line 1/);
+  const scenario = testInfo.outputPath('pinned-tooltip.txt');
+  const output = testInfo.outputPath('screenshots');
+  await fs.writeFile(scenario,
+    'fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj\n'
+    + 'openTab Axis\nhover #matrix-selected\npinMatrixTooltip\nunfocus\n'
+    + 'shotElt .matrix-tooltip-comp tooltip.png {padding:0px}');
+  await runScreenshotScenario(app, firstWindow, scenario, output);
+  const tooltip = firstWindow.locator('.matrix-tooltip-comp');
+  await expect(tooltip).toHaveCount(1);
+  await expect(tooltip).not.toHaveClass(/visible/);
+  await expect(tooltip.locator('h2')).toHaveCount(0);
+  const screenshot = await fs.readFile(path.join(output, 'tooltip.png'));
+  const darkPixels = await firstWindow.evaluate(async (image) => {
+    const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(image), (character) => character.charCodeAt(0))], { type: 'image/png' }));
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(bitmap, 0, 0);
+    const pixels = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+    let dark = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      if (pixels[index] < 80 && pixels[index + 1] < 80 && pixels[index + 2] < 120) dark++;
+    }
+    return dark / (bitmap.width * bitmap.height);
+  }, screenshot.toString('base64'));
+  expect(darkPixels).toBeGreaterThan(0.25);
+});
+
 test('Require quoted annotation text', () => {
   const commands = parseScreenshotScenario('annotation .target "Add or remove views"\n'
     + 'annotation #target "First line\\nSecond line"\nannotation .target "Say \\"hello\\""\n'
