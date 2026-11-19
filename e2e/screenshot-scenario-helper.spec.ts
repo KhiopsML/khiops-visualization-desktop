@@ -494,7 +494,8 @@ test('Wait for fade-in before capturing a padded screenshot', async ({ app, firs
     target.className = 'scenario-opacity-target';
     target.style.cssText = 'position:fixed;left:150px;top:100px;width:40px;height:40px;z-index:2147483647;background:red;opacity:0;transition:opacity 2s linear;pointer-events:none';
     trigger.addEventListener('mouseenter', () => { target.style.opacity = '1'; });
-    element.append(trigger, target);
+    if (!element.shadowRoot) throw new Error('Covisualization shadow root is unavailable');
+    element.shadowRoot.append(trigger, target);
   });
   const scenario = testInfo.outputPath('opacity.txt');
   const output = testInfo.outputPath('screenshots');
