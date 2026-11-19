@@ -24,9 +24,9 @@ shotElt kl-keyboard-tooltip "images-khiops-guides/covisualization/CTRL.png" {pad
 
 # tree icons
 clickElt .tree-expando
-shotElt .folder-close "images-khiops-guides/covisualization/FoldedCluster.png" {padding: 10px 6px 0px 6px}
+shotElt .folder-close "images-khiops-guides/covisualization/FoldedCluster.png" {padding: 6px 6px 6px 6px}
 shotElt .folder-open "images-khiops-guides/covisualization/UnfoldedCluster.png" {padding: 10px 6px 0px 6px}
-shotElt .is-leaf "images-khiops-guides/covisualization/TerminalCluster.png" {padding: 10px 6px 0px 6px}
+shotElt .is-leaf "images-khiops-guides/covisualization/TerminalCluster.png" {padding: 6px 6px 6px 6px}
 
 # invert-axis button
 shotElt .invert-axis "images-khiops-guides/covisualization/image33.png" {padding: 5px 8px 0px 8px}

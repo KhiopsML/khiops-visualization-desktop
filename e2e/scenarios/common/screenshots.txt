@@ -7,6 +7,7 @@ openTab Modeling
 screenshot "images/Visualization Adult Modeling.png"
 
 openTab Evaluation
+clickRow age
 screenshot "images/Visualization Adult Evaluation.png"
 
 

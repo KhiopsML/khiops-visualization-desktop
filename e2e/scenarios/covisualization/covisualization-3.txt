@@ -14,6 +14,7 @@ clickElt "C1"
 openTab Axis
 
 resizeSplit .axis-view-comp>.as-horizontal 40 60
+resizeSplit .matrix-container-comp>.as-vertical 40 60
 
 frame app-selected-clusters {noId:true}
 annotation app-selected-clusters "3 dimensions :\n2 main, 1 contextual"

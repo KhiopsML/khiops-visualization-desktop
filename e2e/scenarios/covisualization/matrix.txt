@@ -38,7 +38,7 @@ shotElt #cell-stats-comp "images-khiops-guides/covisualization/MatrixTop.png" {p
 
 # tooltip
 hover #matrix-selected
-wait 500
+wait 100
 shotElt .matrix-tooltip-comp "images-khiops-guides/covisualization/InfoTooltip.png" {padding: 100px 300px 100px 300px, fade:40px}
 
 
