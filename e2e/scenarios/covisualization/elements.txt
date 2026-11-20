@@ -18,9 +18,8 @@ shotElt .button-unfold-hierarchy "images-khiops-guides/covisualization/UnfoldHie
 
 # Table filter
 shotElt .mat-badge-accent "images-khiops-guides/covisualization/ColumnsButton.png" {padding: 5px 5px 5px 5px}
-
 # CTRL shortcut
-shotElt kl-keyboard-tooltip "images-khiops-guides/covisualization/CTRL.png" {padding: 5px 5px 0px 5px}
+# shotElt kl-keyboard-tooltip "images-khiops-guides/covisualization/CTRL.png" {padding: 5px 5px 0px 5px}
 
 # tree icons
 clickElt .tree-expando
@@ -32,7 +31,7 @@ shotElt .is-leaf "images-khiops-guides/covisualization/TerminalCluster.png" {pad
 shotElt .invert-axis "images-khiops-guides/covisualization/image33.png" {padding: 5px 8px 0px 8px}
 
 # search button
-shotElt .search-input-btn "images-khiops-guides/covisualization/Image-searchbox.png" {padding: 5px 5px 5px 5px}
+# shotElt .search-input-btn "images-khiops-guides/covisualization/Image-searchbox.png" {padding: 5px 5px 5px 5px}
 
 # external datas
 annotation .button-import-external-datas "Import external datas"

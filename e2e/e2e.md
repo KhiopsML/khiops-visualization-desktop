@@ -78,7 +78,9 @@ must match exactly one visible element in the active view.
 `waitOpaque .matrix-tooltip-comp` waits for the first visible matching element's CSS
 opacity to reach 1, including completion of its fade-in. IDs require a unique visible
 match unless an occurrence is specified. Use it after hovering over the matrix and
-before capturing its tooltip.
+before capturing its tooltip. Alternatively, `pinMatrixTooltip` freezes the populated
+matrix tooltip above the page until the next screenshot, even if the pointer leaves
+the matrix. Hover the matrix first; the pinned tooltip is removed after the capture.
 `hideElt #level-distribution-btn` hides the visible element with that ID;
 `hideElt .class-elt` hides all visible elements with that class.
 Hidden elements no longer occupy layout space.
