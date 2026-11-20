@@ -9,12 +9,6 @@ setVisibility isCompositionChecked 2 false
 frame #graph-header-tools {noId:true}
 shotElt .variable-graph-details-comp "images-khiops-guides/covisualization/DistributionZoom.png" {padding: 10px 10px 10px 10px}
 
-clickElt .button-unfold-hierarchy
-screenshot "images-khiops-guides/covisualization/UnfoldHierarchyWindow.png"
-
-# close dialog
-clickElt .button-confirm-hierarchy
-
 # Distribution views
 fileOpen e2e/mocks/src-screenshots/Covisualization/1-Adult2varsEducationOccupation.khcj
 
@@ -23,6 +17,13 @@ setVisibility isCompositionChecked 1 false
 setVisibility isCompositionChecked 2 false
 setVisibility isCooccurrenceChecked false
 setVisibility isDimensionsChecked false
+
+clickElt .button-unfold-hierarchy
+screenshot "images-khiops-guides/covisualization/UnfoldHierarchyWindow.png"
+
+# close dialog
+clickElt .button-confirm-hierarchy
+
 
 clickElt "B11"
 clickElt "{Masters}"
