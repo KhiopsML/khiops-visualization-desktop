@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: KhiopsML/khiops-visualization
-          path: visualization-component
+          path: khiops-visualization
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -162,7 +162,7 @@ matrix cell instead of the entire canvas. Multiple selected cells use their comb
 bounding rectangle. The command requires one visible matrix by default; add a
 1-based occurrence before the text to select another. It requires a visualization
 component build that exposes matrix selection bounds. After updating the component,
-run `yarn ng build khiops-webcomponent` in the adjacent visualization-component
+run `yarn ng build khiops-webcomponent` in the adjacent khiops-visualization
 repository and restart the desktop development server.
 `annotationSelectedChart #distribution-chart-0 1 "Selected bar" {position:top}`
 annotates the bar at zero-based index 1 without clicking or changing the selection.

@@ -5,7 +5,7 @@ const fs = require("fs");
 module.exports = function setupReloading(mainWindow) {
   const libPath = path.resolve(
     __dirname,
-    "../visualization-component/dist/khiops-webcomponent/"
+    "../khiops-visualization/dist/khiops-webcomponent/"
   );
 
   if (!fs.existsSync(libPath)) {

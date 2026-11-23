@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Prevent committing dist paths from visualization-component in angular.json
-if git diff --cached -- angular.json | grep -q '"\.\./visualization-component/dist/'; then
+# Prevent committing dist paths from khiops-visualization in angular.json
+if git diff --cached -- angular.json | grep -q '"\.\./khiops-visualization/dist/'; then
   echo ""
-  echo "❌ Commit blocked: angular.json contains a reference to ../visualization-component/dist/"
+  echo "❌ Commit blocked: angular.json contains a reference to ../khiops-visualization/dist/"
   echo "   Remove the dist path from 'scripts' before committing."
   echo ""
   exit 1

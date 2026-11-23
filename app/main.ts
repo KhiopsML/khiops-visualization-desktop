@@ -294,7 +294,7 @@ function createWindow(): BrowserWindow {
     electronReload(
       path.join(
         __dirname,
-        '../visualization-component/dist/khiops-webcomponent/',
+        '../khiops-visualization/dist/khiops-webcomponent/',
       ),
     );
     const setupReloading = require('../electron-reload.js');

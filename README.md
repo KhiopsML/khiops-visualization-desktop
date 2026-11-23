@@ -107,15 +107,26 @@ yarn start
 
 To develop with a local version of the visualization component:
 
+Clone `khiops-visualization` alongside this repository and install dependencies in
+both projects before starting the desktop app:
+
 ```bash
+git clone https://github.com/KhiopsML/khiops-visualization.git ../khiops-visualization
+cd ../khiops-visualization
+yarn install
+cd ../khiops-visualization-desktop
+yarn install
 yarn dev
 ```
 
 This command:
 
 - Replaces the visualization library with the local copy
-- Uses scripts from the `../visualization-component/dist/khiops-webcomponent/` directory
+- Uses scripts from the `../khiops-visualization/dist/khiops-webcomponent/` directory
 - Enables hot-reload for rapid development
+
+The command updates `angular.json` and comments out the package import in
+`src/app/app.component.ts`; these changes remain after the command exits.
 
 ### Contributing Your Changes
 

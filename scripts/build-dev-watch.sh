@@ -5,12 +5,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DESKTOP_DIR="$REPO_ROOT/khiops-visualization-desktop"
-COMPONENT_DIR="$REPO_ROOT/visualization-component"
+COMPONENT_DIR="$REPO_ROOT/khiops-visualization"
 ANGULAR_JSON="$DESKTOP_DIR/angular.json"
 APP_COMPONENT_PATH="$DESKTOP_DIR/src/app/app.component.ts"
 
 if [ ! -d "$COMPONENT_DIR" ]; then
-    echo "ERROR: visualization-component was not found at $COMPONENT_DIR."
+    echo "ERROR: khiops-visualization was not found at $COMPONENT_DIR."
     exit 1
 fi
 
@@ -22,8 +22,8 @@ else
 fi
 
 # Update the angular.json file to replace the style and script paths
-sed "${SED_INPLACE[@]}" 's/"styles": \["src\/styles.scss"\]/"styles": ["..\/visualization-component\/dist\/khiops-webcomponent\/styles.css", "src\/styles.scss"]/' "$ANGULAR_JSON"
-sed "${SED_INPLACE[@]}" 's/"scripts": \[\]/"scripts": ["..\/visualization-component\/dist\/khiops-webcomponent\/main.js"]/' "$ANGULAR_JSON"
+sed "${SED_INPLACE[@]}" 's/"styles": \["src\/styles.scss"\]/"styles": ["..\/khiops-visualization\/dist\/khiops-webcomponent\/styles.css", "src\/styles.scss"]/' "$ANGULAR_JSON"
+sed "${SED_INPLACE[@]}" 's/"scripts": \[\]/"scripts": ["..\/khiops-visualization\/dist\/khiops-webcomponent\/main.js"]/' "$ANGULAR_JSON"
 
 # Ensure desktop app does not import npm package directly during dev startup.
 if grep -q "^import 'khiops-visualization';" "$APP_COMPONENT_PATH"; then

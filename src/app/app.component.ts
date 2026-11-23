@@ -34,7 +34,7 @@ import { Tab } from './core/interfaces/tab.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { LucideArrowDownToLine } from '@lucide/angular';
-import 'khiops-visualization';
+// import 'khiops-visualization';
 
 @Component({
   selector: 'app-root',
@@ -292,7 +292,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     // Configure component with unique instance configuration compatible with Shadow DOM
     if (tabConfig.setConfig && typeof tabConfig.setConfig === 'function') {
-      // Generate timestamp-based instance ID like visualization-component expects
+      // Generate timestamp-based instance ID like khiops-visualization expects
       const timestamp = Date.now();
       const random = Math.random().toString(36).substr(2, 9);
       const compatibleInstanceId = `${timestamp}_${random}_tab_${tab.id}`;
