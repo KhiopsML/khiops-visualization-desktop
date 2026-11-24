@@ -64,6 +64,7 @@
     "electron:windows64": "yarn build:prod && electron-builder build --windows --x64 -p always",
     "electron:publish": "yarn build:prod && electron-builder build --publish=never",
     "electron:mac": "yarn build:prod && electron-builder build --mac -p always",
+    "electron:mac:local": "yarn build:prod && electron-builder build --mac",
     "lint": "ng lint",
     "addHeader": "ts-node scripts/add-header.js",
     "updateElectron": "npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxypac.si.francetelecom.fr:8080/ yarn add electron@latest --force --legacy-peer-deps",
