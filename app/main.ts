@@ -280,25 +280,29 @@ function createWindow(): BrowserWindow {
   // win.webContents.openDevTools();
 
   if (serve) {
-    try {
-      const reloader = require('electron-reloader');
-      (reloader.default ?? reloader)(module);
-    } catch (error) {
-      // Hot reload is optional in dev, do not block startup
-      log.warn('electron-reloader setup failed:', (error as Error).message);
+    if (process.env.KVD_E2E !== '1') {
+      try {
+        const reloader = require('electron-reloader');
+        (reloader.default ?? reloader)(module);
+      } catch (error) {
+        // Hot reload is optional in dev, do not block startup
+        log.warn('electron-reloader setup failed:', (error as Error).message);
+      }
     }
 
     newWindow.loadURL('http://localhost:4200');
 
-    const electronReload = require('electron-reload');
-    electronReload(
-      path.join(
-        __dirname,
-        '../khiops-visualization/dist/khiops-webcomponent/',
-      ),
-    );
-    const setupReloading = require('../electron-reload.js');
-    setupReloading(newWindow);
+    if (process.env.KVD_E2E !== '1') {
+      const electronReload = require('electron-reload');
+      electronReload(
+        path.join(
+          __dirname,
+          '../khiops-visualization/dist/khiops-webcomponent/',
+        ),
+      );
+      const setupReloading = require('../electron-reload.js');
+      setupReloading(newWindow);
+    }
   } else {
     // Path when running electron executable
     let pathIndex = './index.html';

@@ -88,7 +88,7 @@ test.describe('Check loading external datas', () => {
     await expect(educationItem).toBeVisible();
     await educationItem.click();
 
-    const loadBtn = firstWindow.locator('button', { hasText: 'Load datas' });
+    const loadBtn = firstWindow.locator('button', { hasText: 'Load data' });
     await expect(loadBtn).toBeVisible();
     await loadBtn.click();
 

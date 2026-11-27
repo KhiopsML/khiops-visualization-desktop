@@ -1,5 +1,21 @@
 # Commands
 
+## Local E2E tests
+
+Install the project dependencies, then compile the Electron main process:
+
+```sh
+yarn install
+yarn electron:serve-tsc
+```
+
+In one terminal, start the Angular development server with `yarn ng:serve:dev`
+and wait for it to compile. In another terminal, run `yarn e2e` or
+`yarn e2e:ui`. Alternatively, `yarn e2e:watch` starts the server and the
+Playwright UI together. Recompile the Electron main process after changing it.
+The tests disable Electron's file watchers; Angular's development server still
+reloads the renderer.
+
 ## Screenshot scenarios
 
 Start the development server with `yarn ng:serve:dev`, then run
@@ -17,7 +33,8 @@ On Linux with Xvfb, use a display large enough for the requested window, for
 example `xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" yarn e2e:screenshots`.
 
 Screenshot scenarios and their helper tests are excluded from the standard E2E
-suite. On GitHub, run the **Screenshot Scenarios** workflow manually without
+suite, as is the menu geometry probe, which has its own `menu-probe.config.ts`.
+On GitHub, run the **Screenshot Scenarios** workflow manually without
 inputs to run all scenarios and generate a separate `screenshot-scenarios`
 artifact. The workflow checks out the visualization repository beside the
 desktop repository.

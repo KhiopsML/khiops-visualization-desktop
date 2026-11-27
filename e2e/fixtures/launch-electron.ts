@@ -49,6 +49,7 @@ async function withElectronApp(
   let app: ElectronApplication | undefined;
   try {
     app = await electron.launch({
+      env: { ...process.env, KVD_E2E: '1' },
       args: [
         PATH.join(__dirname, '../../app/main.js'),
         '--serve',
