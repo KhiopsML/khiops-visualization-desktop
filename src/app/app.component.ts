@@ -319,10 +319,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           );
         },
         readLocalFile: (file: File | any, cb: Function) => {
-          console.log(
-            '🚀 ~ AppComponent ~ configureTabComponent ~ file:',
-            file,
-          );
           return this.readLocalFile(file, cb, tab);
         },
         onSendEvent: (event: { message: string; data: any }, cb?: Function) => {
