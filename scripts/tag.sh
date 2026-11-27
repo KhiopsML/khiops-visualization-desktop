@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <tag>"
@@ -9,8 +10,13 @@ TAG=$1
 git pull origin main --tags
 
 # Replace version into package.json
-sed -i "s/\"version\": \".*\"/\"version\": \"$TAG\"/" package.json
-sed -i "s/\"version\": \".*\"/\"version\": \"$TAG\"/" ./app/package.json
+if [ "$(uname -s)" = "Darwin" ]; then
+    sed -i '' "s/\"version\": \".*\"/\"version\": \"$TAG\"/" package.json
+    sed -i '' "s/\"version\": \".*\"/\"version\": \"$TAG\"/" ./app/package.json
+else
+    sed -i "s/\"version\": \".*\"/\"version\": \"$TAG\"/" package.json
+    sed -i "s/\"version\": \".*\"/\"version\": \"$TAG\"/" ./app/package.json
+fi
 
 git add .
 git commit -am "$TAG"
