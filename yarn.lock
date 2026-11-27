@@ -10647,7 +10647,7 @@ __metadata:
     karma-electron: "npm:^7.3.0"
     karma-jasmine: "npm:^5.1.0"
     karma-jasmine-html-reporter: "npm:^2.3.0"
-    khiops-visualization: "npm:^11.17.3"
+    khiops-visualization: "npm:^11.17.4"
     ngx-matomo-client: "npm:^10.0.0"
     node-polyfill-webpack-plugin: "npm:^4.1.0"
     npm-run-all: "npm:^4.1.5"
@@ -10663,10 +10663,10 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"khiops-visualization@npm:^11.17.3":
-  version: 11.17.3
-  resolution: "khiops-visualization@npm:11.17.3"
-  checksum: 10c0/677033fd18a2efccecc9fb8550375b678ae381ace58b7105d0c5ce1f12461795de912850ad35f9b603471ef6b66350b7682b926cdfd3d493076b6bbb12742eda
+"khiops-visualization@npm:^11.17.4":
+  version: 11.17.4
+  resolution: "khiops-visualization@npm:11.17.4"
+  checksum: 10c0/f6b73f4ed3c0030781216a4d58b0da6138c0904b012a53e4d54868a392270d556bc935608e84c37ceffb1541e09fa949de81dedc602ce4f3736e38cd51747811
   languageName: node
   linkType: hard
 
